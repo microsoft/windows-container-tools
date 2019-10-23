@@ -1,13 +1,20 @@
+//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+
 #include "pch.h"
 #include "CppUnitTest.h"
 
-#include <algorithm>
+#include <string>
+#include <functional>
 
 #include "../src/LogMonitor/LogWriter.h"
-#include "../src/LogMonitor/ConfigFileParser.cpp"
-#include "../src/LogMonitor/Utility.cpp"
-#include "../src/LogMonitor/JsonFileParser.cpp"
-
+#include "../src/LogMonitor/EtwMonitor.h"
+#include "../src/LogMonitor/EventMonitor.h"
+#include "../src/LogMonitor/LogFileMonitor.h"
+#include "../src/LogMonitor/ProcessMonitor.h"
+#include "../src/LogMonitor/Utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -71,7 +78,7 @@ namespace LogMonitorTests
 
 			bool success = ReadConfigFile(jsonParser, settings);
 
-			wstring output = RecoverOuput();
+			std::wstring output = RecoverOuput();
 
 			Assert::IsTrue(success);
 			Assert::AreEqual(L"", output.c_str());
@@ -128,7 +135,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -184,7 +191,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -237,7 +244,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -387,7 +394,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -479,7 +486,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -566,7 +573,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -663,7 +670,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -729,7 +736,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -784,7 +791,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -830,7 +837,7 @@ namespace LogMonitorTests
 
 				bool success = ReadConfigFile(jsonParser, settings);
 
-				wstring output = RecoverOuput();
+				std::wstring output = RecoverOuput();
 
 				//
 				// The config string was valid
@@ -868,8 +875,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -882,8 +889,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -896,8 +903,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -910,8 +917,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -924,8 +931,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -938,8 +945,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 
 			//
@@ -952,8 +959,8 @@ namespace LogMonitorTests
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
 
-				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
-				Assert::ExpectException<invalid_argument>(f1);
+				std::function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 		}
 		TEST_METHOD(TestInvalidConfigFile)

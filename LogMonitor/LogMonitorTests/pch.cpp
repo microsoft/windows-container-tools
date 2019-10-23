@@ -1,3 +1,8 @@
+//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+
 // pch.cpp: source file corresponding to the pre-compiled header
 
 #include "pch.h"

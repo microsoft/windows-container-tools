@@ -1,7 +1,34 @@
+//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+
 #include "pch.h"
 #include "CppUnitTest.h"
 
+#include <windows.h>
+#include <conio.h>
+#include <stdio.h>
+#include <winevt.h>
+
 #include "../src/LogMonitor/LogWriter.h"
+#include "../src/LogMonitor/EtwMonitor.h"
+#include "../src/LogMonitor/EventMonitor.h"
+#include "../src/LogMonitor/LogFileMonitor.h"
+#include "../src/LogMonitor/ProcessMonitor.h"
+#include "../src/LogMonitor/Utility.h"
+#include "../src/LogMonitor/ConfigFileParser.cpp"
+#include "../src/LogMonitor/EtwMonitor.cpp"
+#include "../src/LogMonitor/EventMonitor.cpp"
+#include "../src/LogMonitor/JsonFileParser.cpp"
+#include "../src/LogMonitor/LogFileMonitor.cpp"
+#include "../src/LogMonitor/ProcessMonitor.cpp"
+#include "../src/LogMonitor/Utility.cpp"
+
+#pragma comment(lib, "wevtapi.lib")
+#pragma comment(lib, "tdh.lib")
+#pragma comment(lib, "ws2_32.lib")  // For ntohs function
+#pragma comment(lib, "shlwapi.lib") 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
