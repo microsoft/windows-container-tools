@@ -520,11 +520,8 @@ EtwMonitor::StartTraceSession(
 						Utility::FormatString(L"EnableTraceEx2 failed with %lu for GUID %s", status, pwsProviderId).c_str()
 					);
 
-					if (pwsProviderId != NULL)
-					{
-						CoTaskMemFree(pwsProviderId);
-						pwsProviderId = NULL;
-					}
+					CoTaskMemFree(pwsProviderId);
+					pwsProviderId = NULL;
 				}
 
 				if (status == ERROR_NO_SYSTEM_RESOURCES)
