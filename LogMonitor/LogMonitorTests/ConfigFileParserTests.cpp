@@ -223,8 +223,7 @@ namespace LogMonitorTests
 								\"type\": \"EventLog\",\
 								\"channels\" : [\
 									{\
-										\"name\": \"system\",\
-										\"level\" : \"Verbose\"\
+										\"name\": \"system\"\
 									}\
 								]\
 							}\
@@ -258,6 +257,8 @@ namespace LogMonitorTests
 				Assert::AreEqual(true, sourceEventLog->EventFormatMultiLine);
 
 				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
+
+				Assert::AreEqual((int)EventChannelLogLevel::Error, (int)sourceEventLog->Channels[0].Level);
 			}
 		}
 
@@ -697,6 +698,724 @@ namespace LogMonitorTests
 				Assert::IsFalse(FAILED(hr));
 				Assert::AreEqual(RemoveBracesGuidStr(firstProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid1)).c_str());
 				CoTaskMemFree(providerGuid1);
+			}
+
+			std::wstring firstProviderName = L"Microsoft-Windows-User-Diagnostic";
+
+			configFileStrFormat =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"providers\" : [\
+									{\
+										\"providerName\": \"%s\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				std::wstring configFileStr = Utility::FormatString(
+					configFileStrFormat.c_str(),
+					firstProviderName.c_str()
+				);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> sourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual(true, sourceEtw->EventFormatMultiLine);
+
+				Assert::AreEqual((size_t)1, sourceEtw->Providers.size());
+
+				//
+				// First provider
+				//
+				Assert::AreEqual(firstProviderName.c_str(), sourceEtw->Providers[0].ProviderName.c_str());
+				Assert::AreEqual((UCHAR)2, sourceEtw->Providers[0].Level); // Error
+				Assert::AreEqual((ULONGLONG)0L, sourceEtw->Providers[0].Keywords);
+			}
+		}
+
+
+		TEST_METHOD(TestCaseInsensitiveOnAttributeNames)
+		{
+			std::wstring configFileStr =
+				L"{	\
+					\"logconfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"EventLog\",\
+								\"channels\" : [\
+									{\
+										\"name\": \"system\",\
+										\"level\" : \"Verbose\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
+
+
+				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
+
+				Assert::AreEqual(L"system", sourceEventLog->Channels[0].Name.c_str());
+				Assert::AreEqual((int)EventChannelLogLevel::Verbose, (int)sourceEventLog->Channels[0].Level);
+			}
+
+			configFileStr =
+				L"{	\
+					\"LOGCONFIG\": {	\
+						\"SourCes\": [ \
+							{\
+								\"Type\": \"EventLog\",\
+								\"CHANNELS\" : [\
+									{\
+										\"Name\": \"system\",\
+										\"Level\" : \"Verbose\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
+
+
+				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
+
+				Assert::AreEqual(L"system", sourceEventLog->Channels[0].Name.c_str());
+				Assert::AreEqual((int)EventChannelLogLevel::Verbose, (int)sourceEventLog->Channels[0].Level);
+			}
+		}
+
+		TEST_METHOD(TestInvalidJson)
+		{
+			std::wstring configFileStr;
+			
+			//
+			// Empty string
+			//
+			configFileStr =
+				L"";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Invalid attribute name 
+			//
+			configFileStr =
+				L"{other: false}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Invalid boolean value 
+			//
+			configFileStr =
+				L"{\"boolean\": Negative}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Invalid numeric value 
+			//
+			configFileStr =
+				L"{\"numeric\": 0xff}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Invalid escape sequence 
+			//
+			configFileStr =
+				L"{\"text\": \"\\k\"}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Expected next element, object
+			//
+			configFileStr =
+				L"{\"text\": \"\",}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+
+			//
+			// Expected next element, array
+			//
+			configFileStr =
+				L"{\"array\":[\"text\": \"\",]}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				function<void(void)> f1 = [&jsonParser, &settings] { bool success = ReadConfigFile(jsonParser, settings); };
+				Assert::ExpectException<invalid_argument>(f1);
+			}
+		}
+		TEST_METHOD(TestInvalidConfigFile)
+		{
+			std::wstring configFileStr;
+
+			//
+			// LogConfig doesn't exist
+			//
+			configFileStr =
+				L"{\"other\": { }}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsFalse(success);
+			}
+
+			//
+			// LogConfig is an array
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": []\
+				}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsFalse(success);
+			}
+
+			//
+			// 'Sources' doesn't exist
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"other\": [ \
+							{\
+								\"type\": \"File\",\
+								\"directory\": \"C:\\\\logs\"\
+							}\
+						]\
+					}\
+				}";
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsFalse(success);
+			}
+
+			//
+			//
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": \
+							{\
+								\"type\": \"File\",\
+								\"directory\": \"C:\\\\logs\"\
+							}\
+					}\
+				}";
+
+			{
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsFalse(success);
+			}
+
+			//
+			// Invalid Type
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"Unknown\",\
+								\"directory\": \"C:\\\\logs\"\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+		}
+
+		TEST_METHOD(TestInvalidEventLogSource)
+		{
+			std::wstring configFileStr;
+
+			//
+			// 'Channels' doesn't exist
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"EventLog\",\
+								\"other\" : [\
+									{\
+										\"name\": \"system\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)0, settings.Sources.size());
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+
+			//
+			// 'Channels' isn't an array
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"EventLog\",\
+								\"channels\" : \
+									{\
+										\"name\": \"system\"\
+									}\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)0, settings.Sources.size());
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+
+			//
+			// Invalid channel
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"EventLog\",\
+								\"channels\" : [\
+									{\
+										\"other\": \"system\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
+
+				Assert::AreEqual((size_t)0, sourceEventLog->Channels.size());
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+
+			//
+			// Invalid level
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"EventLog\",\
+								\"channels\" : [\
+									{\
+										\"name\": \"system\",\
+										\"level\": \"Invalid\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
+
+				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
+				Assert::AreEqual((int)EventChannelLogLevel::Error, (int)sourceEventLog->Channels[0].Level);
+				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+			}
+		}
+
+		TEST_METHOD(TestInvalidFileSource)
+		{
+			std::wstring configFileStr;
+
+			//
+			// 'Directory' doesn't exist
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"File\",\
+								\"other\": \"C:\\\\logs\"\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)0, settings.Sources.size());
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+		}
+
+		TEST_METHOD(TestInvalidETWSource)
+		{
+			std::wstring configFileStr;
+
+			//
+			// 'providers' doesn't exist
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"other\" : [\
+									{\
+										\"providerGuid\": \"305FC87B-002A-5E26-D297-60223012CA9C\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)0, settings.Sources.size());
+				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+			}
+
+			//
+			// Invalid provider
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"providers\" : [\
+									{\
+										\"level\": \"Information\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> SourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual((size_t)0, SourceEtw->Providers.size());
+				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+			}
+
+			//
+			// Invalid providerGuid
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"providers\" : [\
+									{\
+										\"providerGuid\": \"305FC87B-002A-5E26-D297-60\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> SourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual((size_t)0, SourceEtw->Providers.size());
+				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+			}
+
+			//
+			// Invalid level
+			//
+			configFileStr =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"providers\" : [\
+									{\
+										\"providerGuid\": \"305FC87B-002A-5E26-D297-60223012CA9C\",\
+										\"level\": \"Info\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+				Assert::IsTrue(success);
+
+				std::wstring output = RecoverOuput();
+
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> SourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual((size_t)1, SourceEtw->Providers.size());
+				Assert::AreEqual((UCHAR)2, SourceEtw->Providers[0].Level); // Error
+				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
 			}
 		}
 	};
