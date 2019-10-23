@@ -38,10 +38,18 @@ LogWriter logWriter;
 
 namespace LogMonitorTests
 {
+	///
+	/// Tests the tools that other tests could use. i.e. redirecting stdout.
+	///
 	TEST_CLASS(LogMonitorTests)
 	{
 		char bigOutBuf[BUFFER_SIZE];
 
+		///
+		/// Gets the content of the Stdout buffer and returns it in a wstring. 
+		///
+		/// \return A wstring with the stdout.
+		///
 		std::wstring RecoverOuput()
 		{
 			std::string realOutputStr(bigOutBuf);
@@ -50,6 +58,9 @@ namespace LogMonitorTests
 
 	public:
 
+		///
+		/// "Redirects" the stdout to an own buffer. 
+		///
 		TEST_METHOD_INITIALIZE(InitializeLogMonitorTests)
 		{
 			//
@@ -60,6 +71,10 @@ namespace LogMonitorTests
 			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
 		}
 		
+		///
+		/// Test that things being printed with logWriter are sent to
+		/// bigOutBuf buffer. 
+		///
 		TEST_METHOD(TestRedirectedOutputForTests)
 		{
 			std::wstring expectedOutput(BUFFER_SIZE - 4, L'#');

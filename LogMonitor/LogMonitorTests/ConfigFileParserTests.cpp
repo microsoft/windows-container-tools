@@ -22,16 +22,35 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace LogMonitorTests
 {
+	///
+	/// Tests of the ConfigFileParser's ReadConfigFile function. This function 
+	/// uses a JsonFileParser object to parse a JSON string, and return a
+	/// vector of sources with the retrieved configuration.
+	///
 	TEST_CLASS(ConfigFileParserTests)
 	{
 		char bigOutBuf[BUFFER_SIZE];
 
+		///
+		/// Gets the content of the Stdout buffer and returns it in a wstring. 
+		///
+		/// \return A wstring with the stdout.
+		///
 		std::wstring RecoverOuput()
 		{
 			std::string realOutputStr(bigOutBuf);
 			return std::wstring(realOutputStr.begin(), realOutputStr.end());
 		}
 
+		///
+		/// Replaces all the occurrences in a wstring. 
+		///
+		/// \param str		The string to search substrings and replace them.
+		/// \param from		The substring to being replaced.
+		/// \param from		The substring to replace.
+		///
+		/// \return A wstring.
+		///
 		std::wstring ReplaceAll(std::wstring str, const std::wstring& from, const std::wstring& to) {
 			size_t start_pos = 0;
 			
@@ -42,6 +61,13 @@ namespace LogMonitorTests
 			return str;
 		}
 
+		///
+		/// Removes the braces at the start and end of a string. 
+		///
+		/// \param str		A wstring.
+		///
+		/// \return A wstring.
+		///
 		std::wstring RemoveBracesGuidStr(const std::wstring& str)
 		{
 			if (str.size() >= 2 && str[0] == L'{' && str[str.length() - 1] == L'}')
@@ -53,6 +79,9 @@ namespace LogMonitorTests
 
 	public:
 
+		///
+		/// "Redirects" the stdout to an own buffer. 
+		///
 		TEST_METHOD_INITIALIZE(InitializeConfigFileParserTests)
 		{
 			//
@@ -63,6 +92,10 @@ namespace LogMonitorTests
 			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
 		}
 
+		///
+		/// Test that the most simple, but valid configuration string is
+		/// read successfully.
+		///
 		TEST_METHOD(TestBasicConfigFile)
 		{
 			std::wstring configFileStr = 
@@ -82,20 +115,20 @@ namespace LogMonitorTests
 
 			Assert::IsTrue(success);
 			Assert::AreEqual(L"", output.c_str());
-
 		}
 
+		///
+		/// Tests that EventLog sources, with all their attributes, are read
+		/// successfully.
+		///
 		TEST_METHOD(TestSourceEventLog)
 		{
 			bool startAtOldestRecord = true;
 			bool eventFormatMultiLine = true;
 
-			std::wstring firstChannelName = L"system";
-			EventChannelLogLevel firstChannelLevel = EventChannelLogLevel::Information;
-
-			std::wstring secondChannelName = L"application";
-			EventChannelLogLevel secondChannelLevel = EventChannelLogLevel::Critical;
-
+			//
+			// Template of a valid configuration string, with an EventLog source.
+			//
 			std::wstring configFileStrFormat =
 				L"{	\
 					\"LogConfig\": {	\
@@ -119,6 +152,14 @@ namespace LogMonitorTests
 					}\
 				}";
 
+			//
+			// Try reading this values
+			//
+			std::wstring firstChannelName = L"system";
+			EventChannelLogLevel firstChannelLevel = EventChannelLogLevel::Information;
+
+			std::wstring secondChannelName = L"application";
+			EventChannelLogLevel secondChannelLevel = EventChannelLogLevel::Critical;
 			{
 				std::wstring configFileStr = Utility::FormatString(
 					configFileStrFormat.c_str(),
@@ -220,6 +261,10 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Test that default values for optional attributes on an EventLog source
+		/// are correct.
+		///
 		TEST_METHOD(TestSourceEventLogDefaultValues)
 		{
 			std::wstring configFileStr =
@@ -269,13 +314,15 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Tests that file sources, with all their attributes, are read
+		/// successfully.
+		///
 		TEST_METHOD(TestSourceFile)
 		{
-			bool includeSubdirectories = true;
-
-			std::wstring directory = L"C:\\LogMonitor\\logs";
-			std::wstring filter = L"*.*";
-
+			//
+			// Template of a valid configuration string, with a file source.
+			//
 			std::wstring configFileStrFormat =
 				L"{	\
 					\"LogConfig\": {	\
@@ -289,6 +336,14 @@ namespace LogMonitorTests
 						]\
 					}\
 				}";
+
+			//
+			// First, try with this values.
+			//
+			bool includeSubdirectories = true;
+
+			std::wstring directory = L"C:\\LogMonitor\\logs";
+			std::wstring filter = L"*.*";
 			{
 				std::wstring configFileStr = Utility::FormatString(
 					configFileStrFormat.c_str(),
@@ -366,6 +421,9 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Test that default values for optional attributes on a file source are correct.
+		///
 		TEST_METHOD(TestSourceFileDefaultValues)
 		{
 
@@ -416,9 +474,17 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Tests that etw sources, with all their attributes, are read
+		/// successfully.
+		///
 		TEST_METHOD(TestSourceETW)
 		{
 			HRESULT hr;
+
+			//
+			// Used to convert an etw log level value to its string representation.
+			//
 			const static std::vector<std::wstring> c_LevelToString =
 			{
 				L"Unknown",
@@ -429,18 +495,9 @@ namespace LogMonitorTests
 				L"Verbose",
 			};
 
-			bool eventFormatMultiLine = true;
-
-			std::wstring firstProviderName = L"IIS: WWW Server";
-			std::wstring firstProviderGuid = L"3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83";
-			UCHAR firstProviderLevel = 2; // Error
-			ULONGLONG firstProviderKeywords = 255;
-
-			std::wstring secondProviderName = L"Microsoft-Windows-IIS-Logging";
-			std::wstring secondProviderGuid = L"{7E8AD27F-B271-4EA2-A783-A47BDE29143B}";
-			UCHAR secondProviderLevel = 1; // Critical
-			ULONGLONG secondProviderKeywords = 555;
-
+			//
+			// Template of a valid configuration string, with a file source.
+			//
 			std::wstring configFileStrFormat =
 				L"{	\
 					\"LogConfig\": {	\
@@ -466,6 +523,21 @@ namespace LogMonitorTests
 						]\
 					}\
 				}";
+
+			//
+			// First, try this values.
+			//
+			bool eventFormatMultiLine = true;
+
+			std::wstring firstProviderName = L"IIS: WWW Server";
+			std::wstring firstProviderGuid = L"3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83";
+			UCHAR firstProviderLevel = 2; // Error
+			ULONGLONG firstProviderKeywords = 255;
+
+			std::wstring secondProviderName = L"Microsoft-Windows-IIS-Logging";
+			std::wstring secondProviderGuid = L"{7E8AD27F-B271-4EA2-A783-A47BDE29143B}";
+			UCHAR secondProviderLevel = 1; // Critical
+			ULONGLONG secondProviderKeywords = 555;
 
 			{
 				std::wstring configFileStr = Utility::FormatString(
@@ -627,6 +699,10 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Test that default values for optional attributes on an etw source
+		/// are correct.
+		///
 		TEST_METHOD(TestSourceETWDefaultValues)
 		{
 			HRESULT hr;
@@ -765,7 +841,9 @@ namespace LogMonitorTests
 			}
 		}
 
-
+		///
+		/// Test that ReadConfigFile reads attribute names in a case insensitive way.
+		///
 		TEST_METHOD(TestCaseInsensitiveOnAttributeNames)
 		{
 			std::wstring configFileStr =
@@ -861,12 +939,15 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Test that bad formatted JSON strings throw errors.
+		///
 		TEST_METHOD(TestInvalidJson)
 		{
 			std::wstring configFileStr;
 			
 			//
-			// Empty string
+			// Empty string.
 			//
 			configFileStr =
 				L"";
@@ -880,7 +961,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid attribute name 
+			// Invalid attribute name.
 			//
 			configFileStr =
 				L"{other: false}";
@@ -894,7 +975,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid boolean value 
+			// Invalid boolean value.
 			//
 			configFileStr =
 				L"{\"boolean\": Negative}";
@@ -908,7 +989,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid numeric value 
+			// Invalid numeric value.
 			//
 			configFileStr =
 				L"{\"numeric\": 0xff}";
@@ -922,7 +1003,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid escape sequence 
+			// Invalid escape sequence.
 			//
 			configFileStr =
 				L"{\"text\": \"\\k\"}";
@@ -936,7 +1017,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Expected next element, object
+			// Expected next element on an object.
 			//
 			configFileStr =
 				L"{\"text\": \"\",}";
@@ -950,7 +1031,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Expected next element, array
+			// Expected next element on an array.
 			//
 			configFileStr =
 				L"{\"array\":[\"text\": \"\",]}";
@@ -963,12 +1044,17 @@ namespace LogMonitorTests
 				Assert::ExpectException<std::invalid_argument>(f1);
 			}
 		}
+
+		///
+		/// Test that valid JSON strings, but invalid values for a configuration string,
+		/// return false when passed to ReadConfigFile.
+		///
 		TEST_METHOD(TestInvalidConfigFile)
 		{
 			std::wstring configFileStr;
 
 			//
-			// LogConfig doesn't exist
+			// 'LogConfig' root element doesn't exist.
 			//
 			configFileStr =
 				L"{\"other\": { }}";
@@ -982,7 +1068,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// LogConfig is an array
+			// LogConfig is an array.
 			//
 			configFileStr =
 				L"{	\
@@ -998,7 +1084,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// 'Sources' doesn't exist
+			// 'Sources' doesn't exist.
 			//
 			configFileStr =
 				L"{	\
@@ -1020,7 +1106,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			//
+			// 'sources' isn't an array.
 			//
 			configFileStr =
 				L"{	\
@@ -1042,7 +1128,9 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid Type
+			// Check a source with invalid type.
+			// This case is special, because it shouldn't return false, but a 
+			// warning message should be throw.
 			//
 			configFileStr =
 				L"{	\
@@ -1072,12 +1160,15 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Check that invalid EventLog sources are not returned by ReadConfigFile.
+		///
 		TEST_METHOD(TestInvalidEventLogSource)
 		{
 			std::wstring configFileStr;
 
 			//
-			// 'Channels' doesn't exist
+			// 'Channels' doesn't exist.
 			//
 			configFileStr =
 				L"{	\
@@ -1112,7 +1203,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// 'Channels' isn't an array
+			// 'Channels' isn't an array.
 			//
 			configFileStr =
 				L"{	\
@@ -1146,7 +1237,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid channel
+			// Invalid channel. It should have at least a 'name' attribute.
 			//
 			configFileStr =
 				L"{	\
@@ -1186,7 +1277,9 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid level
+			// Invalid level.
+			// This case is special, because the source should be returned, but a 
+			// warning message should be throw.
 			//
 			configFileStr =
 				L"{	\
@@ -1228,6 +1321,9 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Check that invalid File sources are not returned by ReadConfigFile.
+		///
 		TEST_METHOD(TestInvalidFileSource)
 		{
 			std::wstring configFileStr;
@@ -1264,6 +1360,9 @@ namespace LogMonitorTests
 			}
 		}
 
+		///
+		/// Check that invalid ETW sources are not returned by ReadConfigFile.
+		///
 		TEST_METHOD(TestInvalidETWSource)
 		{
 			std::wstring configFileStr;
@@ -1344,7 +1443,7 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid providerGuid
+			// Invalid providerGuid.
 			//
 			configFileStr =
 				L"{	\
@@ -1384,7 +1483,9 @@ namespace LogMonitorTests
 			}
 
 			//
-			// Invalid level
+			// Invalid level.
+			// This case is special, because the source should be returned, but a 
+			// warning message should be throw.
 			//
 			configFileStr =
 				L"{	\
