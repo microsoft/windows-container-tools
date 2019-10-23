@@ -6,6 +6,8 @@
 #include "pch.h"
 #include "Parser/JsonFileParser.h"
 
+#undef min
+
 /// JsonFileParser.cpp
 ///
 /// Defines a class to parse JSON from a string buffer.
