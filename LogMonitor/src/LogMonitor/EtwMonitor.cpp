@@ -519,19 +519,19 @@ EtwMonitor::StartTraceSession(
 					logWriter.TraceError(
 						Utility::FormatString(L"EnableTraceEx2 failed with %lu for GUID %s", status, pwsProviderId).c_str()
 					);
+
+					if (pwsProviderId != NULL)
+					{
+						CoTaskMemFree(pwsProviderId);
+						pwsProviderId = NULL;
+					}
 				}
 
 				if (status == ERROR_NO_SYSTEM_RESOURCES)
 				{
-					logWriter.TraceWarning(L"Exceeded the number of trace sessions that can enable the provider.");
+					logWriter.TraceWarning(L"Exceeded the number of trace sessions that the provider can enable.");
 
 					return status;
-				}
-
-				if (pwsProviderId != NULL)
-				{
-					CoTaskMemFree(pwsProviderId);
-					pwsProviderId = NULL;
 				}
             }
         }
