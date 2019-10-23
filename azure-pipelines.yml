@@ -1,0 +1,27 @@
+trigger:
+- master
+
+pool:
+    name: 'Hosted VS2017'  # name of the pool to run this job in
+    demands: 
+      - msbuild
+      - visualstudio
+      - vstest
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'x86|x64|ARM'
+  buildConfiguration: 'Release'
+
+steps:
+- task: VSBuild@1
+  inputs:
+    platform: 'x64'
+    solution: '$(solution)'
+    configuration: '$(buildConfiguration)'
+
+- task: ComponentGovernanceComponentDetection@0
+  inputs:
+    scanType: 'LogOnly'
+    verbosity: 'Verbose'
+    alertWarningLevel: 'High'
