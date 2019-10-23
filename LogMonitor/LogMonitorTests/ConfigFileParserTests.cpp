@@ -35,6 +35,15 @@ namespace LogMonitorTests
 			return str;
 		}
 
+		std::wstring RemoveBracesGuidStr(const std::wstring& str)
+		{
+			if (str.size() >= 2 && str[0] == L'{' && str[str.length() - 1] == L'}')
+			{
+				return str.substr(1, str.length() - 2);
+			}
+			return str;
+		}
+
 	public:
 
 		TEST_METHOD_INITIALIZE(InitializeConfigFileParserTests)
@@ -65,7 +74,8 @@ namespace LogMonitorTests
 			wstring output = RecoverOuput();
 
 			Assert::IsTrue(success);
-			Assert::AreEqual(output.size(), (size_t)0);
+			Assert::AreEqual(L"", output.c_str());
+
 		}
 
 		TEST_METHOD(TestSourceEventLog)
@@ -124,26 +134,26 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::EventLog);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceEventLog->StartAtOldestRecord, startAtOldestRecord);
-				Assert::AreEqual(sourceEventLog->EventFormatMultiLine, eventFormatMultiLine);
+				Assert::AreEqual(startAtOldestRecord, sourceEventLog->StartAtOldestRecord);
+				Assert::AreEqual(eventFormatMultiLine, sourceEventLog->EventFormatMultiLine);
 
-				Assert::AreEqual(sourceEventLog->Channels.size(), (size_t)2);
+				Assert::AreEqual((size_t)2, sourceEventLog->Channels.size());
 
-				Assert::AreEqual(sourceEventLog->Channels[0].Name.c_str(), firstChannelName.c_str());
-				Assert::AreEqual((int)sourceEventLog->Channels[0].Level, (int)firstChannelLevel);
+				Assert::AreEqual(firstChannelName.c_str(), sourceEventLog->Channels[0].Name.c_str());
+				Assert::AreEqual((int)firstChannelLevel, (int)sourceEventLog->Channels[0].Level);
 
-				Assert::AreEqual(sourceEventLog->Channels[1].Name.c_str(), secondChannelName.c_str());
-				Assert::AreEqual((int)sourceEventLog->Channels[1].Level, (int)secondChannelLevel);
+				Assert::AreEqual(secondChannelName.c_str(), sourceEventLog->Channels[1].Name.c_str());
+				Assert::AreEqual((int)secondChannelLevel, (int)sourceEventLog->Channels[1].Level);
 			}
 
 			//
@@ -180,26 +190,26 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::EventLog);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceEventLog->StartAtOldestRecord, startAtOldestRecord);
-				Assert::AreEqual(sourceEventLog->EventFormatMultiLine, eventFormatMultiLine);
+				Assert::AreEqual(startAtOldestRecord, sourceEventLog->StartAtOldestRecord);
+				Assert::AreEqual(eventFormatMultiLine, sourceEventLog->EventFormatMultiLine);
 
-				Assert::AreEqual(sourceEventLog->Channels.size(), (size_t)2);
+				Assert::AreEqual((size_t)2, sourceEventLog->Channels.size());
 
-				Assert::AreEqual(sourceEventLog->Channels[0].Name.c_str(), firstChannelName.c_str());
-				Assert::AreEqual((int)sourceEventLog->Channels[0].Level, (int)firstChannelLevel);
+				Assert::AreEqual(firstChannelName.c_str(), sourceEventLog->Channels[0].Name.c_str());
+				Assert::AreEqual((int)firstChannelLevel, (int)sourceEventLog->Channels[0].Level);
 
-				Assert::AreEqual(sourceEventLog->Channels[1].Name.c_str(), secondChannelName.c_str());
-				Assert::AreEqual((int)sourceEventLog->Channels[1].Level, (int)secondChannelLevel);
+				Assert::AreEqual(secondChannelName.c_str(), sourceEventLog->Channels[1].Name.c_str());
+				Assert::AreEqual((int)secondChannelLevel, (int)sourceEventLog->Channels[1].Level);
 			}
 		}
 
@@ -234,20 +244,20 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::EventLog);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::EventLog, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceEventLog->StartAtOldestRecord, false);
-				Assert::AreEqual(sourceEventLog->EventFormatMultiLine, true);
+				Assert::AreEqual(false, sourceEventLog->StartAtOldestRecord);
+				Assert::AreEqual(true, sourceEventLog->EventFormatMultiLine);
 
-				Assert::AreEqual(sourceEventLog->Channels.size(), (size_t)1);
+				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
 			}
 		}
 
@@ -290,19 +300,19 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::File);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceFile->Directory.c_str(), directory.c_str());
-				Assert::AreEqual(sourceFile->Filter.c_str(), filter.c_str());
-				Assert::AreEqual(sourceFile->IncludeSubdirectories, includeSubdirectories);
+				Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
+				Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
+				Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
 			}
 
 			//
@@ -332,19 +342,19 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::File);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceFile->Directory.c_str(), directory.c_str());
-				Assert::AreEqual(sourceFile->Filter.c_str(), filter.c_str());
-				Assert::AreEqual(sourceFile->IncludeSubdirectories, includeSubdirectories);
+				Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
+				Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
+				Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
 			}
 		}
 
@@ -382,19 +392,311 @@ namespace LogMonitorTests
 				// The config string was valid
 				//
 				Assert::IsTrue(success);
-				Assert::AreEqual(output.size(), (size_t)0);
+				Assert::AreEqual(L"", output.c_str());
 
 				//
 				// The source Event Log is valid
 				//
-				Assert::AreEqual(settings.Sources.size(), (size_t)1);
-				Assert::AreEqual((int)settings.Sources[0]->Type, (int)LogSourceType::File);
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
 
 				std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
 
-				Assert::AreEqual(sourceFile->Directory.c_str(), directory.c_str());
-				Assert::AreEqual(sourceFile->Filter.c_str(), L"");
-				Assert::AreEqual(sourceFile->IncludeSubdirectories, false);
+				Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
+				Assert::AreEqual(L"", sourceFile->Filter.c_str());
+				Assert::AreEqual(false, sourceFile->IncludeSubdirectories);
+			}
+		}
+
+		TEST_METHOD(TestSourceETW)
+		{
+			HRESULT hr;
+			const static std::vector<std::wstring> c_LevelToString =
+			{
+				L"Unknown",
+				L"Critical",
+				L"Error",
+				L"Warning",
+				L"Information",
+				L"Verbose",
+			};
+
+			bool eventFormatMultiLine = true;
+
+			std::wstring firstProviderName = L"IIS: WWW Server";
+			std::wstring firstProviderGuid = L"3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83";
+			UCHAR firstProviderLevel = 2; // Error
+			ULONGLONG firstProviderKeywords = 255;
+
+			std::wstring secondProviderName = L"Microsoft-Windows-IIS-Logging";
+			std::wstring secondProviderGuid = L"{7E8AD27F-B271-4EA2-A783-A47BDE29143B}";
+			UCHAR secondProviderLevel = 1; // Critical
+			ULONGLONG secondProviderKeywords = 555;
+
+			std::wstring configFileStrFormat =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"eventFormatMultiLine\" : %s,\
+								\"providers\" : [\
+									{\
+										\"providerName\": \"%s\",\
+										\"providerGuid\": \"%s\",\
+										\"level\" : \"%s\",\
+										\"keywords\" : \"%llu\"\
+									},\
+									{\
+										\"providerName\": \"%s\",\
+										\"providerGuid\": \"%s\",\
+										\"level\" : \"%s\",\
+										\"keywords\" : \"%llu\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				std::wstring configFileStr = Utility::FormatString(
+					configFileStrFormat.c_str(),
+					eventFormatMultiLine ? L"true" : L"false",
+					firstProviderName.c_str(),
+					firstProviderGuid.c_str(),
+					c_LevelToString[(int)firstProviderLevel].c_str(),
+					firstProviderKeywords,
+					secondProviderName.c_str(),
+					secondProviderGuid.c_str(),
+					c_LevelToString[(int)secondProviderLevel].c_str(),
+					secondProviderKeywords
+				);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> sourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual(eventFormatMultiLine, sourceEtw->EventFormatMultiLine);
+
+				Assert::AreEqual((size_t)2, sourceEtw->Providers.size());
+
+				//
+				// First provider
+				//
+				Assert::AreEqual(firstProviderName.c_str(), sourceEtw->Providers[0].ProviderName.c_str());
+				Assert::AreEqual(firstProviderLevel, sourceEtw->Providers[0].Level);
+				Assert::AreEqual(firstProviderKeywords, sourceEtw->Providers[0].Keywords);
+
+				//
+				// Check that guids are equal
+				//
+				LPWSTR providerGuid1 = NULL;
+				hr = StringFromCLSID(sourceEtw->Providers[0].ProviderGuid, &providerGuid1);
+				Assert::IsFalse(FAILED(hr));
+				Assert::AreEqual(RemoveBracesGuidStr(firstProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid1)).c_str());
+				CoTaskMemFree(providerGuid1);
+
+				//
+				// Second provider
+				//
+				Assert::AreEqual(secondProviderName.c_str(), sourceEtw->Providers[1].ProviderName.c_str());
+				Assert::AreEqual(secondProviderLevel, sourceEtw->Providers[1].Level);
+				Assert::AreEqual(secondProviderKeywords, sourceEtw->Providers[1].Keywords);
+
+				//
+				// Check that guids are equal
+				//
+				LPWSTR providerGuid2 = NULL;
+				hr = StringFromCLSID(sourceEtw->Providers[1].ProviderGuid, &providerGuid2);
+				Assert::IsFalse(FAILED(hr));
+				Assert::AreEqual(RemoveBracesGuidStr(secondProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid2)).c_str());
+				CoTaskMemFree(providerGuid2);
+			}
+
+			//
+			// Try different values
+			//
+			eventFormatMultiLine = false;
+
+			firstProviderName = L"Microsoft-Windows-SMBClient";
+			firstProviderGuid = L"{988C59C5-0A1C-45B6-A555-0C62276E327D}";
+			firstProviderLevel = 3; // Warning
+			firstProviderKeywords = 0xff;
+
+			secondProviderName = L"Microsoft-Windows-SMBWitnessClient";
+			secondProviderGuid = L"32254F6C-AA33-46F0-A5E3-1CBCC74BF683";
+			secondProviderLevel = 4; // Information
+			secondProviderKeywords = 0xfe;
+
+			{
+				std::wstring configFileStr = Utility::FormatString(
+					configFileStrFormat.c_str(),
+					eventFormatMultiLine ? L"true" : L"false",
+					firstProviderName.c_str(),
+					firstProviderGuid.c_str(),
+					c_LevelToString[(int)firstProviderLevel].c_str(),
+					firstProviderKeywords,
+					secondProviderName.c_str(),
+					secondProviderGuid.c_str(),
+					c_LevelToString[(int)secondProviderLevel].c_str(),
+					secondProviderKeywords
+				);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> sourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual(eventFormatMultiLine, sourceEtw->EventFormatMultiLine);
+
+				Assert::AreEqual((size_t)2, sourceEtw->Providers.size());
+
+				//
+				// First provider
+				//
+				Assert::AreEqual(firstProviderName.c_str(), sourceEtw->Providers[0].ProviderName.c_str());
+				Assert::AreEqual(firstProviderLevel, sourceEtw->Providers[0].Level);
+				Assert::AreEqual(firstProviderKeywords, sourceEtw->Providers[0].Keywords);
+
+				//
+				// Check that guids are equal
+				//
+				LPWSTR providerGuid1 = NULL;
+				hr = StringFromCLSID(sourceEtw->Providers[0].ProviderGuid, &providerGuid1);
+				Assert::IsFalse(FAILED(hr));
+				Assert::AreEqual(RemoveBracesGuidStr(firstProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid1)).c_str());
+				CoTaskMemFree(providerGuid1);
+
+				//
+				// Second provider
+				//
+				Assert::AreEqual(secondProviderName.c_str(), sourceEtw->Providers[1].ProviderName.c_str());
+				Assert::AreEqual(secondProviderLevel, sourceEtw->Providers[1].Level);
+				Assert::AreEqual(secondProviderKeywords, sourceEtw->Providers[1].Keywords);
+
+				//
+				// Check that guids are equal
+				//
+				LPWSTR providerGuid2 = NULL;
+				hr = StringFromCLSID(sourceEtw->Providers[1].ProviderGuid, &providerGuid2);
+				Assert::IsFalse(FAILED(hr));
+				Assert::AreEqual(RemoveBracesGuidStr(secondProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid2)).c_str());
+				CoTaskMemFree(providerGuid2);
+			}
+		}
+
+		TEST_METHOD(TestSourceETWDefaultValues)
+		{
+			HRESULT hr;
+			const static std::vector<std::wstring> c_LevelToString =
+			{
+				L"Unknown",
+				L"Critical",
+				L"Error",
+				L"Warning",
+				L"Information",
+				L"Verbose",
+			};
+
+
+			std::wstring firstProviderGuid = L"3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83";
+
+			std::wstring configFileStrFormat =
+				L"{	\
+					\"LogConfig\": {	\
+						\"sources\": [ \
+							{\
+								\"type\": \"ETW\",\
+								\"providers\" : [\
+									{\
+										\"providerGuid\": \"%s\"\
+									}\
+								]\
+							}\
+						]\
+					}\
+				}";
+
+			{
+				std::wstring configFileStr = Utility::FormatString(
+					configFileStrFormat.c_str(),
+					firstProviderGuid.c_str()
+				);
+
+				JsonFileParser jsonParser(configFileStr);
+				LoggerSettings settings;
+
+				bool success = ReadConfigFile(jsonParser, settings);
+
+				wstring output = RecoverOuput();
+
+				//
+				// The config string was valid
+				//
+				Assert::IsTrue(success);
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// The source Event Log is valid
+				//
+				Assert::AreEqual((size_t)1, settings.Sources.size());
+				Assert::AreEqual((int)LogSourceType::ETW, (int)settings.Sources[0]->Type);
+
+				std::shared_ptr<SourceETW> sourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
+
+				Assert::AreEqual(true, sourceEtw->EventFormatMultiLine);
+
+				Assert::AreEqual((size_t)1, sourceEtw->Providers.size());
+
+				//
+				// First provider
+				//
+				Assert::AreEqual(L"", sourceEtw->Providers[0].ProviderName.c_str());
+				Assert::AreEqual((UCHAR)2, sourceEtw->Providers[0].Level); // Error
+				Assert::AreEqual((ULONGLONG)0L, sourceEtw->Providers[0].Keywords);
+
+				//
+				// Check that guids are equal
+				//
+				LPWSTR providerGuid1 = NULL;
+				hr = StringFromCLSID(sourceEtw->Providers[0].ProviderGuid, &providerGuid1);
+				Assert::IsFalse(FAILED(hr));
+				Assert::AreEqual(RemoveBracesGuidStr(firstProviderGuid).c_str(), RemoveBracesGuidStr(std::wstring(providerGuid1)).c_str());
+				CoTaskMemFree(providerGuid1);
 			}
 		}
 	};

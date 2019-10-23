@@ -114,7 +114,6 @@ StringToGuid(_In_ const std::wstring& str, _Out_ GUID& guid)
         && str[37] == '}')
     {
         guidStr = str.substr(1, 36);
-        wprintf(L"String: %ls\n", guidStr.c_str());
     }
     else
     {
