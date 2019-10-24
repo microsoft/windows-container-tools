@@ -503,27 +503,33 @@ EtwMonitor::StartTraceSession(
                 0,
                 NULL);
 
-            LPWSTR pwsProviderId = NULL;
-            HRESULT hr = StringFromCLSID(provider.ProviderGuid, &pwsProviderId);
-
-            if (FAILED(hr))
-            {
-                logWriter.TraceError(
-                    Utility::FormatString(L"StringFromCLSID failed with 0x%x", hr).c_str()
-                );
-
-                if (hr == ERROR_NO_SYSTEM_RESOURCES)
-                {
-                    logWriter.TraceWarning(L"Exceeded the number of trace sessions that can enable the provider.");
-                }
-            }
-
             if (status != ERROR_SUCCESS)
             {
-                logWriter.TraceError(
-                    Utility::FormatString(L"EnableTraceEx2 failed with %lu", status).c_str()
-                );
-                return status;
+				LPWSTR pwsProviderId = NULL;
+				HRESULT hr = StringFromCLSID(provider.ProviderGuid, &pwsProviderId);
+
+				if (FAILED(hr))
+				{
+					logWriter.TraceError(
+						Utility::FormatString(L"StringFromCLSID failed with 0x%x", hr).c_str()
+					);
+				}
+				else
+				{
+					logWriter.TraceError(
+						Utility::FormatString(L"EnableTraceEx2 failed with %lu for GUID %s", status, pwsProviderId).c_str()
+					);
+
+					CoTaskMemFree(pwsProviderId);
+					pwsProviderId = NULL;
+				}
+
+				if (status == ERROR_NO_SYSTEM_RESOURCES)
+				{
+					logWriter.TraceWarning(L"Exceeded the number of trace sessions that the provider can enable.");
+
+					return status;
+				}
             }
         }
     }

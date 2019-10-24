@@ -81,6 +81,7 @@ ReadLogConfigObject(
         return false;
     }
 
+	bool sourcesTagFound = false;
     if (Parser.BeginParseObject())
     {
         do
@@ -95,6 +96,8 @@ ReadLogConfigObject(
                     Parser.SkipValue();
                     continue;
                 }
+
+				sourcesTagFound = true;
 
                 if (!Parser.BeginParseArray())
                 {
@@ -137,7 +140,7 @@ ReadLogConfigObject(
         } while (Parser.ParseNextObjectElement());
     }
 
-    return true;
+    return sourcesTagFound;
 }
 
 ///

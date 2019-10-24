@@ -6,6 +6,7 @@
 #pragma once
 
 #include "JsonFileParser.h"
+#include <algorithm>
 #include <map>
 #include <vector>
 #include <array>
@@ -54,7 +55,7 @@
 struct CaseInsensitiveWideString
 {
     bool operator() (const std::wstring& c1, const std::wstring& c2) const {
-        return _wcsnicmp(c1.c_str(), c2.c_str(), max(c1.size(), c2.size())) < 0;
+        return _wcsicmp(c1.c_str(), c2.c_str()) < 0;
     }
 };
 
@@ -97,16 +98,6 @@ const EventChannelLogLevel LogLevelValues[] = {
 
 inline
 bool
-CompareExactWstrings(const std::wstring& Str1, const std::wstring& Str2)
-{
-    return 0 == _wcsnicmp(
-        Str1.c_str(),
-        Str2.c_str(),
-        max(Str1.length(), Str2.length()));
-}
-
-inline
-bool
 StringToGuid(_In_ const std::wstring& str, _Out_ GUID& guid)
 {
     std::wstring guidStr;
@@ -123,7 +114,6 @@ StringToGuid(_In_ const std::wstring& str, _Out_ GUID& guid)
         && str[37] == '}')
     {
         guidStr = str.substr(1, 36);
-        wprintf(L"String: %ls\n", guidStr.c_str());
     }
     else
     {
@@ -204,7 +194,7 @@ typedef struct _EventLogChannel
 
         for (int i = 0; i < errorLevelSize; i++)
         {
-            if (CompareExactWstrings(Str, LogLevelNames[i]))
+            if (_wcsicmp(Str.c_str(), LogLevelNames[i].c_str()) == 0)
             {
                 Level = LogLevelValues[i];
                 return true;
@@ -359,7 +349,7 @@ public:
 
         for (UCHAR i = 0; i < errorLevelSize; i++)
         {
-            if (CompareExactWstrings(Str, LogLevelNames[i]))
+            if (_wcsicmp(Str.c_str(), LogLevelNames[i].c_str()) == 0)
             {
                 //
                 // Level starts at 1
