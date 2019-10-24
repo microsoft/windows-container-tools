@@ -59,14 +59,14 @@ namespace LogMonitorTests
 	public:
 
 		///
-		/// "Redirects" the stdout to an own buffer. 
+		/// "Redirects" the stdout to our buffer. 
 		///
 		TEST_METHOD_INITIALIZE(InitializeLogMonitorTests)
 		{
 			//
 			// Set our own buffer in stdout
 			//
-			ZeroMemory(bigOutBuf, BUFFER_SIZE);
+			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 			fflush(stdout);
 			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
 		}
