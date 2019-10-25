@@ -1240,6 +1240,7 @@ LogFileMonitor::LogFileModifyEventHandler(
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
     {
+		logWriter.WriteConsoleLog(L"Reading");
         status = ReadLogFile(element->second);
     }
     else
@@ -1605,6 +1606,8 @@ LogFileMonitor::ReadLogFile(
                 }
                 break;
             }
+
+			logWriter.WriteConsoleLog(Utility::FormatString(L"bytesRead %d", bytesRead));
 
             if (bytesRead > 0)
             {
