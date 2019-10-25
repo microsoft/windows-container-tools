@@ -33,6 +33,8 @@ namespace LogMonitorTests
 		const DWORD WAIT_TIME_LOGFILEMONITOR_START = 500;
 		const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE = 750;
 
+		std::vector<std::wstring> directoriesToDeleteAtCleanup;
+
 		WCHAR bigOutBuf[BUFFER_SIZE];
 		
 		std::wstring RecoverOuput()
@@ -75,7 +77,7 @@ namespace LogMonitorTests
 				FILE_SHARE_READ,
 				NULL,
 				OPEN_ALWAYS,
-				FILE_ATTRIBUTE_NORMAL,
+				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
 				NULL);
 
 			if (hFile == INVALID_HANDLE_VALUE)
@@ -121,6 +123,39 @@ namespace LogMonitorTests
 			setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
 		}
 
+		TEST_METHOD_CLEANUP(CleanupLogFileMonitorTests)
+		{
+			for (auto directoryPath : directoriesToDeleteAtCleanup)
+			{
+				DWORD ftyp = GetFileAttributesW(directoryPath.c_str());
+				if (ftyp & FILE_ATTRIBUTE_READONLY)
+				{
+					SetFileAttributes(directoryPath.c_str(), ftyp);
+				}
+
+				wchar_t* folder = new wchar_t[directoryPath.length() + 3];
+				::ZeroMemory(folder, (directoryPath.length() + 3) * sizeof(folder[0]));
+
+				size_t numCopied = directoryPath.copy(folder, directoryPath.length());
+
+				SHFILEOPSTRUCT fileOp = {
+				   NULL,
+				   FO_DELETE,
+				   folder,
+				   NULL,
+				   FOF_NOCONFIRMATION | FOF_NOERRORUI,
+				   FALSE,
+				   NULL,
+				   NULL
+				};
+
+				long hr = SHFileOperation(&fileOp);
+				hr = 5555;
+
+				delete[] folder;
+			}
+		}
+
 		///
 		/// Check that LogFileMonitor prints the updates of the files
 		/// inside a directory, that is its core functionality.
@@ -131,6 +166,8 @@ namespace LogMonitorTests
 
 			std::wstring tempDirectory = CreateTempDirectory();
 			Assert::IsFalse(tempDirectory.empty());
+
+			directoriesToDeleteAtCleanup.push_back(tempDirectory);
 
 			//
 			// Start the monitor
