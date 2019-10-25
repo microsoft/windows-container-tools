@@ -990,6 +990,15 @@ LogFileMonitor::LogFilesChangeHandler()
                                 }
                             }
 							logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
+							logWriter.WriteConsoleLog(Utility::FormatString(L"LongPathSize: %d", (int)m_longPaths.size()));	
+							for (auto info : m_logFilesInformation)
+							{
+								logWriter.WriteConsoleLog(L"INFO: " + info.second->FileName);
+							}
+							for (auto info : m_longPaths)
+							{
+								logWriter.WriteConsoleLog(Utility::FormatString(L"INFO: %s->%s", info.first, info.second));
+							}
                             break;
                         }
 
