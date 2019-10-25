@@ -995,9 +995,10 @@ LogFileMonitor::LogFilesChangeHandler()
 
                         case EventAction::Modify:
                         {
-							logWriter.WriteConsoleLog(L"Modify: " + event.FileName);
+							logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
+								logWriter.WriteConsoleLog(L"Modify: Matched");
                                 status = LogFileModifyEventHandler(event);
                             }
                             break;
@@ -1236,6 +1237,9 @@ LogFileMonitor::LogFileModifyEventHandler(
     DWORD status = ERROR_SUCCESS;
 
     auto element = GetLogFilesInformationIt(Event.FileName);
+	
+	logWriter.WriteConsoleLog((element != m_logFilesInformation.end()) ? L"true" : L"false");
+	logWriter.WriteConsoleLog(Utility::FormatString(L"TIMESTAMP %llu %llu", Event.Timestamp, element->second->LastReadTimestamp));
 
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
