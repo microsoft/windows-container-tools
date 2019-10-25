@@ -970,6 +970,7 @@ LogFileMonitor::LogFilesChangeHandler()
                     {
                         case EventAction::Add:
                         {
+							logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
                                 status = LogFileAddEventHandler(event);
