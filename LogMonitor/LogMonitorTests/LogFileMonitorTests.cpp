@@ -159,7 +159,7 @@ namespace LogMonitorTests
 		/// Check that LogFileMonitor prints the updates of the files
 		/// inside a directory, that is its core functionality.
 		///
-		/*TEST_METHOD(TestBasicLogFileMonitor)
+		TEST_METHOD(TestBasicLogFileMonitor)
 		{
 			std::wstring output;
 
@@ -195,7 +195,7 @@ namespace LogMonitorTests
 				output = RecoverOuput();
 				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
-		}*/
+		}
 
 		///
 		/// Check that even if the directory doesn't exist yet, and it's created after
@@ -248,7 +248,7 @@ namespace LogMonitorTests
 				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
-		/*
+		
 		///
 		/// Check that the filter specified to the monitor make it ignore all
 		/// unmatched files.
@@ -951,6 +951,6 @@ namespace LogMonitorTests
 				output = RecoverOuput();
 				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
-		}*/
+		}
 	};
 }
