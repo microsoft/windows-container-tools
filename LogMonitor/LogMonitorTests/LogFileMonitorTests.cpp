@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
@@ -10,6 +10,8 @@
 #include <functional>
 #include <wchar.h>
 #include <memory>
+#include <io.h> 
+#include <fcntl.h> 
 
 #include "../src/LogMonitor/LogWriter.h"
 #include "../src/LogMonitor/EtwMonitor.h"
@@ -29,14 +31,13 @@ namespace LogMonitorTests
 	TEST_CLASS(LogFileMonitorTests)
 	{
 		const DWORD WAIT_TIME_LOGFILEMONITOR_START = 500;
-		const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE = 200;
+		const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE = 500;
 
-		char bigOutBuf[BUFFER_SIZE];
+		WCHAR bigOutBuf[BUFFER_SIZE];
 		
 		std::wstring RecoverOuput()
 		{
-			std::string realOutputStr(bigOutBuf);
-			return std::wstring(realOutputStr.begin(), realOutputStr.end());
+			return std::wstring(bigOutBuf);
 		}
 
 		std::wstring CreateTempDirectory()
@@ -116,9 +117,14 @@ namespace LogMonitorTests
 			//
 			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 			fflush(stdout);
-			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
+			_setmode(_fileno(stdout), _O_U16TEXT);
+			setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
 		}
 
+		///
+		/// Check that LogFileMonitor prints the updates of the files
+		/// inside a directory, that is its core functionality.
+		///
 		TEST_METHOD(TestBasicLogFileMonitor)
 		{
 			std::wstring output;
@@ -151,12 +157,12 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
 
 		///
-		/// Check that even if the directory doesn't exist yet, if it's created after
+		/// Check that even if the directory doesn't exist yet, and it's created after
 		/// some time, the monitor will read it successfully.
 		///
 		TEST_METHOD(TestDirectoryNotCreatedYet)
@@ -202,7 +208,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
 
@@ -251,7 +257,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
 			}
 
 			
@@ -354,7 +360,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(content.c_str()) != std::wstring::npos);
+				Assert::AreEqual((content + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -376,7 +382,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(content.c_str()) != std::wstring::npos);
+				Assert::AreEqual((content + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -406,7 +412,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(content.c_str()) != std::wstring::npos);
+				Assert::AreEqual((content + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -417,7 +423,7 @@ namespace LogMonitorTests
 				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				std::wstring filename = sourceFile.Directory + L"\\utf8.txt";
-				std::string content = "Hello world UTF8 \xC3\x91!";
+				std::string content = "Hello world UTF8 \xe3\x83\x86!";
 
 				WriteToFile(filename, content.c_str(), content.length());
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
@@ -429,7 +435,7 @@ namespace LogMonitorTests
 				MultiByteToWideChar(CP_UTF8, 0, (LPCCH)content.c_str(), content.length(), (LPWSTR)(contentWide.c_str()), size_needed);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(contentWide) != std::wstring::npos);
+				Assert::AreEqual((contentWide + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -446,12 +452,13 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
 
 		///
-		/// Check that adding files to the directory working fine.
+		/// Check that adding files to the directory prints their content
+		/// to stdout
 		///
 		TEST_METHOD(TestAddFiles)
 		{
@@ -504,7 +511,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -524,12 +531,13 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
 
 		///
-		/// Check that adding files to the directory working fine.
+		/// Check that adding files to subdirectories works as same as
+		/// adding it to the root directory.
 		///
 		TEST_METHOD(TestModifyFiles)
 		{
@@ -593,7 +601,7 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 
 			//
@@ -609,7 +617,302 @@ namespace LogMonitorTests
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
-				Assert::IsTrue(output.find_first_of(TO_WSTR(content).c_str()) != std::wstring::npos);
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+			}
+
+			//
+			// Write a long line (more than 4096 characters).
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring filename = sourceFile.Directory + L"\\longline.log";
+				std::string content(20000, '#');
+				
+				//
+				// Add a new line to check that it doesn't break all.
+				//
+				content += '\n';
+
+				status = WriteToFile(filename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content)).c_str(), output.c_str());
+			}
+		}
+
+		///
+		/// Check that renaming a file doesn't stop its listening.
+		///
+		TEST_METHOD(TestRenameFiles)
+		{
+			std::wstring output;
+
+			std::wstring tempDirectory = CreateTempDirectory();
+			Assert::IsFalse(tempDirectory.empty());
+
+			//
+			// Create a new file inside this directory.
+			//
+			std::wstring oldFilename = tempDirectory + L"\\oldfile.log";
+			std::string oldContent = "Old content";
+
+			WriteToFile(oldFilename, oldContent.c_str(), oldContent.length());
+
+			//
+			// Create subdirectory.
+			//
+			std::wstring subDirectory = tempDirectory + L"\\sub";
+			long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+			Assert::AreNotEqual(0L, status);
+
+			//
+			// Create an file inside a subdirectory.
+			//
+			std::wstring oldFilenameSubdirectory = subDirectory + L"\\oldfile.log";
+			WriteToFile(oldFilenameSubdirectory, oldContent.c_str(), oldContent.length());
+
+			//
+			// Start the monitor
+			//
+			SourceFile sourceFile;
+			sourceFile.Directory = tempDirectory;
+			sourceFile.Filter = L"*.log";
+			sourceFile.IncludeSubdirectories = true;
+
+			fflush(stdout);
+			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+			std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+			Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+			//
+			// Check that LogFileMonitor started successfully and that the content
+			// of the existing files is not printed.
+			//
+			output = RecoverOuput();
+			Assert::AreEqual(L"", output.c_str());
+
+			//
+			// Write to existing file and see stdout.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring newFilename = tempDirectory + L"\\renamedFile.log";
+
+				bool success = MoveFile(oldFilename.c_str(), newFilename.c_str());
+				Assert::IsTrue(success);
+
+				std::string content = "New content";
+
+				status = WriteToFile(newFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+			}
+
+			//
+			// Write to existing file and see stdout.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring newFilename = subDirectory + L"\\renamedFileSub.log";
+
+				bool success = MoveFile(oldFilenameSubdirectory.c_str(), newFilename.c_str());
+				Assert::IsTrue(success);
+
+				std::string content = "Other new content";
+
+				WriteToFile(newFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+			}
+
+			//
+			// Rename a matching file name to an unmatching one.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring initialFilename = tempDirectory + L"\\MatchingToUnmatching.log";
+				std::wstring renamedFilename = tempDirectory + L"\\MatchingToUnmatching.txt";
+
+				//
+				// First, create an filter-matching file.
+				//
+				std::string content = "Other new content";
+				WriteToFile(initialFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+
+				//
+				// Rename it with a filter-unmatching name.
+				//
+				bool success = MoveFile(initialFilename.c_str(), renamedFilename.c_str());
+				Assert::IsTrue(success);
+
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				WriteToFile(renamedFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				//
+				// It should not be logged.
+				//
+				output = RecoverOuput();
+				Assert::AreEqual(L"", output.c_str());
+			}
+
+			//
+			// Rename a matching file name to an unmatching one.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring initialFilename = tempDirectory + L"\\UnmatchingToMatching.txt";
+				std::wstring renamedFilename = tempDirectory + L"\\UnmatchingToMatching.log";
+
+				//
+				// First, create an filter-unmatching file.
+				//
+				std::string content = "Other new content";
+				WriteToFile(initialFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				Assert::AreEqual(L"", output.c_str());
+
+				//
+				// Rename it with a filter-matching name.
+				//
+				bool success = MoveFile(initialFilename.c_str(), renamedFilename.c_str());
+				Assert::IsTrue(success);
+
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				WriteToFile(renamedFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				//
+				// It should the FULL content of the file, that's why we need
+				// to concatenate twice the content.
+				//
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content) + TO_WSTR(content) + L"\n").c_str(), output.c_str());
+			}
+		}
+
+		///
+		/// Check that renaming a subdirectory doesn't stop
+		/// the listening to the files on it.
+		///
+		TEST_METHOD(TestRenameSubdirectories)
+		{
+			std::wstring output;
+
+			std::wstring tempDirectory = CreateTempDirectory();
+			Assert::IsFalse(tempDirectory.empty());
+
+			//
+			// Create subdirectory.
+			//
+			std::string oldContent = "Old content";
+			std::wstring subDirectory = tempDirectory + L"\\sub";
+			long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+			Assert::AreNotEqual(0L, status);
+
+			//
+			// Create an file inside a subdirectory.
+			//
+			std::wstring filename = L"\\filename.log";
+			std::wstring oldFilenameSubdirectory = subDirectory + filename;
+			WriteToFile(oldFilenameSubdirectory, oldContent.c_str(), oldContent.length());
+
+			//
+			// Start the monitor
+			//
+			SourceFile sourceFile;
+			sourceFile.Directory = tempDirectory;
+			sourceFile.Filter = L"*.log";
+			sourceFile.IncludeSubdirectories = true;
+
+			fflush(stdout);
+			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+			std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+			Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+			//
+			// Check that LogFileMonitor started successfully and that the content
+			// of the existing files is not printed.
+			//
+			output = RecoverOuput();
+			Assert::AreEqual(L"", output.c_str());
+
+			//
+			// Write to existing file and see stdout.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::string content = "New content";
+
+				WriteToFile(oldFilenameSubdirectory, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+			}
+
+			//
+			// Rename the subdirectory, write to the existing file insidte it
+			// and see stdout.
+			//
+			{
+				fflush(stdout);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+				std::wstring newSubdirectory = tempDirectory + L"\\newSubdirectory";
+
+				//
+				// Rename the subdirectory.
+				//
+				bool success = MoveFile(subDirectory.c_str(), newSubdirectory.c_str());
+				Assert::IsTrue(success);
+
+				std::wstring newFilename = newSubdirectory + filename;
+
+				//
+				// Test that the file inside the renamed subdirectory still exists
+				//
+				WIN32_FIND_DATA FindFileData;
+				HANDLE handle = FindFirstFileW(newFilename.c_str(), &FindFileData);
+				Assert::IsTrue(handle != INVALID_HANDLE_VALUE);
+
+				//
+				// Write in it.
+				//
+				std::string content = "Other new content";
+
+				WriteToFile(newFilename, content.c_str(), content.length());
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+
+				output = RecoverOuput();
+				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
 			}
 		}
 	};

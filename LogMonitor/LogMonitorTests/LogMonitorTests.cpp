@@ -10,6 +10,8 @@
 #include <conio.h>
 #include <stdio.h>
 #include <winevt.h>
+#include <io.h> 
+#include <fcntl.h> 
 
 #include "../src/LogMonitor/LogWriter.h"
 #include "../src/LogMonitor/EtwMonitor.h"
@@ -43,7 +45,7 @@ namespace LogMonitorTests
 	///
 	TEST_CLASS(LogMonitorTests)
 	{
-		char bigOutBuf[BUFFER_SIZE];
+		WCHAR bigOutBuf[BUFFER_SIZE];
 
 		///
 		/// Gets the content of the Stdout buffer and returns it in a wstring. 
@@ -52,8 +54,7 @@ namespace LogMonitorTests
 		///
 		std::wstring RecoverOuput()
 		{
-			std::string realOutputStr(bigOutBuf);
-			return std::wstring(realOutputStr.begin(), realOutputStr.end());
+			return std::wstring(bigOutBuf);
 		}
 
 	public:
@@ -61,14 +62,15 @@ namespace LogMonitorTests
 		///
 		/// "Redirects" the stdout to our buffer. 
 		///
-		TEST_METHOD_INITIALIZE(InitializeLogMonitorTests)
+		TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
 		{
 			//
-			// Set our own buffer in stdout
+			// Set our own buffer in stdout.
 			//
 			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 			fflush(stdout);
-			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
+			_setmode(_fileno(stdout), _O_U16TEXT);
+			setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
 		}
 		
 		///
