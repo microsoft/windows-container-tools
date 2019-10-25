@@ -26,12 +26,12 @@ steps:
     verbosity: 'Verbose'
     alertWarningLevel: 'High'
 
-- task: VisualStudioTestPlatformInstaller@2
+- task: VisualStudioTestPlatformInstaller@1
   inputs:
     packageFeedSelector: 'nugetOrg'
     versionSelector: 'latestPreRelease'
 
-- task: VSTest@3
+- task: VSTest@2
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: '**\*test*.dll'
