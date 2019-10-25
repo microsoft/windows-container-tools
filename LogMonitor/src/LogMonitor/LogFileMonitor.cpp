@@ -1130,6 +1130,8 @@ LogFileMonitor::LogFileAddEventHandler(
     {
         const std::wstring fullLongPath = Utility::GetLongPath(m_logDirectory + L'\\' + Event.FileName);
 
+		logWriter.WriteConsoleLog(L"fullLongPath: " + fullLongPath);
+
         DWORD ftyp = GetFileAttributesW(fullLongPath.c_str());
         if (ftyp == INVALID_FILE_ATTRIBUTES)
         {
@@ -1153,8 +1155,12 @@ LogFileMonitor::LogFileAddEventHandler(
             // Get the short and long relative path
             //
             const std::wstring longPath = fullLongPath.substr(m_logDirectory.size() + 1);
+			logWriter.WriteConsoleLog(L"m_logDirectory: " + m_logDirectory);
+			logWriter.WriteConsoleLog(L"longPath: " + longPath);
 
             const std::wstring shortPath = Utility::GetShortPath(fullLongPath).substr(m_shortLogDirectory.size() + 1);
+			logWriter.WriteConsoleLog(L"m_shortLogDirectory: " + m_shortLogDirectory);
+			logWriter.WriteConsoleLog(L"shortPath: " + shortPath);
 
             logFileInfo->FileName = longPath;
             logFileInfo->NextReadOffset = 0;
