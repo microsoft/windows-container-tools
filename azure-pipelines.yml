@@ -38,3 +38,7 @@ steps:
     searchFolder: '$(System.DefaultWorkingDirectory)' 
     runOnlyImpactedTests: true
     runInParallel: false
+    rerunFailedTests: true
+    rerunType: 'basedOnTestFailurePercentage' # Optional. Options: basedOnTestFailurePercentage, basedOnTestFailureCount
+    rerunFailedThreshold: '20' # Optional
+    rerunMaxAttempts: '3'

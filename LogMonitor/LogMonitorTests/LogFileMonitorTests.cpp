@@ -193,7 +193,7 @@ namespace LogMonitorTests
 			long status = CreateDirectoryW(sourceFile.Directory.c_str(), NULL);
 			Sleep(7000);
 			
-			Assert::AreNotSame(0L, status);
+			Assert::AreNotEqual(0L, status);
 
 			//
 			// Check that LogFileMonitor started successfully.
@@ -204,7 +204,8 @@ namespace LogMonitorTests
 				std::wstring filename = sourceFile.Directory + L"\\test.txt";
 				std::string content = "Hello World!";
 
-				WriteToFile(filename, content.c_str(), content.length());
+				status = WriteToFile(filename, content.c_str(), content.length());
+				Assert::AreEqual(0L, status);
 				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
 
 				output = RecoverOuput();
