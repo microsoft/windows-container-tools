@@ -970,10 +970,10 @@ LogFileMonitor::LogFilesChangeHandler()
                     {
                         case EventAction::Add:
                         {
-							//logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
+							logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								//logWriter.WriteConsoleLog(L"Entered");
+								logWriter.WriteConsoleLog(L"Entered");
                                 status = LogFileAddEventHandler(event);
                             }
                             else
@@ -989,16 +989,16 @@ LogFileMonitor::LogFilesChangeHandler()
                                     status = LogFileAddEventHandler(event);
                                 }
                             }
-							//logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
+							logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
                             break;
                         }
 
                         case EventAction::Modify:
                         {
-							//logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
+							logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								//logWriter.WriteConsoleLog(L"Modify: Matched");
+								logWriter.WriteConsoleLog(L"Modify: Matched");
                                 status = LogFileModifyEventHandler(event);
                             }
                             break;

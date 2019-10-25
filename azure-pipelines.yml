@@ -36,7 +36,7 @@ steps:
     testSelector: 'testAssemblies'
     testAssemblyVer2: '**\*test*.dll'
     searchFolder: '$(System.DefaultWorkingDirectory)' 
-    #runOnlyImpactedTests: true
+    runOnlyImpactedTests: false
     runInParallel: false
     rerunFailedTests: true
     rerunType: 'basedOnTestFailurePercentage' # Optional. Options: basedOnTestFailurePercentage, basedOnTestFailureCount
