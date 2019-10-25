@@ -90,7 +90,7 @@ namespace LogMonitorTests
 			// Write data to the file.
 			//
 			DWORD bytesWritten;
-			DWORD status = WriteFile(
+			bool success = WriteFile(
 				hFile,
 				Buffer,
 				BufferSize,
@@ -102,7 +102,7 @@ namespace LogMonitorTests
 			//
 			CloseHandle(hFile);
 
-			return status;
+			return (success)? 0 : GetLastError();
 		}
 
 	public:
@@ -179,7 +179,7 @@ namespace LogMonitorTests
 			// Start the monitor
 			//
 			SourceFile sourceFile;
-			sourceFile.Directory = std::wstring(tempDirectoryArray);
+			sourceFile.Directory = std::wstring(tempDirectoryArray) + L"NOT_CREATED_YET";
 
 			fflush(stdout);
 			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
@@ -201,7 +201,7 @@ namespace LogMonitorTests
 			output = RecoverOuput();
 			Assert::AreEqual(L"", output.c_str());
 			{
-				std::wstring filename = sourceFile.Directory + L"\\test.txt";
+				std::wstring filename = sourceFile.Directory + L"\\testfile.txt";
 				std::string content = "Hello World!";
 
 				status = WriteToFile(filename, content.c_str(), content.length());
