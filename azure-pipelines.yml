@@ -34,8 +34,7 @@ steps:
 - task: VSTest@3
   inputs:
     testSelector: 'testAssemblies'
-    testAssemblyVer2: | 
-      **\*test*.dll
+    testAssemblyVer2: '**\*test*.dll'
     searchFolder: '$(System.DefaultWorkingDirectory)' 
     runOnlyImpactedTests: True
     runInParallel: False
