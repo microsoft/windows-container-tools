@@ -36,5 +36,5 @@ steps:
     testSelector: 'testAssemblies'
     testAssemblyVer2: '**\*test*.dll'
     searchFolder: '$(System.DefaultWorkingDirectory)' 
-    runOnlyImpactedTests: True
-    runInParallel: False
+    runOnlyImpactedTests: true
+    runInParallel: false
