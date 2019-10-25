@@ -997,7 +997,7 @@ LogFileMonitor::LogFilesChangeHandler()
 							}
 							for (auto info : m_longPaths)
 							{
-								logWriter.WriteConsoleLog(Utility::FormatString(L"INFO: %s->%s", info.first, info.second));
+								logWriter.WriteConsoleLog(Utility::FormatString(L"INFO: %s->%s", info.first.c_str(), info.second.c_str()));
 							}
                             break;
                         }
