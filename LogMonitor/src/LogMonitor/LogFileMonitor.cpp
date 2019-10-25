@@ -63,7 +63,9 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
     {
         m_logDirectory.resize(m_logDirectory.size() - 1);
     }
+	logWriter.WriteConsoleLog(L"Initial before: m_logDirectory" + m_logDirectory);
     m_logDirectory = Utility::GetLongPath(PREFIX_EXTENDED_PATH + m_logDirectory);
+	logWriter.WriteConsoleLog(L"Initial: m_logDirectory" + m_logDirectory);
     m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
 
     if (m_filter.empty())
