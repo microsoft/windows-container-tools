@@ -191,7 +191,7 @@ namespace LogMonitorTests
 			// Create the directory and wait to be recognized by the monitor. 
 			//
 			long status = CreateDirectoryW(sourceFile.Directory.c_str(), NULL);
-			Sleep(7000);
+			Sleep(11000);
 			
 			Assert::AreNotEqual(0L, status);
 
