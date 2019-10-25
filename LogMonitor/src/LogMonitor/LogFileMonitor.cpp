@@ -63,6 +63,7 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
     {
         m_logDirectory.resize(m_logDirectory.size() - 1);
     }
+    m_logDirectory = PREFIX_EXTENDED_PATH + m_logDirectory;
 
     if (m_filter.empty())
     {
@@ -398,11 +399,14 @@ LogFileMonitor::StartLogFileMonitor()
         );
         return status;
     }
-	else
-	{
-		m_logDirectory = Utility::GetLongPath(PREFIX_EXTENDED_PATH + m_logDirectory);
-		m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
-	}
+    else
+    {
+        //
+        // Now that the directory was open, we can obtain its long and short path.
+        //
+        m_logDirectory = Utility::GetLongPath(m_logDirectory);
+        m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
+    }
 
     status = InitializeDirectoryChangeEventsQueue();
     if (status != ERROR_SUCCESS)
@@ -973,10 +977,8 @@ LogFileMonitor::LogFilesChangeHandler()
                     {
                         case EventAction::Add:
                         {
-							//logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								//logWriter.WriteConsoleLog(L"Entered");
                                 status = LogFileAddEventHandler(event);
                             }
                             else
@@ -992,17 +994,14 @@ LogFileMonitor::LogFilesChangeHandler()
                                     status = LogFileAddEventHandler(event);
                                 }
                             }
-							//logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
-							//logWriter.WriteConsoleLog(Utility::FormatString(L"LongPathSize: %d", (int)m_longPaths.size()));	
+
                             break;
                         }
 
                         case EventAction::Modify:
                         {
-							//logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								//logWriter.WriteConsoleLog(L"Modify: Matched");
                                 status = LogFileModifyEventHandler(event);
                             }
                             break;
@@ -1125,8 +1124,6 @@ LogFileMonitor::LogFileAddEventHandler(
     {
         const std::wstring fullLongPath = Utility::GetLongPath(m_logDirectory + L'\\' + Event.FileName);
 
-		//logWriter.WriteConsoleLog(L"fullLongPath: " + fullLongPath);
-
         DWORD ftyp = GetFileAttributesW(fullLongPath.c_str());
         if (ftyp == INVALID_FILE_ATTRIBUTES)
         {
@@ -1150,12 +1147,8 @@ LogFileMonitor::LogFileAddEventHandler(
             // Get the short and long relative path
             //
             const std::wstring longPath = fullLongPath.substr(m_logDirectory.size() + 1);
-			//logWriter.WriteConsoleLog(L"m_logDirectory: " + m_logDirectory);
-			//logWriter.WriteConsoleLog(L"longPath: " + longPath);
 
             const std::wstring shortPath = Utility::GetShortPath(fullLongPath).substr(m_shortLogDirectory.size() + 1);
-			//logWriter.WriteConsoleLog(L"m_shortLogDirectory: " + m_shortLogDirectory);
-			//logWriter.WriteConsoleLog(L"shortPath: " + shortPath);
 
             logFileInfo->FileName = longPath;
             logFileInfo->NextReadOffset = 0;
@@ -1247,14 +1240,10 @@ LogFileMonitor::LogFileModifyEventHandler(
     DWORD status = ERROR_SUCCESS;
 
     auto element = GetLogFilesInformationIt(Event.FileName);
-	
-	//logWriter.WriteConsoleLog((element != m_logFilesInformation.end()) ? L"true" : L"false");
-	//logWriter.WriteConsoleLog(Utility::FormatString(L"TIMESTAMP %llu %llu", Event.Timestamp, element->second->LastReadTimestamp));
 
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
     {
-		//logWriter.WriteConsoleLog(L"Reading");
         status = ReadLogFile(element->second);
     }
     else
@@ -1620,8 +1609,6 @@ LogFileMonitor::ReadLogFile(
                 }
                 break;
             }
-
-			//logWriter.WriteConsoleLog(Utility::FormatString(L"bytesRead %d", bytesRead));
 
             if (bytesRead > 0)
             {
