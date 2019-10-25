@@ -970,10 +970,10 @@ LogFileMonitor::LogFilesChangeHandler()
                     {
                         case EventAction::Add:
                         {
-							logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
+							//logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								logWriter.WriteConsoleLog(L"Entered");
+								//logWriter.WriteConsoleLog(L"Entered");
                                 status = LogFileAddEventHandler(event);
                             }
                             else
@@ -989,16 +989,16 @@ LogFileMonitor::LogFilesChangeHandler()
                                     status = LogFileAddEventHandler(event);
                                 }
                             }
-							logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
+							//logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
                             break;
                         }
 
                         case EventAction::Modify:
                         {
-							logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
+							//logWriter.WriteConsoleLog(L"Modify: " + event.FileName + L"|" + m_filter);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
-								logWriter.WriteConsoleLog(L"Modify: Matched");
+								//logWriter.WriteConsoleLog(L"Modify: Matched");
                                 status = LogFileModifyEventHandler(event);
                             }
                             break;
@@ -1238,13 +1238,13 @@ LogFileMonitor::LogFileModifyEventHandler(
 
     auto element = GetLogFilesInformationIt(Event.FileName);
 	
-	logWriter.WriteConsoleLog((element != m_logFilesInformation.end()) ? L"true" : L"false");
-	logWriter.WriteConsoleLog(Utility::FormatString(L"TIMESTAMP %llu %llu", Event.Timestamp, element->second->LastReadTimestamp));
+	//logWriter.WriteConsoleLog((element != m_logFilesInformation.end()) ? L"true" : L"false");
+	//logWriter.WriteConsoleLog(Utility::FormatString(L"TIMESTAMP %llu %llu", Event.Timestamp, element->second->LastReadTimestamp));
 
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
     {
-		logWriter.WriteConsoleLog(L"Reading");
+		//logWriter.WriteConsoleLog(L"Reading");
         status = ReadLogFile(element->second);
     }
     else
@@ -1611,7 +1611,7 @@ LogFileMonitor::ReadLogFile(
                 break;
             }
 
-			logWriter.WriteConsoleLog(Utility::FormatString(L"bytesRead %d", bytesRead));
+			//logWriter.WriteConsoleLog(Utility::FormatString(L"bytesRead %d", bytesRead));
 
             if (bytesRead > 0)
             {
