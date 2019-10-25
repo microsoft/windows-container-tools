@@ -973,6 +973,7 @@ LogFileMonitor::LogFilesChangeHandler()
 							logWriter.WriteConsoleLog(L"ADD: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
+								logWriter.WriteConsoleLog(L"Entered");
                                 status = LogFileAddEventHandler(event);
                             }
                             else
@@ -988,11 +989,13 @@ LogFileMonitor::LogFilesChangeHandler()
                                     status = LogFileAddEventHandler(event);
                                 }
                             }
+							logWriter.WriteConsoleLog(Utility::FormatString(L"Size: %d", (int)m_logFilesInformation.size()));
                             break;
                         }
 
                         case EventAction::Modify:
                         {
+							logWriter.WriteConsoleLog(L"Modify: " + event.FileName);
                             if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
                             {
                                 status = LogFileModifyEventHandler(event);
