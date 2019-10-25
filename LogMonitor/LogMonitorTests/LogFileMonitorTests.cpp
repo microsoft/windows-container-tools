@@ -191,7 +191,7 @@ namespace LogMonitorTests
 			// Create the directory and wait to be recognized by the monitor. 
 			//
 			long status = CreateDirectoryW(sourceFile.Directory.c_str(), NULL);
-			Sleep(11000);
+			Sleep(7000);
 			
 			Assert::AreNotEqual(0L, status);
 
@@ -206,7 +206,7 @@ namespace LogMonitorTests
 
 				status = WriteToFile(filename, content.c_str(), content.length());
 				Assert::AreEqual(0L, status);
-				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE);
+				Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE + 2000);
 
 				output = RecoverOuput();
 				Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());

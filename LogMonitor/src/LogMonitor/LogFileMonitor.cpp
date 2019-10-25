@@ -319,7 +319,6 @@ LogFileMonitor::StartLogFileMonitor()
         while (status == ERROR_FILE_NOT_FOUND &&
                 retryCount < maxRetryCount)
         {
-			logWriter.WriteConsoleLog(L"It's getting here 1");
             if (!SetWaitableTimer(timerEvent, &liDueTime, 0, NULL, NULL, 0))
             {
                 status = GetLastError();
@@ -329,7 +328,7 @@ LogFileMonitor::StartLogFileMonitor()
                 );
                 break;
             }
-			logWriter.WriteConsoleLog(L"It's getting here 2");
+            
             DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
             switch(wait)
             {
@@ -365,7 +364,7 @@ LogFileMonitor::StartLogFileMonitor()
                 }
                     
             }
-			logWriter.WriteConsoleLog(L"It's getting here 3");
+
             m_logDirHandle = CreateFileW (m_logDirectory.c_str(),
                                           FILE_LIST_DIRECTORY,
                                           FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -376,13 +375,11 @@ LogFileMonitor::StartLogFileMonitor()
 
             if (m_logDirHandle == INVALID_HANDLE_VALUE)
             {
-				logWriter.WriteConsoleLog(L"It's getting here 4");
                 status = GetLastError();
                 ++retryCount;
             }
             else
             {
-				logWriter.WriteConsoleLog(L"It's getting here 5");
                 status = ERROR_SUCCESS;
                 break;
             }
