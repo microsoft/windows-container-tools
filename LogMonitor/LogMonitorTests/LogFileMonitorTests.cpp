@@ -28,23 +28,45 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace LogMonitorTests
 {
+    ///
+    /// Tests the Log File Monitor. This class creates temporaries directories
+    /// and files, and tests that the Monitor prints all the changes to stdout.
+    ///
     TEST_CLASS(LogFileMonitorTests)
     {
+        ///
+        /// The wait time after each modification to a subdirectory or a file.
+        ///
         const DWORD WAIT_TIME_LOGFILEMONITOR_START = 500;
         const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_LONG = 750;
         const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT = 500;
 
         const int READ_OUTPUT_RETRIES = 6;
 
+        ///
+        /// Add the path of the created directories, to be removed during
+        /// cleanup.
+        ///
         std::vector<std::wstring> directoriesToDeleteAtCleanup;
-
-        WCHAR bigOutBuf[BUFFER_SIZE];
         
+        WCHAR bigOutBuf[BUFFER_SIZE];
+
+        ///
+        /// Gets the content of the Stdout buffer and returns it in a wstring. 
+        ///
+        /// \return A wstring with the stdout.
+        ///
         std::wstring RecoverOuput()
         {
             return std::wstring(bigOutBuf);
         }
 
+
+        ///
+        /// Creates a new random-name directory inside the Temp directory. 
+        ///
+        /// \return The new directory path. If an error occurs, it's empty.
+        ///
         std::wstring CreateTempDirectory()
         {
             WCHAR tempDirectory[L_tmpnam_s];
@@ -65,6 +87,16 @@ namespace LogMonitorTests
             return std::wstring(tempDirectory);
         }
 
+        ///
+        /// Writes to a new or existing file. 
+        ///
+        /// \param FileName      The full path of the file.
+        /// \param FileName      The buffer with the content to write.
+        /// \param Buffer        The size of the buffer in bytes.
+        ///
+        ///
+        /// \return The status of the operation.
+        ///
         DWORD WriteToFile(
             const std::wstring& FileName, 
             _In_reads_bytes_opt_(BufferSize) LPCVOID Buffer,

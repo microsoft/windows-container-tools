@@ -26,7 +26,7 @@ namespace LogMonitorTests
 {
 	///
 	/// Tests of the ConfigFileParser's ReadConfigFile function. This function 
-	/// uses a JsonFileParser object to parse a JSON string, and return a
+	/// uses a JsonFileParser object To parse a JSON string, and return a
 	/// vector of sources with the retrieved configuration.
 	///
 	TEST_CLASS(ConfigFileParserTests)
@@ -46,42 +46,42 @@ namespace LogMonitorTests
 		///
 		/// Replaces all the occurrences in a wstring. 
 		///
-		/// \param str		The string to search substrings and replace them.
-		/// \param from		The substring to being replaced.
-		/// \param from		The substring to replace.
+		/// \param Str		The string To search substrings and replace them.
+		/// \param From		The substring To being replaced.
+		/// \param To		The substring To replace.
 		///
 		/// \return A wstring.
 		///
-		std::wstring ReplaceAll(std::wstring str, const std::wstring& from, const std::wstring& to) {
+		std::wstring ReplaceAll(std::wstring Str, const std::wstring& From, const std::wstring& To) {
 			size_t start_pos = 0;
 			
-			while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-				str.replace(start_pos, from.length(), to);
-				start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+			while ((start_pos = Str.find(From, start_pos)) != std::string::npos) {
+				Str.replace(start_pos, From.length(), To);
+				start_pos += To.length(); // Handles case where 'To' is a substring of 'From'
 			}
-			return str;
+			return Str;
 		}
 
 		///
 		/// Removes the braces at the start and end of a string. 
 		///
-		/// \param str		A wstring.
+		/// \param Str		A wstring.
 		///
 		/// \return A wstring.
 		///
-		std::wstring RemoveBracesGuidStr(const std::wstring& str)
+		std::wstring RemoveBracesGuidStr(const std::wstring& Str)
 		{
-			if (str.size() >= 2 && str[0] == L'{' && str[str.length() - 1] == L'}')
+			if (Str.size() >= 2 && Str[0] == L'{' && Str[Str.length() - 1] == L'}')
 			{
-				return str.substr(1, str.length() - 2);
+				return Str.substr(1, Str.length() - 2);
 			}
-			return str;
+			return Str;
 		}
 
 	public:
 
 		///
-		/// "Redirects" the stdout to our buffer. 
+		/// "Redirects" the stdout To our buffer. 
 		///
 		TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
 		{
@@ -485,7 +485,7 @@ namespace LogMonitorTests
 			HRESULT hr;
 
 			//
-			// Used to convert an etw log level value to its string representation.
+			// Used To convert an etw log level value To its string representation.
 			//
 			const static std::vector<std::wstring> c_LevelToString =
 			{
@@ -1049,7 +1049,7 @@ namespace LogMonitorTests
 
 		///
 		/// Test that valid JSON strings, but invalid values for a configuration string,
-		/// return false when passed to ReadConfigFile.
+		/// return false when passed To ReadConfigFile.
 		///
 		TEST_METHOD(TestInvalidConfigFile)
 		{
