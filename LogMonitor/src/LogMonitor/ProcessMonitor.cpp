@@ -4,16 +4,6 @@
 //
 
 #include "pch.h"
-#include <windows.h>
-#include <conio.h>
-#include <stdio.h>
-#include <iostream>
-#include <tchar.h>
-#include <strsafe.h>
-#include <fstream>
-#include <streambuf>
-#include "ProcessMonitor.h"
-#include "LogWriter.h"
 
 using namespace std;
 

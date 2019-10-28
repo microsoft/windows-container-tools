@@ -5,14 +5,6 @@
 
 #pragma once
 
-#include <sal.h>
-#include <cstdint>
-#include <string>
-#include <algorithm>
-#include <vector>
-#include <stdexcept>
-#include <windows.h>
-
 class JsonFileParser
 {
 public:

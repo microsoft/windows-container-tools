@@ -5,15 +5,6 @@
 
 #pragma once
 
-#include <Windows.h>
-#include <functional>
-#include <string>
-#include <vector>
-#include <queue>
-#include <map>
-#include <memory>
-#include <system_error>
-
 #define REVERSE_BYTE_ORDER_MARK 0xFFFE
 #define BYTE_ORDER_MARK         0xFEFF
 

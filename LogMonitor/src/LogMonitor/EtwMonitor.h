@@ -5,23 +5,6 @@
 
 #pragma once
 
-#include <functional>
-#include <memory>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <strsafe.h>
-#include <Windows.h>
-#include <winevt.h>
-#include <wbemidl.h>
-#include <wmistr.h>
-#include <evntrace.h>
-#include <tdh.h>
-#include <in6addr.h>
-#include <winsock.h>
-#include <time.h>
-#include "Parser/LoggerSettings.h"
-
 typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
     const IN6_ADDR* Addr,
     LPTSTR S

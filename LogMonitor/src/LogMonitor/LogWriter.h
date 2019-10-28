@@ -5,13 +5,6 @@
 
 #pragma once
 
-#include <functional>
-#include <string>
-#include <vector>
-#include <queue>
-#include <map>
-#include "Utility.h"
-
 class LogWriter final
 {
 public:
@@ -19,6 +12,15 @@ public:
     LogWriter()
     {
         InitializeSRWLock(&m_stdoutLock);
+
+        DWORD dwMode;
+
+        if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &dwMode))
+        {
+            m_isConsole = false;
+        }
+
+        m_isConsole = true;
     };
 
     ~LogWriter() {};
@@ -26,6 +28,15 @@ public:
 private:
 
     SRWLOCK m_stdoutLock;
+    bool m_isConsole;
+
+    void FlushStdOut()
+    {
+        if (m_isConsole)
+        {
+            fflush(stdout);
+        }
+    }
 
 public :
 
@@ -55,6 +66,7 @@ public :
         AcquireSRWLockExclusive(&m_stdoutLock);
 
         wprintf(L"%s\n", LogMessage.c_str());
+        FlushStdOut();
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
     }
@@ -64,8 +76,9 @@ public :
     )
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
-        
+
         wprintf(L"%s\n", LogMessage.c_str());
+        FlushStdOut();
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
     }

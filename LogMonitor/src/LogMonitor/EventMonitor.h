@@ -5,14 +5,6 @@
 
 #pragma once
 
-#include <functional>
-#include <string>
-#include <vector>
-#include <Windows.h>
-#include <winevt.h>
-#include "Parser/ConfigFileParser.h"
-
-
 class EventMonitor final
 {
 public:
@@ -63,4 +55,8 @@ private:
     DWORD PrintEvent(
         _In_ const HANDLE& EventHandle
         );
+
+    void EnableEventLogChannels();
+
+    static void EnableEventLogChannel(_In_ LPCWSTR ChannelPath);
 };

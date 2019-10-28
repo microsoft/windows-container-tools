@@ -4,9 +4,6 @@
 //
 
 #include "pch.h"
-#include "EtwMonitor.h"
-#include "LogWriter.h"
-#include "Utility.h"
 
 #define MAX_NAME 256
 

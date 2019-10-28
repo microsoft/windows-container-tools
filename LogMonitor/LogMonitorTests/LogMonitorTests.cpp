@@ -4,21 +4,7 @@
 //
 
 #include "pch.h"
-#include "CppUnitTest.h"
 
-#include <windows.h>
-#include <conio.h>
-#include <stdio.h>
-#include <winevt.h>
-#include <io.h> 
-#include <fcntl.h> 
-
-#include "../src/LogMonitor/LogWriter.h"
-#include "../src/LogMonitor/EtwMonitor.h"
-#include "../src/LogMonitor/EventMonitor.h"
-#include "../src/LogMonitor/LogFileMonitor.h"
-#include "../src/LogMonitor/ProcessMonitor.h"
-#include "../src/LogMonitor/Utility.h"
 #include "../src/LogMonitor/ConfigFileParser.cpp"
 #include "../src/LogMonitor/EtwMonitor.cpp"
 #include "../src/LogMonitor/EventMonitor.cpp"

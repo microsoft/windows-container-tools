@@ -4,21 +4,7 @@
 //
 
 #include "pch.h"
-#include "CppUnitTest.h"
 
-#include <string>
-#include <functional>
-#include <wchar.h>
-#include <memory>
-#include <io.h> 
-#include <fcntl.h> 
-
-#include "../src/LogMonitor/LogWriter.h"
-#include "../src/LogMonitor/EtwMonitor.h"
-#include "../src/LogMonitor/EventMonitor.h"
-#include "../src/LogMonitor/LogFileMonitor.h"
-#include "../src/LogMonitor/ProcessMonitor.h"
-#include "../src/LogMonitor/Utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -271,7 +257,7 @@ namespace LogMonitorTests
             // Create the directory and wait to be recognized by the monitor. 
             //
             long status = CreateDirectoryW(sourceFile.Directory.c_str(), NULL);
-            Sleep(7000);
+            Sleep(17000);
             
             Assert::AreNotEqual(0L, status);
 

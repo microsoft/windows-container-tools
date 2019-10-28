@@ -4,10 +4,6 @@
 //
 
 #include "pch.h"
-#include "LogFileMonitor.h"
-#include "shlwapi.h"
-#include "LogWriter.h"
-#include "Utility.h"
 
 using namespace std;
 
@@ -284,14 +280,14 @@ LogFileMonitor::StartLogFileMonitor()
     {
         //
         // Log directory is not created yet. Keep retrying every
-        // 5 seconds for upto one minute. Also start reading the
+        // 15 seconds for upto five minutes. Also start reading the
         // log files from the begining, instead of current end of
         // file.
         //
-        const DWORD maxRetryCount = 12;
+        const DWORD maxRetryCount = 20;
         DWORD retryCount = 1;
         LARGE_INTEGER liDueTime;
-        INT64 millisecondsToWait = 5000LL;
+        INT64 millisecondsToWait = 15000LL;
         liDueTime.QuadPart = -millisecondsToWait*10000LL; // wait time in 100 nanoseconds
 
         m_readLogFilesFromStart = true;
@@ -1559,7 +1555,7 @@ LogFileMonitor::ReadLogFile(
 
     const DWORD bytesToRead = 4096;
     std::vector<BYTE> logFileContents(
-        static_cast<size_t>(bytesToRead), 0);
+        static_cast<size_t>(bytesToRead));
     DWORD bytesRead = 0;
 
     std::wstring currentLineBuffer;
@@ -1730,7 +1726,7 @@ LogFileMonitor::ReadLogFile(
 
             //wprintf(L"Log file %ws read succeeded.\n", LogFileInfo->FileName.c_str());    
 
-            LogFileInfo->NextReadOffset += bytesRead; //fileSize.QuadPart;
+            LogFileInfo->NextReadOffset += bytesRead;
         } while (bytesRead > 0);
     }
     catch (...) {}

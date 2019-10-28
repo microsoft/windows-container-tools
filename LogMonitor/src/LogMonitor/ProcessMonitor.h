@@ -5,9 +5,5 @@
 
 #pragma once
 
-#include <functional>
-#include <string>
-#include <vector>
-
 DWORD CreateAndMonitorProcess(std::wstring& Cmdline);
 
