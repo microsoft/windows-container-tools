@@ -63,8 +63,7 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
     {
         m_logDirectory.resize(m_logDirectory.size() - 1);
     }
-    m_logDirectory = Utility::GetLongPath(PREFIX_EXTENDED_PATH + m_logDirectory);
-    m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
+    m_logDirectory = PREFIX_EXTENDED_PATH + m_logDirectory;
 
     if (m_filter.empty())
     {
@@ -399,6 +398,14 @@ LogFileMonitor::StartLogFileMonitor()
             ).c_str()
         );
         return status;
+    }
+    else
+    {
+        //
+        // Now that the directory was open, we can obtain its long and short path.
+        //
+        m_logDirectory = Utility::GetLongPath(m_logDirectory);
+        m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
     }
 
     status = InitializeDirectoryChangeEventsQueue();
@@ -987,6 +994,7 @@ LogFileMonitor::LogFilesChangeHandler()
                                     status = LogFileAddEventHandler(event);
                                 }
                             }
+
                             break;
                         }
 

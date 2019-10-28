@@ -25,3 +25,16 @@ steps:
     scanType: 'LogOnly'
     verbosity: 'Verbose'
     alertWarningLevel: 'High'
+
+- task: VisualStudioTestPlatformInstaller@1
+  inputs:
+    packageFeedSelector: 'nugetOrg'
+    versionSelector: 'latestPreRelease'
+
+- task: VSTest@2
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: '**\*test*.dll'
+    searchFolder: '$(System.DefaultWorkingDirectory)' 
+    runOnlyImpactedTests: false
+    runInParallel: false

@@ -8,6 +8,8 @@
 
 #include <string>
 #include <functional>
+#include <io.h> 
+#include <fcntl.h> 
 
 #include "../src/LogMonitor/LogWriter.h"
 #include "../src/LogMonitor/EtwMonitor.h"
@@ -29,7 +31,7 @@ namespace LogMonitorTests
 	///
 	TEST_CLASS(ConfigFileParserTests)
 	{
-		char bigOutBuf[BUFFER_SIZE];
+		WCHAR bigOutBuf[BUFFER_SIZE];
 
 		///
 		/// Gets the content of the Stdout buffer and returns it in a wstring. 
@@ -38,33 +40,32 @@ namespace LogMonitorTests
 		///
 		std::wstring RecoverOuput()
 		{
-			std::string realOutputStr(bigOutBuf);
-			return std::wstring(realOutputStr.begin(), realOutputStr.end());
+			return std::wstring(bigOutBuf);
 		}
 
 		///
 		/// Replaces all the occurrences in a wstring. 
 		///
-		/// \param str		The string to search substrings and replace them.
-		/// \param from		The substring to being replaced.
-		/// \param from		The substring to replace.
+		/// \param Str		The string to search substrings and replace them.
+		/// \param From		The substring to being replaced.
+		/// \param To		The substring to replace.
 		///
 		/// \return A wstring.
 		///
-		std::wstring ReplaceAll(std::wstring str, const std::wstring& from, const std::wstring& to) {
+		std::wstring ReplaceAll(std::wstring Str, const std::wstring& From, const std::wstring& To) {
 			size_t start_pos = 0;
 			
-			while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-				str.replace(start_pos, from.length(), to);
-				start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+			while ((start_pos = Str.find(From, start_pos)) != std::string::npos) {
+				Str.replace(start_pos, From.length(), To);
+				start_pos += To.length(); // Handles case where 'To' is a substring of 'From'
 			}
-			return str;
+			return Str;
 		}
 
 		///
 		/// Removes the braces at the start and end of a string. 
 		///
-		/// \param str		A wstring.
+		/// \param Str		A wstring.
 		///
 		/// \return A wstring.
 		///
@@ -80,16 +81,17 @@ namespace LogMonitorTests
 	public:
 
 		///
-		/// "Redirects" the stdout to an own buffer. 
+		/// "Redirects" the stdout to our buffer. 
 		///
-		TEST_METHOD_INITIALIZE(InitializeConfigFileParserTests)
+		TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
 		{
 			//
-			// Set our own buffer in stdout
+			// Set our own buffer in stdout.
 			//
-			ZeroMemory(bigOutBuf, BUFFER_SIZE);
+			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 			fflush(stdout);
-			setvbuf(stdout, bigOutBuf, _IOFBF, BUFFER_SIZE);
+			_setmode(_fileno(stdout), _O_U16TEXT);
+			setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
 		}
 
 		///
@@ -1146,7 +1148,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1156,7 +1158,7 @@ namespace LogMonitorTests
 
 				std::wstring output = RecoverOuput();
 
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
 			}
 		}
 
@@ -1188,7 +1190,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1199,7 +1201,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
 			}
 
 			//
@@ -1222,7 +1224,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1233,7 +1235,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
 			}
 
 			//
@@ -1257,7 +1259,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1273,7 +1275,7 @@ namespace LogMonitorTests
 				std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(settings.Sources[0]);
 
 				Assert::AreEqual((size_t)0, sourceEventLog->Channels.size());
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//
@@ -1300,7 +1302,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1317,7 +1319,7 @@ namespace LogMonitorTests
 
 				Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
 				Assert::AreEqual((int)EventChannelLogLevel::Error, (int)sourceEventLog->Channels[0].Level);
-				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
 			}
 		}
 
@@ -1345,7 +1347,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1356,7 +1358,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
 			}
 		}
 
@@ -1388,7 +1390,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1399,7 +1401,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find_first_of(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
 			}
 
 			//
@@ -1423,7 +1425,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1439,7 +1441,7 @@ namespace LogMonitorTests
 				std::shared_ptr<SourceETW> SourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
 
 				Assert::AreEqual((size_t)0, SourceEtw->Providers.size());
-				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//
@@ -1463,7 +1465,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1479,7 +1481,7 @@ namespace LogMonitorTests
 				std::shared_ptr<SourceETW> SourceEtw = std::reinterpret_pointer_cast<SourceETW>(settings.Sources[0]);
 
 				Assert::AreEqual((size_t)0, SourceEtw->Providers.size());
-				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//
@@ -1506,7 +1508,7 @@ namespace LogMonitorTests
 
 			{
 				fflush(stdout);
-				ZeroMemory(bigOutBuf, BUFFER_SIZE);
+				ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
 				JsonFileParser jsonParser(configFileStr);
 				LoggerSettings settings;
@@ -1523,7 +1525,7 @@ namespace LogMonitorTests
 
 				Assert::AreEqual((size_t)1, SourceEtw->Providers.size());
 				Assert::AreEqual((UCHAR)2, SourceEtw->Providers[0].Level); // Error
-				Assert::IsTrue(output.find_first_of(L"WARNING") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
 			}
 		}
 	};
