@@ -26,7 +26,7 @@ namespace LogMonitorTests
 {
 	///
 	/// Tests of the ConfigFileParser's ReadConfigFile function. This function 
-	/// uses a JsonFileParser object To parse a JSON string, and return a
+	/// uses a JsonFileParser object to parse a JSON string, and return a
 	/// vector of sources with the retrieved configuration.
 	///
 	TEST_CLASS(ConfigFileParserTests)
@@ -46,9 +46,9 @@ namespace LogMonitorTests
 		///
 		/// Replaces all the occurrences in a wstring. 
 		///
-		/// \param Str		The string To search substrings and replace them.
-		/// \param From		The substring To being replaced.
-		/// \param To		The substring To replace.
+		/// \param Str		The string to search substrings and replace them.
+		/// \param From		The substring to being replaced.
+		/// \param To		The substring to replace.
 		///
 		/// \return A wstring.
 		///
@@ -69,19 +69,19 @@ namespace LogMonitorTests
 		///
 		/// \return A wstring.
 		///
-		std::wstring RemoveBracesGuidStr(const std::wstring& Str)
+		std::wstring RemoveBracesGuidStr(const std::wstring& str)
 		{
-			if (Str.size() >= 2 && Str[0] == L'{' && Str[Str.length() - 1] == L'}')
+			if (str.size() >= 2 && str[0] == L'{' && str[str.length() - 1] == L'}')
 			{
-				return Str.substr(1, Str.length() - 2);
+				return str.substr(1, str.length() - 2);
 			}
-			return Str;
+			return str;
 		}
 
 	public:
 
 		///
-		/// "Redirects" the stdout To our buffer. 
+		/// "Redirects" the stdout to our buffer. 
 		///
 		TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
 		{
@@ -485,7 +485,7 @@ namespace LogMonitorTests
 			HRESULT hr;
 
 			//
-			// Used To convert an etw log level value To its string representation.
+			// Used to convert an etw log level value to its string representation.
 			//
 			const static std::vector<std::wstring> c_LevelToString =
 			{
@@ -1049,7 +1049,7 @@ namespace LogMonitorTests
 
 		///
 		/// Test that valid JSON strings, but invalid values for a configuration string,
-		/// return false when passed To ReadConfigFile.
+		/// return false when passed to ReadConfigFile.
 		///
 		TEST_METHOD(TestInvalidConfigFile)
 		{
