@@ -4,19 +4,6 @@
 //
 
 #include "pch.h"
-#include "CppUnitTest.h"
-
-#include <string>
-#include <functional>
-#include <io.h> 
-#include <fcntl.h> 
-
-#include "../src/LogMonitor/LogWriter.h"
-#include "../src/LogMonitor/EtwMonitor.h"
-#include "../src/LogMonitor/EventMonitor.h"
-#include "../src/LogMonitor/LogFileMonitor.h"
-#include "../src/LogMonitor/ProcessMonitor.h"
-#include "../src/LogMonitor/Utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -1158,7 +1145,7 @@ namespace LogMonitorTests
 
 				std::wstring output = RecoverOuput();
 
-				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos || output.find(L"WARNING") != std::wstring::npos);
 			}
 		}
 
@@ -1201,7 +1188,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos || output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//
@@ -1235,7 +1222,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos || output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//
@@ -1358,7 +1345,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos || output.find(L"WARNING") != std::wstring::npos);
 			}
 		}
 
@@ -1401,7 +1388,7 @@ namespace LogMonitorTests
 				std::wstring output = RecoverOuput();
 
 				Assert::AreEqual((size_t)0, settings.Sources.size());
-				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos);
+				Assert::IsTrue(output.find(L"ERROR") != std::wstring::npos || output.find(L"WARNING") != std::wstring::npos);
 			}
 
 			//

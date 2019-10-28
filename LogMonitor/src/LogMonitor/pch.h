@@ -39,22 +39,23 @@
 #include <in6addr.h>
 #include <winsock.h>
 #include <time.h>
-#include "Parser/ConfigFileParser.h"
-#include "Utility.h"
-#include "LogWriter.h"
-#include "Parser/LoggerSettings.h"
-#include "EventMonitor.h"
-#include "EtwMonitor.h"
-#include "ProcessMonitor.h"
-#include "Parser/JsonFileParser.h"
 #include <iostream>
 #include <tchar.h>
 #include <strsafe.h>
 #include <fstream>
 #include <streambuf>
 #include <system_error>
-#include "LogFileMonitor.h"
 #include "shlwapi.h"
-
+#include <io.h> 
+#include <fcntl.h>
+#include "Utility.h"
+#include "Parser/ConfigFileParser.h"
+#include "Parser/LoggerSettings.h"
+#include "Parser/JsonFileParser.h"
+#include "LogWriter.h"
+#include "EtwMonitor.h"
+#include "EventMonitor.h"
+#include "LogFileMonitor.h"
+#include "ProcessMonitor.h"
 
 #endif //PCH_H
