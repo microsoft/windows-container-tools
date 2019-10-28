@@ -4,22 +4,7 @@
 //
 
 #include "pch.h"
-#include <windows.h>
-#include <conio.h>
-#include <stdio.h>
-#include <winevt.h>
-#include "EventMonitor.h"
-#include "ProcessMonitor.h"
-#include "EtwMonitor.h"
-#include "Parser/JsonFileParser.h"
-#include "Parser/ConfigFileParser.h"
-#include <iostream>
-#include <tchar.h>
-#include <strsafe.h>
-#include <fstream>
-#include <streambuf>
-#include "LogFileMonitor.h"
-#include "LogWriter.h"
+#include "Version.h"
 
 using namespace std;
 
@@ -38,9 +23,9 @@ LogWriter logWriter;
 
 HANDLE g_hStopEvent = INVALID_HANDLE_VALUE;
 
-std::shared_ptr<EventMonitor> g_eventMon(nullptr);
+std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
-std::shared_ptr<EtwMonitor> g_etwMon(nullptr);
+std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
 void ControlHandle(_In_ DWORD dwCtrlType)
 {
@@ -65,7 +50,7 @@ void ControlHandle(_In_ DWORD dwCtrlType)
 
 void PrintUsage()
 {
-    wprintf(L"\n\tLogMonitor Tool Version 1.0 \n\n");
+    wprintf(L"\n\tLogMonitor Tool Version %d.%d.%d.%d \n\n", LM_MAJORNUMBER, LM_MINORNUMBER, LM_BUILDNUMBER, LM_BUILDMINORVERSION);
     wprintf(L"\tUsage: LogMonitor.exe [/CONFIG PATH][COMMAND] [PARAMETERS] \n\n");
     wprintf(L"\tPATH        specifies the path of the Json configuration file. This is\n");
     wprintf(L"\t            an optional parameter. If not specified, then default Json\n");
@@ -91,17 +76,18 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
         bool eventMonStartAtOldestRecord;
         bool etwMonMultiLine;
 
-        //
-        // Convert the document content to a string, to pass it to JsonFileParser constructor.
-        //
-        std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
-            std::istreambuf_iterator<wchar_t>());
-
-        JsonFileParser jsonParser(configFileStr);
         LoggerSettings settings;
 
         try
         {
+            //
+            // Convert the document content to a string, to pass it to JsonFileParser constructor.
+            //
+            std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
+                std::istreambuf_iterator<wchar_t>());
+
+            JsonFileParser jsonParser(configFileStr);
+
             success = ReadConfigFile(jsonParser, settings);
         }
         catch (std::exception& ex)
@@ -188,7 +174,7 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
         {
             try
             {
-                g_eventMon = make_shared<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+                g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
             }
             catch (std::exception& ex)
             {
@@ -208,7 +194,7 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
         {
             try
             {
-                g_etwMon = make_shared<EtwMonitor>(etwProviders, etwMonMultiLine);
+                g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
             }
             catch (...)
             {
@@ -234,10 +220,10 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
 
-    g_hStopEvent = CreateEvent(NULL,               // default security attributes
+    g_hStopEvent = CreateEvent(nullptr,            // default security attributes
                                TRUE,               // manual-reset event
                                FALSE,              // initial state is nonsignaled
-                               argv[1]);           // object name
+                               nullptr);           // object name
 
     if (g_hStopEvent == NULL)
     {

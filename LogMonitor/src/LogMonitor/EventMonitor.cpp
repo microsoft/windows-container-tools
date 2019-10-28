@@ -4,9 +4,6 @@
 //
 
 #include "pch.h"
-#include "EventMonitor.h"
-#include "LogWriter.h"
-#include "Utility.h"
 
 using namespace std;
 
@@ -142,6 +139,8 @@ EventMonitor::StartEventMonitor()
     const LPWSTR pwsQuery = (LPWSTR)(L"*");
     const DWORD eventsCount = 2;
 
+    EnableEventLogChannels();
+
     //
     // Order stop event first so that stop is prioritized if both events are already signalled (changes 
     // are available but stop has been called).
@@ -199,7 +198,8 @@ EventMonitor::StartEventMonitor()
                 {
                     break;
                 }
-            
+
+                status = ERROR_SUCCESS;
                 ResetEvent(aWaitHandles[1]);
             }
             else
@@ -550,4 +550,119 @@ EventMonitor::PrintEvent(
     }
     return status;
 
+}
+
+
+/// Enables all monitored event log channels.
+///
+/// \param ChannelPath  Full path to the event log channel.
+///
+/// \return None
+///
+void
+EventMonitor::EnableEventLogChannels()
+{
+    for (const auto& eventChannel : m_eventChannels)
+    {
+        EnableEventLogChannel(eventChannel.Name.c_str());
+    }
+}
+
+
+/// Enables or disables an Event Log channel.
+///
+/// \param ChannelPath  Full path to the event log channel.
+///
+/// \return None
+///
+void
+EventMonitor::EnableEventLogChannel(
+    _In_ LPCWSTR ChannelPath
+)
+{
+    DWORD       status = ERROR_SUCCESS;
+    EVT_HANDLE  channelConfig = NULL;
+    EVT_VARIANT propValue;
+    DWORD dwPropValSize;
+
+    //
+    // Open the channel configuration.
+    //
+    channelConfig = EvtOpenChannelConfig(NULL, ChannelPath, 0);
+    if (NULL == channelConfig)
+    {
+        status = GetLastError();
+        goto Exit;
+    }
+
+    if (EvtGetChannelConfigProperty(channelConfig, EvtChannelConfigEnabled, 0, sizeof(EVT_VARIANT), &propValue, &dwPropValSize))
+    {
+        //
+        // Return if event channel is slready enabled.
+        //
+        if (propValue.BooleanVal)
+        {
+            goto Exit;
+        }
+    }
+    else
+    {
+        status = GetLastError();
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to query event channel configuration. Channel: %ws Error: 0x%X", ChannelPath, status).c_str()
+        );
+    }
+
+    //
+    // Set the Enabled property.
+    //
+    propValue.Type = EvtVarTypeBoolean;
+    propValue.Count = 1;
+    propValue.BooleanVal = true;
+
+    if (!EvtSetChannelConfigProperty(
+        channelConfig,
+        EvtChannelConfigEnabled,
+        0,
+        &propValue
+    ))
+    {
+        status = GetLastError();
+        goto Exit;
+    }
+
+    //
+    // Save changes.
+    //
+    if (!EvtSaveChannelConfig(channelConfig, 0))
+    {
+        status = GetLastError();
+        if (status == ERROR_EVT_INVALID_OPERATION_OVER_ENABLED_DIRECT_CHANNEL)
+        {
+            //
+            // The channel is already enabled.
+            //
+            status = ERROR_SUCCESS;
+        }
+        else
+        {
+            goto Exit;
+        }
+    }
+
+    status = ERROR_SUCCESS;
+
+Exit:
+
+    if (ERROR_SUCCESS != status)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to enable channel %ws: 0x%X", ChannelPath, status).c_str()
+        );
+    }
+
+    if (channelConfig != NULL)
+    {
+        EvtClose(channelConfig);
+    }
 }

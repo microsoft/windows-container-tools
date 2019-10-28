@@ -5,18 +5,6 @@
 
 #pragma once
 
-#include "JsonFileParser.h"
-#include <algorithm>
-#include <map>
-#include <vector>
-#include <array>
-#include <memory>
-#include <variant>
-#include <string>
-#include <sal.h>
-#include <windows.h>
-#include <cctype>
-
 #define DEFAULT_CONFIG_FILENAME L"C:\\LogMonitor\\LogMonitorConfig.json"
 
 #define JSON_TAG_LOG_CONFIG L"LogConfig"
