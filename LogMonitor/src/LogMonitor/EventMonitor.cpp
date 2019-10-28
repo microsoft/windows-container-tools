@@ -555,8 +555,6 @@ EventMonitor::PrintEvent(
 
 /// Enables all monitored event log channels.
 ///
-/// \param ChannelPath  Full path to the event log channel.
-///
 /// \return None
 ///
 void
