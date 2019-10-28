@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/ms/windows-container-tools/_apis/build/status/microsoft.windows-container-tools?branchName=master)](https://dev.azure.com/ms/windows-container-tools/_build/latest?definitionId=265&branchName=master)
+
 
 # Contributing
 
