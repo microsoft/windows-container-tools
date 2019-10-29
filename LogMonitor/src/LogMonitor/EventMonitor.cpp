@@ -171,14 +171,14 @@ EventMonitor::StartEventMonitor()
         status = GetLastError();
     
         if (ERROR_EVT_CHANNEL_NOT_FOUND == status)
-            logWriter.TraceError(L"Channel was not found.");
+            logWriter.TraceError(L"Failed to subscribe to event log channel. The specified event channel was not found.");
         else if (ERROR_EVT_INVALID_QUERY == status)
             logWriter.TraceError(
-                Utility::FormatString(L"The query %s was not found.", pwsQuery).c_str()
+                Utility::FormatString(L"Failed to subscribe to event log channel. Event query %s is not valid.", pwsQuery).c_str()
             );
         else
             logWriter.TraceError(
-                Utility::FormatString(L"EvtSubscribe failed with %lu.", status).c_str()
+                Utility::FormatString(L"Failed to subscribe to event log channel. Error: %lu.", status).c_str()
             );
     }
 
@@ -207,7 +207,7 @@ EventMonitor::StartEventMonitor()
                 if (WAIT_FAILED == wait)
                 {
                     logWriter.TraceError(
-                        Utility::FormatString(L"WaitForSingleObject failed with %lu.", GetLastError()).c_str()
+                        Utility::FormatString(L"Failed to subscribe to event log channel. Wait operation on event handle failed. Error: %lu.", GetLastError()).c_str()
                     );
                 }
                 break;
@@ -328,7 +328,7 @@ EventMonitor::EnumerateResults(
             if (ERROR_NO_MORE_ITEMS != (status = GetLastError()))
             {
                 logWriter.TraceError(
-                    Utility::FormatString(L"EvtNext failed with %lu.", status).c_str()
+                    Utility::FormatString(L"Failed to query next event. Error: %lu.", status).c_str()
                 );
             }
 
@@ -655,7 +655,7 @@ Exit:
     if (ERROR_SUCCESS != status)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to enable channel %ws: 0x%X", ChannelPath, status).c_str()
+            Utility::FormatString(L"Failed to enable event channel %ws: 0x%X", ChannelPath, status).c_str()
         );
     }
 

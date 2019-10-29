@@ -33,7 +33,7 @@ ReadConfigFile(
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
-        logWriter.TraceError(L"Object expected at the file's root");
+        logWriter.TraceError(L"Failed to parse configuration file. Object expected at the file's root");
         return false;
     }
 
@@ -76,7 +76,7 @@ ReadLogConfigObject(
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
-        logWriter.TraceError(L"'LogConfig' is expected to be an object");
+        logWriter.TraceError(L"Failed to parse configuration file. 'LogConfig' is expected to be an object");
         Parser.SkipValue();
         return false;
     }
@@ -92,7 +92,7 @@ ReadLogConfigObject(
             {
                 if (Parser.GetNextDataType() != JsonFileParser::DataType::Array)
                 {
-                    logWriter.TraceError(L"'sources' attribute expected to be an array");
+                    logWriter.TraceError(L"Failed to parse configuration file. 'sources' attribute expected to be an array");
                     Parser.SkipValue();
                     continue;
                 }
@@ -115,12 +115,12 @@ ReadLogConfigObject(
                     if (ReadSourceAttributes(Parser, sourceAttributes)) {
                         if (!AddNewSource(Parser, sourceAttributes, Config.Sources))
                         {
-                            logWriter.TraceWarning(L"Error reading invalid source.");
+                            logWriter.TraceWarning(L"Failed to parse configuration file. Error reading invalid source.");
                         }
                     }
                     else
                     {
-                        logWriter.TraceWarning(L"Error retrieving source attributes. Invalid source");
+                        logWriter.TraceWarning(L"Failed to parse configuration file. Error retrieving source attributes. Invalid source");
                     }
 
                     for (auto attributePair : sourceAttributes)
@@ -134,7 +134,7 @@ ReadLogConfigObject(
             }
             else
             {
-                logWriter.TraceWarning(Utility::FormatString(L"'Unknow key %ws in configuration file.", key.c_str()).c_str());
+                logWriter.TraceWarning(Utility::FormatString(L"Error parsing configuration file. 'Unknow key %ws in the configuration file.", key.c_str()).c_str());
                 Parser.SkipValue();
             }
         } while (Parser.ParseNextObjectElement());
@@ -159,7 +159,7 @@ ReadSourceAttributes(
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
-        logWriter.TraceError(L"Source item expected to be an object");
+        logWriter.TraceError(L"Failed to parse configuration file. Source item expected to be an object");
         Parser.SkipValue();
         return false;
     }
@@ -206,7 +206,7 @@ ReadSourceAttributes(
                 {
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"'%s' isn't a valid source type", typeString.c_str()
+                            L"Error parsing configuration file. '%s' isn't a valid source type", typeString.c_str()
                         ).c_str()
                     );
 
@@ -221,7 +221,7 @@ ReadSourceAttributes(
             {
                 if (Parser.GetNextDataType() != JsonFileParser::DataType::Array)
                 {
-                    logWriter.TraceError(L"'channels' attribute expected to be an array");
+                    logWriter.TraceError(L"Error parsing configuration file. 'channels' attribute expected to be an array");
                     Parser.SkipValue();
                     continue;
                 }
@@ -238,7 +238,7 @@ ReadSourceAttributes(
                         channels->emplace_back();
                         if (!ReadLogChannel(Parser, channels->back()))
                         {
-                            logWriter.TraceWarning(L"Discarded invalid channel (it must have a non-empty 'name').");
+                            logWriter.TraceWarning(L"Error parsing configuration file. Discarded invalid channel (it must have a non-empty 'name').");
                             channels->pop_back();
                         }
                     } while (Parser.ParseNextArrayElement());
@@ -277,7 +277,7 @@ ReadSourceAttributes(
             {
                 if (Parser.GetNextDataType() != JsonFileParser::DataType::Array)
                 {
-                    logWriter.TraceError(L"'providers' attribute expected to be an array");
+                    logWriter.TraceError(L"Error parsing configuration file. 'providers' attribute expected to be an array");
                     Parser.SkipValue();
                     continue;
                 }
@@ -294,7 +294,7 @@ ReadSourceAttributes(
                         providers->emplace_back();
                         if (!ReadETWProvider(Parser, providers->back()))
                         {
-                            logWriter.TraceWarning(L"Discarded invalid provider (it must have a non-empty 'providerName' or 'providerGuid').");
+                            logWriter.TraceWarning(L"Error parsing configuration file. Discarded invalid provider (it must have a non-empty 'providerName' or 'providerGuid').");
                             providers->pop_back();
                         }
                     } while (Parser.ParseNextArrayElement());
@@ -331,14 +331,14 @@ ReadLogChannel(
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
-        logWriter.TraceError(L"Channel item expected to be an object");
+        logWriter.TraceError(L"Error parsing configuration file. Channel item expected to be an object");
         Parser.SkipValue();
         return false;
     }
 
     if (!Parser.BeginParseObject())
     {
-        logWriter.TraceError(L"Error reading channel object");
+        logWriter.TraceError(L"Error parsing configuration file. Error reading channel object");
         return false;
     }
 
@@ -368,7 +368,7 @@ ReadLogChannel(
             {
                 logWriter.TraceWarning(
                     Utility::FormatString(
-                        L"'%s' isn't a valid log level. Setting 'Error' level as default", logLevelStr.c_str()
+                        L"Error parsing configuration file. '%s' isn't a valid log level. Setting 'Error' level as default", logLevelStr.c_str()
                     ).c_str()
                 );
             }
@@ -402,14 +402,14 @@ ReadETWProvider(
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
-        logWriter.TraceError(L"Provider item expected to be an object");
+        logWriter.TraceError(L"Error parsing configuration file. Provider item expected to be an object");
         Parser.SkipValue();
         return false;
     }
 
     if (!Parser.BeginParseObject())
     {
-        logWriter.TraceError(L"Error reading provider object");
+        logWriter.TraceError(L"Error parsing configuration file. Error reading provider object");
         return false;
     }
 
@@ -448,7 +448,7 @@ ReadETWProvider(
             {
                 logWriter.TraceWarning(
                     Utility::FormatString(
-                        L"'%s' isn't a valid log level. Setting 'Error' level as default", logLevelStr.c_str()
+                        L"Error parsing configuration file. '%s' isn't a valid log level. Setting 'Error' level as default", logLevelStr.c_str()
                     ).c_str()
                 );
             }
@@ -510,7 +510,7 @@ AddNewSource(
         //
         if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog))
         {
-            logWriter.TraceError(L"Invalid EventLog source (it must have a non-empty 'channels')");
+            logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source (it must have a non-empty 'channels')");
             return false;
         }
 
@@ -528,7 +528,7 @@ AddNewSource(
         //
         if (!SourceFile::Unwrap(Attributes, *sourceFile))
         {
-            logWriter.TraceError(L"Invalid File source (it must have a non-empty 'directory')");
+            logWriter.TraceError(L"Error parsing configuration file. Invalid File source (it must have a non-empty 'directory')");
             return false;
         }
 
@@ -546,7 +546,7 @@ AddNewSource(
         //
         if (!SourceETW::Unwrap(Attributes, *sourceETW))
         {
-            logWriter.TraceError(L"Invalid ETW source (it must have a non-empty 'providers')");
+            logWriter.TraceError(L"Error parsing configuration file. Invalid ETW source (it must have a non-empty 'providers')");
             return false;
         }
 
