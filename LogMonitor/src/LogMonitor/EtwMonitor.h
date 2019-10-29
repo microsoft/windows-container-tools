@@ -32,8 +32,8 @@ private:
     //
     // Vectors used to store an EVENT_TRACE_PROPERTIES object.
     //
-    std::vector<BYTE>	m_vecEventTracePropsBuffer;
-    std::vector<BYTE>	m_vecStopTracePropsBuffer;
+    std::vector<BYTE>    m_vecEventTracePropsBuffer;
+    std::vector<BYTE>    m_vecStopTracePropsBuffer;
 
     //
     // Signaled by destructor to request the spawned thread to stop.
