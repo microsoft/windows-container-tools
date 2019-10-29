@@ -966,6 +966,13 @@ EtwMonitor::_FormatData(
                 if (ERROR_SUCCESS != status)
                 {
                     logWriter.TraceError(Utility::FormatString(L"GetMapInfo failed with %ul", status).c_str());
+
+                    if (pMapInfo)
+                    {
+                        free(pMapInfo);
+                        pMapInfo = NULL;
+                    }
+
                     break;
                 }
             }
