@@ -42,7 +42,7 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"Stdout CreatePipe failed with %lu", status).c_str()
+            Utility::FormatString(L"Process monitor error. Failed to create stdout pipe. Error: %lu", status).c_str()
         );
 
         return status;
@@ -56,7 +56,7 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"Stdout SetHandleInformation failed with %lu", status).c_str()
+            Utility::FormatString(L"Process monitor error. Failed to update handle to stdout pipe. Error: %lu", status).c_str()
         );
 
         return status;
@@ -124,7 +124,7 @@ void CreateChildProcess(std::wstring& Cmdline)
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"CreateProcess failed with %lu", status).c_str()
+            Utility::FormatString(L"Failed to start entrypoint process. Error: %lu", status).c_str()
         );
     }
     else 
@@ -136,13 +136,13 @@ void CreateChildProcess(std::wstring& Cmdline)
         if(GetExitCodeProcess(piProcInfo.hProcess, &exitcode))
         {
             logWriter.TraceInfo(
-                Utility::FormatString(L"Processs exit code: %d", exitcode).c_str()
+                Utility::FormatString(L"Entrypoint processs exit code: %d", exitcode).c_str()
             );
         }
         else
         {
             logWriter.TraceError(
-                Utility::FormatString(L"GetExitCodeProcess failed: %d", GetLastError()).c_str()
+                Utility::FormatString(L"Process monitor error. Failed to get entrypoint process exit code. Error: %d", GetLastError()).c_str()
             );
         }
 

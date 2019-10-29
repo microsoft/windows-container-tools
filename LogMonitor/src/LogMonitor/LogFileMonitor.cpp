@@ -136,7 +136,7 @@ LogFileMonitor::~LogFileMonitor()
     if(!SetEvent(m_stopEvent))
     {
         logWriter.TraceError(
-            Utility::FormatString(L"SetEvent failed with %lu", GetLastError()).c_str()
+            Utility::FormatString(L"Failed to signal event to stop log file monitor. %lu", GetLastError()).c_str()
         );
     }
     else
@@ -713,7 +713,7 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
     }
     else
     {
-        logWriter.TraceError(L"DirectoryListenThread: ERROR - GetOverlappedResult returned 1 bytes transferred");
+        logWriter.TraceError(L"Error monitoring log directory. Invalid directory change notification data.");
     }
 
     return S_OK;
@@ -784,7 +784,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                     {
                         logWriter.TraceError(
                             Utility::FormatString(
-                                L"ReadLogFile: Failed to open file %ws. Error = %d",
+                                L"Error in log file monitor. Failed to open file %ws. Error = %d",
                                 fileName.c_str(),
                                 GetLastError()
                             ).c_str()
@@ -801,7 +801,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                     {
                         logWriter.TraceError(
                             Utility::FormatString(
-                                L"ReadLogFile: Failed to get size of file %ws. Error = %d",
+                                L"Error in log file monitor. Failed to get size of file %ws. Error = %d",
                                 fileName.c_str(),
                                 GetLastError()
                             ).c_str()
@@ -836,7 +836,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                     ReleaseSRWLockExclusive(&m_eventQueueLock);
 
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to signal worker thread to process log file changes. Error=%d\n", GetLastError()).c_str()
+                        Utility::FormatString(L"Error in log file monitor. Failed to signal worker thread to process log file changes. Error=%d\n", GetLastError()).c_str()
                     );
                     return GetLastError();
                 }
@@ -849,7 +849,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Failed to enumerate log directory %ws. Error=%d",
+                L"Error in log file monitor. Failed to enumerate log directory %ws. Error=%d",
                 m_logDirectory.c_str(),
                 GetLastError()
             ).c_str()
@@ -1126,7 +1126,7 @@ LogFileMonitor::LogFileAddEventHandler(
             status = GetLastError();
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"GetFileAttributesW: Failed to get info of file %ws. Error = %d",
+                    L"Error in log file monitor. Failed to query attributes of File: %ws. Error: %d",
                     fullLongPath.c_str(),
                     status
                 ).c_str()
@@ -1159,7 +1159,7 @@ LogFileMonitor::LogFileAddEventHandler(
                 status = GetLastError();
                 logWriter.TraceError(
                     Utility::FormatString(
-                        L"GetFileId: Failed to get info of file %ws. Error = %d",
+                        L"Error in log file monitor. Failed to query file ID. File: %ws. Error: %d",
                         fullLongPath.c_str(),
                         status
                     ).c_str()
@@ -1268,7 +1268,7 @@ LogFileMonitor::LogFileRenameNewEventHandler(
         status = GetLastError();
         logWriter.TraceError(
             Utility::FormatString(
-                L"GetFileAttributesW: Failed to get info of file %ws. Error = %d",
+                L"Error in log file monitor. Failed to query file attributes. File: %ws. Error: %d",
                 fullLongPath.c_str(),
                 status
             ).c_str()
@@ -1449,7 +1449,7 @@ LogFileMonitor::LogFileReInitEventHandler(
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Failed to enumerate log directory %ws. Error=%d",
+                L"Error in log file monitor. Failed to enumerate log directory %ws. Error: %d",
                 m_logDirectory.c_str(),
                 GetLastError()
             ).c_str()
@@ -1503,7 +1503,7 @@ LogFileMonitor::ReadLogFile(
         {
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"ReadLogFile: Failed to open file %ws. Error = %d",
+                    L"Error in log file monitor. Failed to open file %ws. Error: %d",
                     fullLongPath.c_str(),
                     status
                 ).c_str()
@@ -1517,7 +1517,7 @@ LogFileMonitor::ReadLogFile(
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"ReadLogFile: SetFilePointer to open file %ws. Error = %d",
+                L"Error in log file monitor. SetFilePointer failed. File: %ws. Error: %d",
                 fullLongPath.c_str(),
                 GetLastError()
             ).c_str()
@@ -1595,7 +1595,7 @@ LogFileMonitor::ReadLogFile(
                 {
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"ReadLogFile: File read error. File = %ws. Error = %d",
+                            L"Error in log file monitor. File read error. File: %ws. Error: %d",
                             LogFileInfo->FileName.c_str(),
                             GetLastError()
                         ).c_str()
@@ -2041,7 +2041,7 @@ LogFileMonitor::GetFileId(
         status = GetLastError();
         logWriter.TraceError(
             Utility::FormatString(
-                L"CreateFileW: Failed to open file %ws. Error = %d",
+                L"Error in log file monitor. Failed to open file %ws. Error: %d",
                 FullLongPath.c_str(),
                 status
             ).c_str()
@@ -2060,7 +2060,7 @@ LogFileMonitor::GetFileId(
         status = GetLastError();
         logWriter.TraceError(
             Utility::FormatString(
-                L"GetFileInformationByHandleEx: Failed to get info of file %ws. Error = %d",
+                L"Error in log file monitor. Failed to query file information. File: %ws. Error: %d",
                 FullLongPath.c_str(),
                 status
             ).c_str()

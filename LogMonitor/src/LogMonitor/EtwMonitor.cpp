@@ -67,7 +67,7 @@ EtwMonitor::~EtwMonitor()
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceWarning(
-            Utility::FormatString(L"StopTrace returned %ul", status).c_str()
+            Utility::FormatString(L"Failed to stop ETW trace session. Error: %ul", status).c_str()
         );
     }
 
@@ -144,7 +144,7 @@ EtwMonitor::FilterValidProviders(
         if (NULL == ptemp)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Allocation failed (size=%lu).", bufferSize).c_str()
+                Utility::FormatString(L"Failed to allocate memory to enumerate ETW providers. Size=%lu.", bufferSize).c_str()
             );
             status = ERROR_OUTOFMEMORY;
             break;
@@ -159,7 +159,7 @@ EtwMonitor::FilterValidProviders(
     if (ERROR_SUCCESS != status)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"TdhEnumerateProviders failed with %lu.", status).c_str()
+            Utility::FormatString(L"Failed to enumerate providers. Error: %lu.", status).c_str()
         );
     }
     else
@@ -287,7 +287,7 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
     catch (...)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"OFailed to record ETW event.").c_str()
+            Utility::FormatString(L"Failed to record ETW event.").c_str()
         );
     }
 }
@@ -359,7 +359,7 @@ EtwMonitor::StartEtwMonitor()
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"StartTraceSession failed with %lu", status).c_str()
+            Utility::FormatString(L"Failed to start ETW trace session. Error: %lu", status).c_str()
         );
         if (m_startTraceHandle != NULL) 
         {
@@ -385,7 +385,7 @@ EtwMonitor::StartEtwMonitor()
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"OpenTrace failed with %lu", status).c_str()
+            Utility::FormatString(L"Failed to open ETW trace session. Error: %lu", status).c_str()
         );
 
         if (m_startTraceHandle != NULL)
@@ -404,7 +404,7 @@ EtwMonitor::StartEtwMonitor()
     if (status != ERROR_SUCCESS && status != ERROR_CANCELLED)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"ProcessTrace failed with %lu", status).c_str()
+            Utility::FormatString(L"Failed to process ETW traces. Error: %lu", status).c_str()
         );
         CloseTrace(m_startTraceHandle);
     }
@@ -468,7 +468,7 @@ EtwMonitor::StartTraceSession(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"StopTrace failed with %lu", status).c_str()
+                Utility::FormatString(L"Failed to stop ETW trace. Error: %lu", status).c_str()
             );
             return status;
         }
@@ -479,7 +479,7 @@ EtwMonitor::StartTraceSession(
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"StartTrace failed with %lu", status).c_str()
+            Utility::FormatString(L"Failed to start ETW trace. Error: %lu", status).c_str()
         );
         TraceSessionHandle = 0L;
         return status;
@@ -502,31 +502,31 @@ EtwMonitor::StartTraceSession(
 
             if (status != ERROR_SUCCESS)
             {
-				LPWSTR pwsProviderId = NULL;
-				HRESULT hr = StringFromCLSID(provider.ProviderGuid, &pwsProviderId);
+                LPWSTR pwsProviderId = NULL;
+                HRESULT hr = StringFromCLSID(provider.ProviderGuid, &pwsProviderId);
 
-				if (FAILED(hr))
-				{
-					logWriter.TraceError(
-						Utility::FormatString(L"StringFromCLSID failed with 0x%x", hr).c_str()
-					);
-				}
-				else
-				{
-					logWriter.TraceError(
-						Utility::FormatString(L"EnableTraceEx2 failed with %lu for GUID %s", status, pwsProviderId).c_str()
-					);
+                if (FAILED(hr))
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(L"Failed to convert GUID to string. Error: 0x%x", hr).c_str()
+                    );
+                }
+                else
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(L"Failed to enable ETW trace session. Error: %lu, Provider GUID: %s", status, pwsProviderId).c_str()
+                    );
 
-					CoTaskMemFree(pwsProviderId);
-					pwsProviderId = NULL;
-				}
+                    CoTaskMemFree(pwsProviderId);
+                    pwsProviderId = NULL;
+                }
 
-				if (status == ERROR_NO_SYSTEM_RESOURCES)
-				{
-					logWriter.TraceWarning(L"Exceeded the number of trace sessions that the provider can enable.");
+                if (status == ERROR_NO_SYSTEM_RESOURCES)
+                {
+                    logWriter.TraceWarning(L"Exceeded the number of ETW trace sessions that the provider can enable.");
 
-					return status;
-				}
+                    return status;
+                }
             }
         }
     }
@@ -599,7 +599,7 @@ EtwMonitor::OnRecordEvent(
         if (ERROR_SUCCESS != status)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"TdhGetEventInformation failed with %lu", status).c_str()
+                Utility::FormatString(L"Failed to query ETW event information. Error: %lu", status).c_str()
             );
         }
 
@@ -616,7 +616,7 @@ EtwMonitor::OnRecordEvent(
             if (status != ERROR_SUCCESS)
             {
                 logWriter.TraceError(
-                    Utility::FormatString(L"PrintEvent failed with %lu", status).c_str()
+                    Utility::FormatString(L"Failed to print event. Error: %lu", status).c_str()
                 );
             }
         }
@@ -651,7 +651,7 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"FormatMetadata failed with %lu", status).c_str()
+                Utility::FormatString(L"Failed to format ETW event metadata. Error: %lu", status).c_str()
             );
             return status;
         }
@@ -662,7 +662,7 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"FormatData failed with %lu", status).c_str()
+                Utility::FormatString(L"Failed to format ETW event data. Error: %lu", status).c_str()
             );
             return status;
         }
@@ -732,7 +732,7 @@ EtwMonitor::FormatMetadata(
     if (FAILED(hr))
     {
         logWriter.TraceError(
-            Utility::FormatString(L"StringFromCLSID failed with 0x%x\n", hr).c_str()
+            Utility::FormatString(L"Failed to convert ETW provider GUID to string. Error: 0x%x\n", hr).c_str()
         );
         return hr;
     }   
@@ -788,7 +788,7 @@ EtwMonitor::FormatMetadata(
         if (FAILED(hr)) 
         {
             logWriter.TraceError(
-                Utility::FormatString(L"StringFromCLSID failed with 0x%x\n", hr).c_str()
+                Utility::FormatString(L"Failed to convert GUID to string. Error: 0x%x\n", hr).c_str()
             );
             return hr;
         }
@@ -864,7 +864,7 @@ EtwMonitor::FormatData(
             status = _FormatData(EventRecord, EventInfo, i, pUserData, pEndOfUserData, oss);
             if (ERROR_SUCCESS != status)
             {
-                logWriter.TraceError(L"Formating top level properties failed.");
+                logWriter.TraceError(L"Failed to format ETW event user data..");
 
                 return status;
             }
@@ -914,7 +914,7 @@ EtwMonitor::_FormatData(
     if (ERROR_SUCCESS != status)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"GetPropertyLength failed with %ul", status).c_str()
+            Utility::FormatString(L"Failed to query ETW event propery length. Error: %ul", status).c_str()
         );
         UserData = NULL;
 
@@ -943,7 +943,7 @@ EtwMonitor::_FormatData(
                 status = _FormatData(EventRecord, EventInfo, j, UserData, EndOfUserData, Result);
                 if (ERROR_SUCCESS != status || UserData == NULL)
                 {
-                    logWriter.TraceError(L"Printing the members of the structure failed.");
+                    logWriter.TraceError(L"Failed to format ETW event user data.");
                     break;
                 }
             }
@@ -965,7 +965,7 @@ EtwMonitor::_FormatData(
 
                 if (ERROR_SUCCESS != status)
                 {
-                    logWriter.TraceError(Utility::FormatString(L"GetMapInfo failed with %ul", status).c_str());
+                    logWriter.TraceError(Utility::FormatString(L"Failed to query ETW event property of type map. Error: %ul", status).c_str());
 
                     if (pMapInfo)
                     {
@@ -1028,7 +1028,7 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"TdhFormatProperty failed with %ul", status).c_str());
+                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property of type map. Error: %ul", status).c_str());
                 UserData = NULL;
                 break;
             }
@@ -1126,7 +1126,7 @@ EtwMonitor::GetPropertyLength(
             {
                 logWriter.TraceError(
                     Utility::FormatString(
-                        L"Unexpected length of 0 for intype %d and outtype %d",
+                        L"Failed to format ETW event property. Unexpected length of 0 for intype %d and outtype %d",
                         EventInfo->EventPropertyInfoArray[Index].nonStructType.InType,
                         EventInfo->EventPropertyInfoArray[Index].nonStructType.OutType
                     ).c_str()
@@ -1221,7 +1221,7 @@ EtwMonitor::GetMapInfo(
         if (MapInfo == NULL)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to allocate memory for map info (size=%lu).", mapSize).c_str()
+                Utility::FormatString(L"Failed to allocate memory for ETW event map info (size=%lu).", mapSize).c_str()
             );
             status = ERROR_OUTOFMEMORY;
             return status;
@@ -1249,7 +1249,7 @@ EtwMonitor::GetMapInfo(
         else
         {
             logWriter.TraceError(
-                Utility::FormatString(L"TdhGetEventMapInformation failed with %lu.", status).c_str()
+                Utility::FormatString(L"Failed to query ETW event information. Error: %lu.", status).c_str()
             );
         }
     }
