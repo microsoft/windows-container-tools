@@ -26,56 +26,56 @@ LogWriter logWriter;
 
 namespace LogMonitorTests
 {
-	///
-	/// Tests the tools that other tests could use. i.e. redirecting stdout.
-	///
-	TEST_CLASS(LogMonitorTests)
-	{
-		WCHAR bigOutBuf[BUFFER_SIZE];
+    ///
+    /// Tests the tools that other tests could use. i.e. redirecting stdout.
+    ///
+    TEST_CLASS(LogMonitorTests)
+    {
+        WCHAR bigOutBuf[BUFFER_SIZE];
 
-		///
-		/// Gets the content of the Stdout buffer and returns it in a wstring. 
-		///
-		/// \return A wstring with the stdout.
-		///
-		std::wstring RecoverOuput()
-		{
-			return std::wstring(bigOutBuf);
-		}
+        ///
+        /// Gets the content of the Stdout buffer and returns it in a wstring. 
+        ///
+        /// \return A wstring with the stdout.
+        ///
+        std::wstring RecoverOuput()
+        {
+            return std::wstring(bigOutBuf);
+        }
 
-	public:
+    public:
 
-		///
-		/// "Redirects" the stdout to our buffer. 
-		///
-		TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
-		{
-			//
-			// Set our own buffer in stdout.
-			//
-			ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-			fflush(stdout);
-			_setmode(_fileno(stdout), _O_U16TEXT);
-			setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
-		}
-		
-		///
-		/// Test that things being printed with logWriter are sent to
-		/// bigOutBuf buffer. 
-		///
-		TEST_METHOD(TestRedirectedOutputForTests)
-		{
-			std::wstring expectedOutput(BUFFER_SIZE - 4, L'#');
+        ///
+        /// "Redirects" the stdout to our buffer. 
+        ///
+        TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
+        {
+            //
+            // Set our own buffer in stdout.
+            //
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+            _setmode(_fileno(stdout), _O_U16TEXT);
+            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
+        }
+        
+        ///
+        /// Test that things being printed with logWriter are sent to
+        /// bigOutBuf buffer. 
+        ///
+        TEST_METHOD(TestRedirectedOutputForTests)
+        {
+            std::wstring expectedOutput(BUFFER_SIZE - 4, L'#');
 
-			logWriter.WriteConsoleLog(expectedOutput);
-			expectedOutput += L"\n";
+            logWriter.WriteConsoleLog(expectedOutput);
+            expectedOutput += L"\n";
 
-			//
-			// Recover the stdout
-			//
-			std::wstring realOutput = RecoverOuput();
+            //
+            // Recover the stdout
+            //
+            std::wstring realOutput = RecoverOuput();
 
-			Assert::AreEqual(expectedOutput, realOutput);
-		}
-	};
+            Assert::AreEqual(expectedOutput, realOutput);
+        }
+    };
 }
