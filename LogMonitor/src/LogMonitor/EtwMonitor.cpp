@@ -170,7 +170,7 @@ EtwMonitor::FilterValidProviders(
         //
         for (DWORD i = 0; i < penum->NumberOfProviders; i++)
         {
-            wstring providerName((LPWSTR)((PBYTE)(penum)+penum->TraceProviderInfoArray[i].ProviderNameOffset));
+            wstring providerName((LPWSTR)((PBYTE)(penum) + penum->TraceProviderInfoArray[i].ProviderNameOffset));
             transform(
                 providerName.begin(), providerName.end(),
                 providerName.begin(),
@@ -761,6 +761,23 @@ EtwMonitor::FormatMetadata(
         << EventRecord->EventHeader.ThreadId << "\" />";
 
     //
+    // Print Level and Keyword
+    //
+    const static std::vector<std::wstring> c_LevelToString =
+    {
+        L"None",
+        L"Critical",
+        L"Error",
+        L"Warning",
+        L"Information",
+        L"Verbose",
+    };
+
+    oss << L"<Level>" << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level] << L"</Level>";
+    oss << L"<Keyword>" << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword) << L"</Keyword>";
+
+
+    //
     // Format specific metadata by type
     //
     if (DecodingSourceWbem == EventInfo->DecodingSource)  // MOF class
@@ -768,7 +785,7 @@ EtwMonitor::FormatMetadata(
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
 
-        if (FAILED(hr))
+        if (FAILED(hr)) 
         {
             logWriter.TraceError(
                 Utility::FormatString(L"StringFromCLSID failed with 0x%x\n", hr).c_str()
@@ -889,7 +906,6 @@ EtwMonitor::_FormatData(
     DWORD lastMember = 0;  // Last member of a structure
     USHORT propertyLength = 0;
     USHORT arraySize = 0;
-    PEVENT_MAP_INFO pMapInfo = NULL;
     DWORD formattedDataSize = 0;
     std::vector<BYTE> formattedData;
     USHORT userDataConsumed = 0;
@@ -912,7 +928,7 @@ EtwMonitor::_FormatData(
 
     for (USHORT k = 0; k < arraySize; k++)
     {
-        Result << "<" << (LPWSTR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
+        Result << "<" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
 
         //
         // If the property is a structure, print the members of the structure.
@@ -934,19 +950,29 @@ EtwMonitor::_FormatData(
         }
         else if (propertyLength > 0)
         {
+            PEVENT_MAP_INFO pMapInfo = NULL;
+
             //
             // If the property could be a map, try to get its info.
             //
-            if (TDH_INTYPE_UINT32 == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType)
+            if (TDH_INTYPE_UINT32 == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType
+                && EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset != 0)
             {
                 status = GetMapInfo(EventRecord,
-                    (PWCHAR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
+                    (PWCHAR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
                     EventInfo->DecodingSource,
                     pMapInfo);
 
                 if (ERROR_SUCCESS != status)
                 {
                     logWriter.TraceError(Utility::FormatString(L"GetMapInfo failed with %ul", status).c_str());
+
+                    if (pMapInfo)
+                    {
+                        free(pMapInfo);
+                        pMapInfo = NULL;
+                    }
+
                     break;
                 }
             }
@@ -988,6 +1014,12 @@ EtwMonitor::_FormatData(
                     &userDataConsumed);
             }
 
+            if (pMapInfo)
+            {
+                free(pMapInfo);
+                pMapInfo = NULL;
+            }
+
             if (ERROR_SUCCESS == status)
             {
                 Result << (PWCHAR)formattedData.data();
@@ -1000,29 +1032,17 @@ EtwMonitor::_FormatData(
                 UserData = NULL;
                 break;
             }
-
-            if (pMapInfo)
-            {
-                free(pMapInfo);
-                pMapInfo = NULL;
-            }
         }
 
         try
         {
-            Result << "</" << (LPWSTR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
+            Result << "</" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
         }
         catch (...)
         {
             status = ERROR_EVT_INVALID_EVENT_DATA;
             break;
         }
-    }
-
-    if (pMapInfo)
-    {
-        free(pMapInfo);
-        pMapInfo = NULL;
     }
 
     return status;
@@ -1071,7 +1091,7 @@ EtwMonitor::GetPropertyLength(
         DWORD length = 0;  // Expects the length to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].lengthPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)&length);
@@ -1148,7 +1168,7 @@ EtwMonitor::GetArraySize(
         DWORD count = 0;  // Expects the count to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].countPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         if (status != ERROR_SUCCESS)

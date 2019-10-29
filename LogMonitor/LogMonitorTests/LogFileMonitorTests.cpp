@@ -86,7 +86,7 @@ namespace LogMonitorTests
         DWORD WriteToFile(
             const std::wstring& FileName, 
             _In_reads_bytes_opt_(BufferSize) LPCVOID Buffer,
-            _In_ DWORD BufferSize
+            _In_ size_t BufferSize
         )
         {
             //
@@ -116,7 +116,7 @@ namespace LogMonitorTests
             bool success = WriteFile(
                 hFile,
                 Buffer,
-                BufferSize,
+                (DWORD)BufferSize,
                 &bytesWritten,
                 nullptr);
 
@@ -534,10 +534,10 @@ namespace LogMonitorTests
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
                 std::wstring contentWide;
-                int size_needed = MultiByteToWideChar(CP_UTF8, 0, content.c_str(), content.length(), NULL, 0);
+                int size_needed = MultiByteToWideChar(CP_UTF8, 0, content.c_str(), (int)content.length(), NULL, 0);
                 contentWide.resize(size_needed);
 
-                MultiByteToWideChar(CP_UTF8, 0, (LPCCH)content.c_str(), content.length(), (LPWSTR)(contentWide.c_str()), size_needed);
+                MultiByteToWideChar(CP_UTF8, 0, (LPCCH)content.c_str(), (int)content.length(), (LPWSTR)(contentWide.c_str()), size_needed);
 
                 Assert::AreEqual((contentWide + L"\n").c_str(), output.c_str());
             }
