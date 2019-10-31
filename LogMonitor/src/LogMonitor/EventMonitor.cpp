@@ -341,15 +341,18 @@ EventMonitor::EnumerateResults(
         //
         for (DWORD i = 0; i < dwReturned; i++)
         {
-            if (ERROR_SUCCESS == (status = PrintEvent(hEvents[i])))
+            status = PrintEvent(hEvents[i]);
+
+            if (ERROR_SUCCESS != status)
             {
-                EvtClose(hEvents[i]);
-                hEvents[i] = NULL;
+                logWriter.TraceWarning(
+                    Utility::FormatString(L"Failed to render event log event. The event will not be processed. Error: %lu.", status).c_str()
+                );
+                status = ERROR_SUCCESS;
             }
-            else
-            {
-                goto cleanup;
-            }
+
+            EvtClose(hEvents[i]);
+            hEvents[i] = NULL;
         }
     }
 
@@ -456,7 +459,7 @@ EventMonitor::PrintEvent(
         }
 
         if (status == ERROR_SUCCESS)
-        {    
+        {
             //
             // Extract the variant values for each queried property. If the variant failed to get a valid type
             // set a default value.
@@ -490,10 +493,13 @@ EventMonitor::PrintEvent(
                         status = ERROR_SUCCESS;
                     }
 
-                    userMessage.resize(bufferSize);
+                    if (m_eventMessageBuffer.capacity() < bufferSize)
+                    {
+                        m_eventMessageBuffer.resize(bufferSize);
+                    }
 
                     if (!EvtFormatMessage(
-                        publisher, EventHandle, 0, 0, nullptr, EvtFormatMessageEvent, bufferSize, &userMessage[0], &bufferSize))
+                        publisher, EventHandle, 0, 0, nullptr, EvtFormatMessageEvent, bufferSize, &m_eventMessageBuffer[0], &bufferSize))
                     {
                         status = GetLastError();
                     }
@@ -512,7 +518,7 @@ EventMonitor::PrintEvent(
                                                         channelName.c_str(),
                                                         c_LevelToString[static_cast<UINT8>(level)].c_str(),
                                                         eventId,
-                                                        userMessage.c_str());
+                                                        (LPWSTR)(&m_eventMessageBuffer[0]));
 
                 //
                 // If the multi-line option is disabled, remove all new lines from the output.
@@ -536,7 +542,7 @@ EventMonitor::PrintEvent(
     }
     catch(...)
     {
-        logWriter.TraceWarning(L"Failed to render event log event");
+        logWriter.TraceWarning(L"Failed to render event log event. The event will not be processed.");
     }
 
     if (publisher)

@@ -51,14 +51,15 @@ void ControlHandle(_In_ DWORD dwCtrlType)
 void PrintUsage()
 {
     wprintf(L"\n\tLogMonitor Tool Version %d.%d.%d.%d \n\n", LM_MAJORNUMBER, LM_MINORNUMBER, LM_BUILDNUMBER, LM_BUILDMINORVERSION);
-    wprintf(L"\tUsage: LogMonitor.exe [/CONFIG PATH][COMMAND] [PARAMETERS] \n\n");
-    wprintf(L"\tPATH        specifies the path of the Json configuration file. This is\n");
+    wprintf(L"\tUsage: LogMonitor.exe [/?] | [--help] | [[/CONFIG <PATH>][COMMAND [PARAMETERS]]] \n\n");
+    wprintf(L"\t/?|--help   Shows help information\n");
+    wprintf(L"\t<PATH>      Specifies the path of the Json configuration file. This is\n");
     wprintf(L"\t            an optional parameter. If not specified, then default Json\n");
-    wprintf(L"\t            path %ws is used\n", DEFAULT_CONFIG_FILENAME);
-    wprintf(L"\tCOMMAND     specifies the name of the executable to run \n");
-    wprintf(L"\tPARAMETERS  specifies the parameters to be passed to the COMMAND \n\n");
+    wprintf(L"\t            configuration file path %ws is used\n", DEFAULT_CONFIG_FILENAME);
+    wprintf(L"\tCOMMAND     Specifies the name of the executable to be run \n");
+    wprintf(L"\tPARAMETERS  Specifies the parameters to be passed to the COMMAND \n\n");
     wprintf(L"\tThis tool monitors Event log, ETW providers and log files and write the log entries\n");
-    wprintf(L"\tto the console. The configuration of what to monitor is specified in a Json\n");
+    wprintf(L"\tto the console. The configuration of input log sources is specified in a Json file.\n");
     wprintf(L"\tfile.\n\n");
 }
 

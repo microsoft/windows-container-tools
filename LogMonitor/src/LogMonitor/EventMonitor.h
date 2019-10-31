@@ -38,6 +38,8 @@ private:
     //    
     HANDLE m_eventMonitorThread;
 
+    std::vector<wchar_t> m_eventMessageBuffer;
+
     DWORD StartEventMonitor();
 
     static DWORD StartEventMonitorStatic(
