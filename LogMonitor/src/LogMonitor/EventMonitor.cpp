@@ -554,8 +554,8 @@ EventMonitor::PrintEvent(
     {
         EvtClose(renderContext);
     }
-    return status;
 
+    return status;
 }
 
 
@@ -582,7 +582,7 @@ EventMonitor::EnableEventLogChannels()
 void
 EventMonitor::EnableEventLogChannel(
     _In_ LPCWSTR ChannelPath
-)
+    )
 {
     DWORD       status = ERROR_SUCCESS;
     EVT_HANDLE  channelConfig = NULL;

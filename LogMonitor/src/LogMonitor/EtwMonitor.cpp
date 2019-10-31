@@ -137,7 +137,6 @@ EtwMonitor::FilterValidProviders(
     // size and the time you enumerated the providers, so call TdhEnumerateProviders
     // in a loop until the function does not return ERROR_INSUFFICIENT_BUFFER.
     //
-
     while (ERROR_INSUFFICIENT_BUFFER == status)
     {
         PROVIDER_ENUMERATION_INFO* ptemp = (PROVIDER_ENUMERATION_INFO*)realloc(penum, bufferSize);
@@ -484,11 +483,13 @@ EtwMonitor::StartTraceSession(
         TraceSessionHandle = 0L;
         return status;
     }
-    else {
+    else
+    {
         //
         // Iterate through the providers to enable them
         //
-        for (auto provider : m_providersConfig) {
+        for (auto provider : m_providersConfig)
+        {
             status = EnableTraceEx(
                 &provider.ProviderGuid,
                 NULL,
@@ -607,8 +608,8 @@ EtwMonitor::OnRecordEvent(
         //
         // Process all the event types, but WPP kind.
         //
-        if (status == ERROR_SUCCESS
-            && (pInfo->DecodingSource == DecodingSourceXMLFile ||
+        if (status == ERROR_SUCCESS && 
+               (pInfo->DecodingSource == DecodingSourceXMLFile ||
                 pInfo->DecodingSource == DecodingSourceWbem ||
                 pInfo->DecodingSource == DecodingSourceTlg))
         {
@@ -754,7 +755,8 @@ EtwMonitor::FormatMetadata(
     };
 
     oss << L"<DecodingSource>"
-        << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str() << L"</DecodingSource>";
+        << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
+        << L"</DecodingSource>";
 
     oss << L"<Execution ProcessID=\""
         << EventRecord->EventHeader.ProcessId << "\" ThreadID=\""
@@ -773,8 +775,13 @@ EtwMonitor::FormatMetadata(
         L"Verbose",
     };
 
-    oss << L"<Level>" << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level] << L"</Level>";
-    oss << L"<Keyword>" << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword) << L"</Keyword>";
+    oss << L"<Level>" 
+        << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level] 
+        << L"</Level>";
+
+    oss << L"<Keyword>" 
+        << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
+        << L"</Keyword>";
 
 
     //
@@ -873,7 +880,6 @@ EtwMonitor::FormatData(
     oss << L"</EventData>";
 
     Result = oss.str();
-    
 
     return ERROR_SUCCESS;
 }
@@ -948,15 +954,15 @@ EtwMonitor::_FormatData(
                 }
             }
         }
-        else if (propertyLength > 0)
+        else
         {
             PEVENT_MAP_INFO pMapInfo = NULL;
 
             //
             // If the property could be a map, try to get its info.
             //
-            if (TDH_INTYPE_UINT32 == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType
-                && EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset != 0)
+            if (TDH_INTYPE_UINT32 == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType &&
+                EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset != 0)
             {
                 status = GetMapInfo(EventRecord,
                     (PWCHAR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
@@ -1028,7 +1034,7 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property of type map. Error: %ul", status).c_str());
+                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %ul", status).c_str());
                 UserData = NULL;
                 break;
             }

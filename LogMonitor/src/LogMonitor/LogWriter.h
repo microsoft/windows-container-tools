@@ -41,11 +41,11 @@ private:
 public :
 
     bool WriteLog(
-      _In_ HANDLE       FileHandle,
-      _In_ LPCVOID      Buffer,
-      _In_ DWORD        NumberOfBytesToWrite,
-      _In_ LPDWORD      NumberOfBytesWritten,
-      _In_ LPOVERLAPPED Overlapped
+        _In_ HANDLE       FileHandle,
+        _In_ LPCVOID      Buffer,
+        _In_ DWORD        NumberOfBytesToWrite,
+        _In_ LPDWORD      NumberOfBytesWritten,
+        _In_ LPOVERLAPPED Overlapped
     )
     {
         bool result;
