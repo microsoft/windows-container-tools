@@ -478,7 +478,6 @@ EventMonitor::PrintEvent(
             //
             // Collect user message
             //
-            std::wstring userMessage;
             publisher = EvtOpenPublisherMetadata(nullptr, providerName.c_str(), nullptr, 0, 0);
 
             if (publisher)
