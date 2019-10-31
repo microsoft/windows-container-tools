@@ -72,7 +72,7 @@ bool
 ReadLogConfigObject(
     _In_ JsonFileParser& Parser,
     _Out_ LoggerSettings& Config
-)
+    )
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
@@ -155,7 +155,7 @@ bool
 ReadSourceAttributes(
     _In_ JsonFileParser& Parser,
     _Out_ AttributesMap& Attributes
-)
+    )
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
@@ -251,9 +251,8 @@ ReadSourceAttributes(
             // * directory
             // * filter
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0
-                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0
-                )
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0 ||
+                     _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
             }
@@ -263,15 +262,11 @@ ReadSourceAttributes(
             // * startAtOldestRecord
             // * includeSubdirectories
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_FORMAT_MULTILINE, _countof(JSON_TAG_FORMAT_MULTILINE)) == 0
-                || _wcsnicmp(key.c_str(), JSON_TAG_START_AT_OLDEST_RECORD, _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0
-                || _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0
-                )
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_FORMAT_MULTILINE, _countof(JSON_TAG_FORMAT_MULTILINE)) == 0 ||
+                     _wcsnicmp(key.c_str(), JSON_TAG_START_AT_OLDEST_RECORD, _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0 ||
+                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0)
             {
-                bool* v = new bool;
-                *v = Parser.ParseBooleanValue();
-
-                Attributes[key] = v;
+                Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }
             else if (_wcsnicmp(key.c_str(), JSON_TAG_PROVIDERS, _countof(JSON_TAG_PROVIDERS)) == 0)
             {
@@ -327,7 +322,7 @@ bool
 ReadLogChannel(
     _In_ JsonFileParser& Parser,
     _Out_ EventLogChannel& Result
-)
+    )
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
@@ -359,12 +354,12 @@ ReadLogChannel(
             // Get the level as a string, and convert it to EventChannelLogLevel.
             //
             std::wstring logLevelStr = Parser.ParseStringValue();
-            bool ok = Result.SetLevelByString(logLevelStr);
+            bool success = Result.SetLevelByString(logLevelStr);
 
             //
             // Print an error message the string doesn't matches with a valid log level name.
             //
-            if (!ok)
+            if (!success)
             {
                 logWriter.TraceWarning(
                     Utility::FormatString(
@@ -398,7 +393,7 @@ bool
 ReadETWProvider(
     _In_ JsonFileParser& Parser,
     _Out_ ETWProvider& Result
-)
+    )
 {
     if (Parser.GetNextDataType() != JsonFileParser::DataType::Object)
     {
@@ -439,12 +434,12 @@ ReadETWProvider(
             // Get the level as a string, and convert it to EventChannelLogLevel.
             //
             std::wstring logLevelStr = Parser.ParseStringValue();
-            bool ok = Result.StringToLevel(logLevelStr);
+            bool success = Result.StringToLevel(logLevelStr);
 
             //
             // Print an error message the string doesn't matches with a valid log level name.
             //
-            if (!ok)
+            if (!success)
             {
                 logWriter.TraceWarning(
                     Utility::FormatString(
@@ -488,7 +483,7 @@ AddNewSource(
     _In_ JsonFileParser& Parser,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource> >& Sources
-)
+    )
 {
     //
     // Check the source has a type.
