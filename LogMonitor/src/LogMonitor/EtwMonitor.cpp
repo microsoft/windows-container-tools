@@ -1034,7 +1034,7 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property of type map. Error: %ul", status).c_str());
+                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %ul", status).c_str());
                 UserData = NULL;
                 break;
             }
