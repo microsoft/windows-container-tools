@@ -543,7 +543,7 @@ JsonFileParser::SkipValue()
 int
 JsonFileParser::PeekNextCharacter(
     size_t Offset
-)
+    )
 {
     if (m_currentPos + Offset < m_bufferLength)
     {
@@ -565,7 +565,7 @@ JsonFileParser::PeekNextCharacter(
 void
 JsonFileParser::AdvanceBufferPointer(
     size_t Offset
-)
+    )
 {
     m_currentPos = min(m_currentPos + Offset, m_bufferLength);
 

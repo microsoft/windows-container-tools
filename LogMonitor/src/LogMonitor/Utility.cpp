@@ -26,7 +26,7 @@ using namespace std;
 std::wstring
 Utility::SystemTimeToString(
     SYSTEMTIME SystemTime
-)
+    )
 {
     constexpr size_t STR_LEN = 64;
     wchar_t dateStr[STR_LEN] = { 0 };
@@ -51,7 +51,7 @@ Utility::SystemTimeToString(
 std::wstring
 Utility::FileTimeToString(
     FILETIME FileTime
-)
+    )
 {
     SYSTEMTIME systemTime;
     FileTimeToSystemTime(&FileTime, &systemTime);
@@ -71,7 +71,7 @@ std::wstring
 Utility::FormatString(
     _In_ _Printf_format_string_ LPCWSTR FormatString,
     ...
-)
+    )
 {
     std::wstring result = L"";
     va_list vaList;
@@ -111,7 +111,7 @@ bool
 Utility::IsTextUTF8(
     LPCSTR InputStream,
     int Length
-)
+    )
 {
     int nChars = MultiByteToWideChar(CP_UTF8,
                                       MB_ERR_INVALID_CHARS,
@@ -135,7 +135,7 @@ bool
 Utility::IsInputTextUnicode(
     LPCSTR InputStream,
     int Length
-)
+    )
 {
     int  iResult = ~0; // turn on IS_TEXT_UNICODE_DBCS_LEADBYTE
     bool bUnicode;
@@ -168,7 +168,7 @@ Utility::IsInputTextUnicode(
 std::wstring
 Utility::GetShortPath(
     _In_ const std::wstring& Path
-)
+    )
 {
     DWORD bufSz = 1024;
     std::vector<wchar_t> buf(bufSz);

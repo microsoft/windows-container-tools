@@ -193,7 +193,6 @@ LogFileMonitor::~LogFileMonitor()
     {
         CloseHandle(m_logDirHandle);
     }
-
 }
 
 
@@ -1350,7 +1349,7 @@ LogFileMonitor::RenameFileInMaps(
     _In_ const std::wstring& NewFullName,
     _In_ const std::wstring& OldName,
     _In_ const FILE_ID_INFO& FileId
-)
+    )
 {
     const std::wstring longPath = NewFullName.substr(m_logDirectory.size() + 1);
     const std::wstring shortPath = Utility::GetShortPath(NewFullName).substr(m_shortLogDirectory.size() + 1);
@@ -1750,7 +1749,8 @@ LogFileMonitor::GetFilesInDirectory(
     _In_ const std::wstring& FolderPath,
     _In_ const std::wstring& SearchPattern,
     _Out_ std::vector<std::pair<std::wstring, FILE_ID_INFO>>& Files,
-    _In_ bool ShouldLookInSubfolders)
+    _In_ bool ShouldLookInSubfolders
+    )
 {
     WIN32_FIND_DATA ffd;
     DWORD status = ERROR_SUCCESS;
@@ -1829,7 +1829,7 @@ LogFileMonitor::FileTypeFromBuffer(
     _In_reads_bytes_(BomSize) LPBYTE Bom,
     _In_ UINT BomSize,
     _Out_ UINT& FoundBomSize
-)
+    )
 {
     LM_FILETYPE lmFileType = LM_FILETYPE::FileTypeUnknown;
     FoundBomSize = 0;
@@ -1906,7 +1906,7 @@ LogFileMonitor::ConvertStringToUTF16(
     _In_reads_bytes_(StringSize) LPBYTE StringPtr,
     _In_ UINT StringSize,
     _In_ LM_FILETYPE EncodingType
-)
+    )
 {
     std::wstring Result;
     if (StringSize == 0)
@@ -1969,7 +1969,7 @@ LogFileMonitor::LogFileInfoMap::iterator
 LogFileMonitor::GetLogFilesInformationIt(
     _In_ const std::wstring& Key,
     _Out_opt_ bool* IsShortPath
-)
+    )
 {
     auto element = m_logFilesInformation.find(Key);
 
@@ -2012,7 +2012,7 @@ LogFileMonitor::GetFileId(
     _In_ const std::wstring& FullLongPath,
     _Out_ FILE_ID_INFO& FileId,
     _In_opt_ HANDLE Handle
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
 
