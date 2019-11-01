@@ -24,15 +24,16 @@
       },
       {
         "type": "ETW",
+        "eventFormatMultiLine": false,
         "providers": [
           {
             "providerName": "IIS: WWW Server",
-            "ProviderGuid": "3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83",
+            "providerGuid": "3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83",
             "level": "Information"
           },
           {
             "providerName": "Microsoft-Windows-IIS-Logging",
-            "ProviderGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
+            "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
             "level": "Information"
           }
         ]
