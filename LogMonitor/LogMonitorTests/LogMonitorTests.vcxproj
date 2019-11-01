@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EventMonitorTests.cpp" />
     <ClCompile Include="LogFileMonitorTests.cpp" />
     <ClCompile Include="LogMonitorTests.cpp" />
     <ClCompile Include="pch.cpp">

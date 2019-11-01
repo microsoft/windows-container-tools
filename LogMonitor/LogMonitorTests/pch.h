@@ -28,6 +28,7 @@
 #include <vector>
 #include <queue>
 #include <map>
+#include <regex>
 #include <stdexcept>
 #include <Windows.h>
 #include <cctype>

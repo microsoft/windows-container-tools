@@ -27,7 +27,7 @@ namespace LogMonitorTests
         const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_LONG = 750;
         const DWORD WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT = 500;
 
-        const int READ_OUTPUT_RETRIES = 6;
+        const int READ_OUTPUT_RETRIES = 8;
 
         ///
         /// Add the path of the created directories, to be removed during
