@@ -67,7 +67,7 @@ EtwMonitor::~EtwMonitor()
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceWarning(
-            Utility::FormatString(L"Failed to stop ETW trace session. Error: %ul", status).c_str()
+            Utility::FormatString(L"Failed to stop ETW trace session. Error: %lu", status).c_str()
         );
     }
 
@@ -954,7 +954,7 @@ EtwMonitor::_FormatData(
                 }
             }
         }
-        else
+        else if(propertyLength > 0 || (EndOfUserData - UserData) > 0)
         {
             PEVENT_MAP_INFO pMapInfo = NULL;
 
@@ -971,7 +971,7 @@ EtwMonitor::_FormatData(
 
                 if (ERROR_SUCCESS != status)
                 {
-                    logWriter.TraceError(Utility::FormatString(L"Failed to query ETW event property of type map. Error: %ul", status).c_str());
+                    logWriter.TraceError(Utility::FormatString(L"Failed to query ETW event property of type map. Error: %lu", status).c_str());
 
                     if (pMapInfo)
                     {
@@ -1034,7 +1034,7 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %ul", status).c_str());
+                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %lu", status).c_str());
                 UserData = NULL;
                 break;
             }
