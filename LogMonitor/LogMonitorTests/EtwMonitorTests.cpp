@@ -22,7 +22,7 @@ namespace LogMonitorTests
         /// The waiting time for monitor operations
         ///
         const DWORD WAIT_TIME_ETWMONITOR_START = 3000;
-        const DWORD WAIT_TIME_ETWMONITOR_EXIT = 500;
+        const DWORD WAIT_TIME_ETWMONITOR_EXIT = 5000;
 
         const int READ_OUTPUT_RETRIES = 4;
 
