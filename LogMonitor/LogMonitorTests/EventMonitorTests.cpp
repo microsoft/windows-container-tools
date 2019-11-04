@@ -24,7 +24,6 @@ namespace LogMonitorTests
         const DWORD WAIT_TIME_EVENTMONITOR_START = 100;
         const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT = 50;
         const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG = 150;
-        const DWORD WAIT_TIME_EVENTMONITOR_EXIT = 0;
 
         const int READ_OUTPUT_RETRIES = 8;
 
@@ -95,11 +94,6 @@ namespace LogMonitorTests
             fflush(stdout);
             _setmode(_fileno(stdout), _O_U16TEXT);
             setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
-        }
-
-        TEST_METHOD_CLEANUP(CleanupEventMonitorTests)
-        {
-            Sleep(WAIT_TIME_EVENTMONITOR_EXIT);
         }
 
         ///

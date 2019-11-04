@@ -31,7 +31,7 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 //
 // Signaled by destructor to request the spawned thread to stop.
 //
-bool m_stopFlag;
+bool g_stopFlag;
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
@@ -42,7 +42,7 @@ EtwMonitor::EtwMonitor(
     //
     // This is set in true to stop receiving more events.
     //
-    m_stopFlag = false;
+    g_stopFlag = false;
     m_ETWMonitorThread = NULL;
 
     FilterValidProviders(Providers, m_providersConfig);
@@ -61,7 +61,7 @@ EtwMonitor::EtwMonitor(
 
 EtwMonitor::~EtwMonitor()
 {
-    m_stopFlag = true;
+    g_stopFlag = true;
     CloseTrace(m_startTraceHandle);
 
     const std::wstring mySessionName = g_sessionName;
@@ -273,7 +273,7 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
     EtwMonitor* etwMon = static_cast<EtwMonitor*>(EventRecord->UserContext);
     try
     {
-        if (etwMon != NULL && !m_stopFlag)
+        if (etwMon != NULL && !g_stopFlag)
         {
             DWORD status = etwMon->OnRecordEvent(EventRecord);
             if (status != ERROR_SUCCESS)
@@ -329,14 +329,14 @@ EtwMonitor::StaticBufferEventCallback(
 }
 
 ///
-/// Returns false if the m_stopFlag is set true.
+/// Returns false if the g_stopFlag is set true.
 ///
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
     )
 {
-    if (m_stopFlag)
+    if (g_stopFlag)
     {
         return FALSE;	// stop sending events
     }
