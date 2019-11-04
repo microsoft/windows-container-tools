@@ -35,12 +35,6 @@ private:
     std::vector<BYTE>    m_vecEventTracePropsBuffer;
     std::vector<BYTE>    m_vecStopTracePropsBuffer;
 
-    //
-    // Signaled by destructor to request the spawned thread to stop.
-    //
-    bool m_stopFlag;
-
-
     static DWORD FilterValidProviders(
         _In_ const std::vector<ETWProvider>& Providers,
         _Out_ std::vector<ETWProvider>& ValidProviders

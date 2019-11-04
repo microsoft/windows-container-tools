@@ -22,7 +22,6 @@ namespace LogMonitorTests
         /// The waiting time for monitor operations
         ///
         const DWORD WAIT_TIME_ETWMONITOR_START = 3000;
-        const DWORD WAIT_TIME_ETWMONITOR_EXIT = 5000;
 
         const int READ_OUTPUT_RETRIES = 4;
 
@@ -53,11 +52,6 @@ namespace LogMonitorTests
             fflush(stdout);
             _setmode(_fileno(stdout), _O_U16TEXT);
             setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
-        }
-
-        TEST_METHOD_CLEANUP(CleanupEtwtMonitorTests)
-        {
-            Sleep(WAIT_TIME_ETWMONITOR_EXIT);
         }
 
         ///

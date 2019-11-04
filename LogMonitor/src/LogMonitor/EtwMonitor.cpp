@@ -28,6 +28,10 @@ using namespace std;
 //
 static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
+//
+// Signaled by destructor to request the spawned thread to stop.
+//
+bool m_stopFlag;
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
@@ -269,12 +273,15 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
     EtwMonitor* etwMon = static_cast<EtwMonitor*>(EventRecord->UserContext);
     try
     {
-        DWORD status = etwMon->OnRecordEvent(EventRecord);
-        if (status != ERROR_SUCCESS)
+        if (etwMon != NULL && !m_stopFlag)
         {
-            logWriter.TraceError(
-                Utility::FormatString(L"Failed to record ETW event. Error: %lu", status).c_str()
-            );
+            DWORD status = etwMon->OnRecordEvent(EventRecord);
+            if (status != ERROR_SUCCESS)
+            {
+                logWriter.TraceError(
+                    Utility::FormatString(L"Failed to record ETW event. Error: %lu", status).c_str()
+                );
+            }
         }
     }
     catch (std::exception& ex)
