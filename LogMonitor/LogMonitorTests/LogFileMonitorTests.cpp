@@ -141,7 +141,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
             fflush(stdout);
             _setmode(_fileno(stdout), _O_U16TEXT);
-            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
+            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
         }
 
         TEST_METHOD_CLEANUP(CleanupLogFileMonitorTests)

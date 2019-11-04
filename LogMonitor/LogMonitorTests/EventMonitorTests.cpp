@@ -13,7 +13,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 namespace LogMonitorTests
 {
     ///
-    /// Tests the Event Monitor. This class writes events and tests that the 
+    /// Tests of Event Monitor. This class writes events and tests that the 
     /// Monitor prints them to stdout.
     ///
     TEST_CLASS(EventMonitorTests)
@@ -24,6 +24,7 @@ namespace LogMonitorTests
         const DWORD WAIT_TIME_EVENTMONITOR_START = 100;
         const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT = 50;
         const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG = 150;
+        const DWORD WAIT_TIME_EVENTMONITOR_EXIT = 500;
 
         const int READ_OUTPUT_RETRIES = 8;
 
@@ -93,7 +94,12 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
             fflush(stdout);
             _setmode(_fileno(stdout), _O_U16TEXT);
-            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf));
+            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
+        }
+
+        TEST_METHOD_CLEANUP(CleanupEventMonitorTests)
+        {
+            Sleep(WAIT_TIME_EVENTMONITOR_EXIT);
         }
 
         ///
@@ -121,13 +127,17 @@ namespace LogMonitorTests
 
                 std::wstring output;
                 int count = 0;
+                
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
                 do
                 {
                     Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
+                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                Assert::IsTrue(std::regex_search(output, rgxMessage),
+                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -164,7 +174,10 @@ namespace LogMonitorTests
                 //
                 // Monitor should have ignored this event.
                 //
-                Assert::AreEqual(L"", output.c_str());
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
+                Assert::IsFalse(std::regex_search(output, rgxMessage),
+                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
             }
 
             //
@@ -188,7 +201,10 @@ namespace LogMonitorTests
                 //
                 // Monitor should have ignored this event.
                 //
-                Assert::AreEqual(L"", output.c_str());
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
+                Assert::IsFalse(std::regex_search(output, rgxMessage),
+                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
             }
         }
 
@@ -217,13 +233,14 @@ namespace LogMonitorTests
 
                 std::wstring output;
                 int count = 0;
+                
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
                 do
                 {
                     Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
-
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -254,13 +271,18 @@ namespace LogMonitorTests
 
                 std::wstring output;
                 int count = 0;
+                
+                //
+                // Test that the created event is printed. We could receive other events,
+                // so is better to loop until our message has arrived, using a regex.
+                //
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
                 do
                 {
                     Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
-
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -291,13 +313,18 @@ namespace LogMonitorTests
 
                 std::wstring output;
                 int count = 0;
+
+                //
+                // Test that the created event is printed. We could receive other events,
+                // so is better to loop until our message has arrived, using a regex.
+                //
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+
                 do
                 {
                     Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
-
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -320,7 +347,7 @@ namespace LogMonitorTests
         //
         TEST_METHOD(TestStartAtOldestRecord)
         {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
+            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
 
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
             fflush(stdout);
@@ -331,7 +358,7 @@ namespace LogMonitorTests
             //
             std::wstring message = L"Hello world Info!";
             int eventId = 102;
-            EventChannelLogLevel level = EventChannelLogLevel::Information;
+            EventChannelLogLevel level = EventChannelLogLevel::Error;
 
             Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
@@ -422,13 +449,18 @@ namespace LogMonitorTests
 
                 std::wstring output;
                 int count = 0;
+
+                //
+                // Test that the created event is printed. We could receive other events,
+                // so is better to loop until our message has arrived, using a regex.
+                //
+                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", messageWithoutNewline.c_str()));
+
                 do
                 {
                     Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
-
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", messageWithoutNewline.c_str()));
+                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());

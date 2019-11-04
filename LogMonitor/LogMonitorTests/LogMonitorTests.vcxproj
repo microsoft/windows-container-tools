@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EtwMonitorTests.cpp" />
     <ClCompile Include="EventMonitorTests.cpp" />
     <ClCompile Include="LogFileMonitorTests.cpp" />
     <ClCompile Include="LogMonitorTests.cpp" />
