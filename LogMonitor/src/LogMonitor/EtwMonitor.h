@@ -38,6 +38,11 @@ private:
     std::vector<BYTE>    m_vecStopTracePropsBuffer;
 
     //
+    // Signaled by destructor to request ProcessTrace to stop. 
+    //
+    bool m_stopFlag;
+
+    //
     // Handle to an event subscriber thread.
     //    
     HANDLE m_ETWMonitorThread;
@@ -53,6 +58,14 @@ private:
 
     static void WINAPI OnEventRecordTramp(
         _In_ PEVENT_RECORD EventRecord
+    );
+
+    static BOOL WINAPI StaticBufferEventCallback(
+        _In_ PEVENT_TRACE_LOGFILE Buffer
+    );
+
+    BOOL WINAPI BufferEventCallback(
+        _In_ PEVENT_TRACE_LOGFILE Buffer
     );
 
     static DWORD StartEtwMonitorStatic(

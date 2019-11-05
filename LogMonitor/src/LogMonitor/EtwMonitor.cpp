@@ -34,6 +34,11 @@ EtwMonitor::EtwMonitor(
     ) :
     m_eventFormatMultiLine(EventFormatMultiLine)
 {
+    //
+    // This is set as 'true' to stop processing events.
+    //
+    m_stopFlag = false;
+
     m_ETWMonitorThread = NULL;
 
     FilterValidProviders(Providers, m_providersConfig);
@@ -70,17 +75,14 @@ EtwMonitor::~EtwMonitor()
     //
     // Wait for watch thread to exit.
     //
+    this->m_stopFlag = true;
+
     DWORD waitResult = WaitForSingleObject(m_ETWMonitorThread, ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS);
 
     if (waitResult != WAIT_OBJECT_0)
     {
         HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
             : HRESULT_FROM_WIN32(waitResult);
-
-        if (hr == HRESULT_FROM_WIN32(WAIT_TIMEOUT))
-        {
-            bool success = TerminateThread(m_ETWMonitorThread, 0);
-        }
     }
 
     if (m_ETWMonitorThread != NULL)
@@ -307,6 +309,52 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
 }
 
 ///
+/// Function automatically called by ProcessTrace when an ETW event arrives. If
+/// it returns false, the ProcessTrace will stop receiving events.
+///
+BOOL WINAPI
+EtwMonitor::StaticBufferEventCallback(
+    _In_ PEVENT_TRACE_LOGFILE Buffer
+    )
+{
+    try
+    {
+        EtwMonitor* etwMon = static_cast<EtwMonitor*>(Buffer->Context);
+        return etwMon->BufferEventCallback(Buffer);
+    }
+    catch (std::exception& ex)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to process ETW event callback. %S", ex.what()).c_str()
+        );
+        return FALSE;
+    }
+    catch (...)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to process ETW event callback. Unknown error occurred").c_str()
+        );
+        return FALSE;
+    }
+}
+
+///
+/// Always returns true.
+///
+BOOL WINAPI
+EtwMonitor::BufferEventCallback(
+    _In_ PEVENT_TRACE_LOGFILE Buffer
+    )
+{
+    if (this->m_stopFlag)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+///
 /// Entry for the spawned ETW monitor thread. It starts a session and blocks
 /// the current thread when ProcessTrace is called. 
 ///
@@ -343,6 +391,7 @@ EtwMonitor::StartEtwMonitor()
     trace.LogFileName = (LPWSTR)NULL;
     trace.Context = this; // Wrap the current object, to call it from the callbacks.
     trace.EventRecordCallback = (PEVENT_RECORD_CALLBACK)(OnEventRecordTramp);
+    trace.BufferCallback = (PEVENT_TRACE_BUFFER_CALLBACK)(StaticBufferEventCallback);
     trace.ProcessTraceMode = PROCESS_TRACE_MODE_EVENT_RECORD | PROCESS_TRACE_MODE_REAL_TIME;
     
     this->m_startTraceHandle = OpenTrace(&trace);
