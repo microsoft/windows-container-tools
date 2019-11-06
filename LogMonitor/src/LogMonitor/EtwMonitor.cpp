@@ -339,7 +339,8 @@ EtwMonitor::StaticBufferEventCallback(
 }
 
 ///
-/// Always returns true.
+/// Returns false if the m_stopFlag is set true by the destructor,
+/// causing ProcessTrace to stop.
 ///
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
