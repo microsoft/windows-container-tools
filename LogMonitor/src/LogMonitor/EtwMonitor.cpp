@@ -28,7 +28,6 @@ using namespace std;
 //
 static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
-
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
     _In_ bool EventFormatMultiLine
@@ -36,9 +35,10 @@ EtwMonitor::EtwMonitor(
     m_eventFormatMultiLine(EventFormatMultiLine)
 {
     //
-    // This is set in true to stop receiving more events.
+    // This is set as 'true' to stop processing events.
     //
     m_stopFlag = false;
+
     m_ETWMonitorThread = NULL;
 
     FilterValidProviders(Providers, m_providersConfig);
@@ -57,18 +57,32 @@ EtwMonitor::EtwMonitor(
 
 EtwMonitor::~EtwMonitor()
 {
-    m_stopFlag = true;
-    CloseTrace(m_startTraceHandle);
+    ULONG status;
 
     const std::wstring mySessionName = g_sessionName;
-    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)& this->m_vecStopTracePropsBuffer[0];
+    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)&this->m_vecStopTracePropsBuffer[0];
 
-    ULONG status = ::StopTrace(m_startTraceHandle, mySessionName.c_str(), petp);
+    status = ::StopTrace(m_startTraceHandle, mySessionName.c_str(), petp);
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceWarning(
             Utility::FormatString(L"Failed to stop ETW trace session. Error: %lu", status).c_str()
         );
+    }
+
+    status = CloseTrace(m_startTraceHandle);
+
+    //
+    // Wait for watch thread to exit.
+    //
+    this->m_stopFlag = true;
+
+    DWORD waitResult = WaitForSingleObject(m_ETWMonitorThread, ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS);
+
+    if (waitResult != WAIT_OBJECT_0)
+    {
+        HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
+            : HRESULT_FROM_WIN32(waitResult);
     }
 
     if (m_ETWMonitorThread != NULL)
@@ -269,12 +283,15 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
     EtwMonitor* etwMon = static_cast<EtwMonitor*>(EventRecord->UserContext);
     try
     {
-        DWORD status = etwMon->OnRecordEvent(EventRecord);
-        if (status != ERROR_SUCCESS)
+        if (etwMon != NULL)
         {
-            logWriter.TraceError(
-                Utility::FormatString(L"Failed to record ETW event. Error: %lu", status).c_str()
-            );
+            DWORD status = etwMon->OnRecordEvent(EventRecord);
+            if (status != ERROR_SUCCESS)
+            {
+                logWriter.TraceError(
+                    Utility::FormatString(L"Failed to record ETW event. Error: %lu", status).c_str()
+                );
+            }
         }
     }
     catch (std::exception& ex)
@@ -322,16 +339,17 @@ EtwMonitor::StaticBufferEventCallback(
 }
 
 ///
-/// Returns false if the m_stopFlag is set true.
+/// Returns false if the m_stopFlag is set true by the destructor,
+/// causing ProcessTrace to stop.
 ///
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
     )
 {
-    if (m_stopFlag)
+    if (this->m_stopFlag)
     {
-        return FALSE;	// stop sending events
+        return FALSE;
     }
 
     return TRUE;
@@ -369,7 +387,6 @@ EtwMonitor::StartEtwMonitor()
     }
 
     EVENT_TRACE_LOGFILE trace;
-    TRACE_LOGFILE_HEADER* pHeader = &trace.LogfileHeader;
     ZeroMemory(&trace, sizeof(EVENT_TRACE_LOGFILE));
     trace.LoggerName = (LPWSTR)g_sessionName.c_str();
     trace.LogFileName = (LPWSTR)NULL;

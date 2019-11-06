@@ -25,6 +25,8 @@ public:
 
 private:
 
+    static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
+
     std::vector<ETWProvider> m_providersConfig;
     bool m_eventFormatMultiLine;
     TRACEHANDLE  m_startTraceHandle;
@@ -36,15 +38,9 @@ private:
     std::vector<BYTE>    m_vecStopTracePropsBuffer;
 
     //
-    // Signaled by destructor to request the spawned thread to stop.
+    // Signaled by destructor to request ProcessTrace to stop. 
     //
     bool m_stopFlag;
-
-
-    static DWORD FilterValidProviders(
-        _In_ const std::vector<ETWProvider>& Providers,
-        _Out_ std::vector<ETWProvider>& ValidProviders
-    );
 
     //
     // Handle to an event subscriber thread.
@@ -54,6 +50,11 @@ private:
     DWORD PointerSize;
 
     DWORD StartEtwMonitor();
+
+    static DWORD FilterValidProviders(
+        _In_ const std::vector<ETWProvider>& Providers,
+        _Out_ std::vector<ETWProvider>& ValidProviders
+    );
 
     static void WINAPI OnEventRecordTramp(
         _In_ PEVENT_RECORD EventRecord
