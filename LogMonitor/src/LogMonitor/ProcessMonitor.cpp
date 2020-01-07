@@ -14,6 +14,7 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 
 void CreateChildProcess(std::wstring& Cmdline); 
 DWORD ReadFromPipe(LPVOID Param); 
+BOOL ProcessMonitorControlHandle(_In_ DWORD dwCtrlType);
 
 ///
 /// Creates a new process, and link its STDIN and STDOUT to the LogMonitor proccess' ones.
@@ -129,6 +130,8 @@ void CreateChildProcess(std::wstring& Cmdline)
     }
     else 
     {
+        SetConsoleCtrlHandler(ProcessMonitorControlHandle, TRUE);
+
         DWORD exitcode;
         CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReadFromPipe, NULL, 0, NULL);
         WaitForSingleObject(piProcInfo.hProcess, INFINITE);
@@ -191,4 +194,32 @@ DWORD ReadFromPipe(LPVOID Param)
     }
 
     return ERROR_SUCCESS;
+}
+
+BOOL ProcessMonitorControlHandle(_In_ DWORD dwCtrlType)
+{
+    switch (dwCtrlType)
+    {
+    case CTRL_C_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+    {
+        wprintf(L"\nCTRL signal received. The process will now terminate.\n");
+        
+        //
+        // Propagate the CTRL signal 
+        //
+        SetConsoleCtrlHandler(NULL, TRUE);
+        GenerateConsoleCtrlEvent(dwCtrlType, 0);
+
+        break;
+    }
+
+    default:
+        return TRUE;
+    }
+
+    return TRUE;
 }

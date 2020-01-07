@@ -27,7 +27,7 @@ std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
-void ControlHandle(_In_ DWORD dwCtrlType)
+BOOL ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
     {
@@ -44,8 +44,10 @@ void ControlHandle(_In_ DWORD dwCtrlType)
         }
 
         default:
-            return;
+            return TRUE;
     }
+
+    return TRUE;
 }
 
 void PrintUsage()
@@ -263,7 +265,6 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     //
     // Create the child process. 
     //
-
     if (argc > indexCommandArgument)
     {
         cmdline = argv[indexCommandArgument];
@@ -278,6 +279,8 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     }
     else
     {
+        SetConsoleCtrlHandler(ControlHandle, TRUE);
+
         DWORD waitResult = WaitForSingleObjectEx(g_hStopEvent, INFINITE, TRUE);
 
         switch (waitResult)
