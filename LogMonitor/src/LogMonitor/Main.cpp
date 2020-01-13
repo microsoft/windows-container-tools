@@ -38,8 +38,16 @@ BOOL ControlHandle(_In_ DWORD dwCtrlType)
         case CTRL_SHUTDOWN_EVENT:
         {
             wprintf(L"\nCTRL signal received. The process will now terminate.\n");
+
             SetEvent(g_hStopEvent);
             g_hStopEvent = INVALID_HANDLE_VALUE;
+
+            //
+            // Propagate the CTRL signal 
+            //
+            SetConsoleCtrlHandler(NULL, TRUE);
+            GenerateConsoleCtrlEvent(dwCtrlType, 0);
+
             break;
         }
 
@@ -263,6 +271,11 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     StartMonitors(configFileName);
 
     //
+    // Set the Ctrl handler function, that propagates the Ctrl events to the child process.
+    //
+    SetConsoleCtrlHandler(ControlHandle, TRUE);
+
+    //
     // Create the child process. 
     //
     if (argc > indexCommandArgument)
@@ -279,8 +292,6 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     }
     else
     {
-        SetConsoleCtrlHandler(ControlHandle, TRUE);
-
         DWORD waitResult = WaitForSingleObjectEx(g_hStopEvent, INFINITE, TRUE);
 
         switch (waitResult)
