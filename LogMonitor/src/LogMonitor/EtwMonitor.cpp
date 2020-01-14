@@ -83,6 +83,12 @@ EtwMonitor::~EtwMonitor()
     {
         HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
             : HRESULT_FROM_WIN32(waitResult);
+
+        //
+        // This object is being destroyed, so kill the thread to avoid an
+        // access to the invalid object.
+        //
+        TerminateThread(m_ETWMonitorThread, 0);
     }
 
     if (m_ETWMonitorThread != NULL)
@@ -1057,15 +1063,7 @@ EtwMonitor::_FormatData(
             }
         }
 
-        try
-        {
-            Result << "</" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
-        }
-        catch (...)
-        {
-            status = ERROR_EVT_INVALID_EVENT_DATA;
-            break;
-        }
+        Result << "</" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
     }
 
     return status;

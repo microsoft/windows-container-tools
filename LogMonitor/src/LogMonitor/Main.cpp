@@ -27,7 +27,7 @@ std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
-void ControlHandle(_In_ DWORD dwCtrlType)
+BOOL ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
     {
@@ -38,14 +38,24 @@ void ControlHandle(_In_ DWORD dwCtrlType)
         case CTRL_SHUTDOWN_EVENT:
         {
             wprintf(L"\nCTRL signal received. The process will now terminate.\n");
+
             SetEvent(g_hStopEvent);
             g_hStopEvent = INVALID_HANDLE_VALUE;
+
+            //
+            // Propagate the CTRL signal 
+            //
+            SetConsoleCtrlHandler(NULL, TRUE);
+            GenerateConsoleCtrlEvent(dwCtrlType, 0);
+
             break;
         }
 
         default:
-            return;
+            return TRUE;
     }
+
+    return TRUE;
 }
 
 void PrintUsage()
@@ -261,9 +271,13 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     StartMonitors(configFileName);
 
     //
+    // Set the Ctrl handler function, that propagates the Ctrl events to the child process.
+    //
+    SetConsoleCtrlHandler(ControlHandle, TRUE);
+
+    //
     // Create the child process. 
     //
-
     if (argc > indexCommandArgument)
     {
         cmdline = argv[indexCommandArgument];
