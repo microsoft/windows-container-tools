@@ -7,7 +7,7 @@
 #define _VERSION_H_
 
 #define LM_MAJORNUMBER          1
-#define LM_MINORNUMBER          0
+#define LM_MINORNUMBER          1
 #define LM_BUILDNUMBER          0
 #ifndef LM_BUILDMINORVERSION
 #define LM_BUILDMINORVERSION    0
