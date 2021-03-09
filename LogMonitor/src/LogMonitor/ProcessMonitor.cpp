@@ -8,12 +8,12 @@
 using namespace std;
 
 #define BUFSIZE 4096 
- 
+
 HANDLE g_hChildStd_OUT_Rd = NULL;
 HANDLE g_hChildStd_OUT_Wr = NULL;
 
-void CreateChildProcess(std::wstring& Cmdline); 
-DWORD ReadFromPipe(LPVOID Param); 
+DWORD CreateChildProcess(std::wstring& Cmdline);
+DWORD ReadFromPipe(LPVOID Param);
 
 ///
 /// Creates a new process, and link its STDIN and STDOUT to the LogMonitor proccess' ones.
@@ -23,21 +23,21 @@ DWORD ReadFromPipe(LPVOID Param);
 /// \return Status
 ///
 DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
-{ 
+{
     SECURITY_ATTRIBUTES saAttr;
     DWORD status = ERROR_SUCCESS;
 
     //
     // Set the bInheritHandle flag so pipe handles are inherited. 
     //
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-    saAttr.bInheritHandle = TRUE; 
-    saAttr.lpSecurityDescriptor = NULL; 
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
 
     //
     // Create a pipe for the child process's STDOUT. 
     //
-    if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0)) 
+    if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
     {
         status = GetLastError();
 
@@ -65,22 +65,20 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
     //
     // Create the child process. 
     //
-    CreateChildProcess(Cmdline);
-
-    return 0; 
-} 
+    return CreateChildProcess(Cmdline);
+}
 
 ///
 /// Create a child process that uses the previously created pipe for STDOUT.
 ///
 /// \param Cmdline      The command to start the new process.
 ///
-void CreateChildProcess(std::wstring& Cmdline)
+DWORD CreateChildProcess(std::wstring& Cmdline)
 {
     PROCESS_INFORMATION piProcInfo;
     STARTUPINFO siStartInfo;
     bool bSuccess = false;
-    DWORD status;
+    DWORD exitcode = 0;
     wchar_t cmdl[32768]; // The maximum size of CreateProcess's lpCommandLine parameter is 32,768
 
     ZeroMemory(&cmdl, sizeof(cmdl));
@@ -106,34 +104,33 @@ void CreateChildProcess(std::wstring& Cmdline)
     // Create the child process. 
     //
     bSuccess = CreateProcess(NULL,
-                             cmdl,          // command line 
-                             NULL,          // process security attributes 
-                             NULL,          // primary thread security attributes 
-                             TRUE,          // handles are inherited 
-                             0,             // creation flags 
-                             NULL,          // use parent's environment 
-                             NULL,          // use parent's current directory 
-                             &siStartInfo,  // STARTUPINFO pointer 
-                             &piProcInfo);  // receives PROCESS_INFORMATION
+        cmdl,          // command line 
+        NULL,          // process security attributes 
+        NULL,          // primary thread security attributes 
+        TRUE,          // handles are inherited 
+        0,             // creation flags 
+        NULL,          // use parent's environment 
+        NULL,          // use parent's current directory 
+        &siStartInfo,  // STARTUPINFO pointer 
+        &piProcInfo);  // receives PROCESS_INFORMATION
 
-    //
-    // If an error occurs, exit the application.
-    //
+//
+// If an error occurs, exit the application.
+//
     if (!bSuccess)
     {
-        status = GetLastError();
+        exitcode = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to start entrypoint process. Error: %lu", status).c_str()
+            Utility::FormatString(L"Failed to start entrypoint process. Error: %lu", exitcode).c_str()
         );
     }
-    else 
+    else
     {
-        DWORD exitcode;
         CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReadFromPipe, NULL, 0, NULL);
         WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 
-        if(GetExitCodeProcess(piProcInfo.hProcess, &exitcode))
+        if (GetExitCodeProcess(piProcInfo.hProcess, &exitcode))
         {
             logWriter.TraceInfo(
                 Utility::FormatString(L"Entrypoint processs exit code: %d", exitcode).c_str()
@@ -152,6 +149,8 @@ void CreateChildProcess(std::wstring& Cmdline)
         CloseHandle(piProcInfo.hProcess);
         CloseHandle(piProcInfo.hThread);
     }
+
+    return exitcode;
 }
 
 ///
@@ -161,29 +160,29 @@ void CreateChildProcess(std::wstring& Cmdline)
 ///
 /// \param Param        UNUSED.
 ///
-DWORD ReadFromPipe(LPVOID Param)  
-{ 
-    DWORD dwRead, dwWritten; 
-    char chBuf[BUFSIZE]; 
+DWORD ReadFromPipe(LPVOID Param)
+{
+    DWORD dwRead, dwWritten;
+    char chBuf[BUFSIZE];
     bool bSuccess = false;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     UNREFERENCED_PARAMETER(Param);
 
-    for (;;) 
-    { 
-        bSuccess = ReadFile( g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+    for (;;)
+    {
+        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
 
         if (!bSuccess || dwRead == 0)
         {
-            break; 
+            break;
         }
 
         bSuccess = logWriter.WriteLog(hParentStdOut,
-                                      chBuf, 
-                                      dwRead,
-                                      &dwWritten,
-                                      NULL);
+            chBuf,
+            dwRead,
+            &dwWritten,
+            NULL);
         if (!bSuccess)
         {
             break;
