@@ -23,6 +23,12 @@
         "includeSubdirectories": true
       },
       {
+        "type": "File",
+        "directory": "c:\\wwwroot",
+        "filter": "*.log",
+        "includeSubdirectories": true
+      },
+      {
         "type": "ETW",
         "eventFormatMultiLine": false,
         "providers": [
