@@ -17,9 +17,8 @@ jobs:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-check
           level: warning
-          flags: --linelength=80
+          flags: --linelength=120
           filter: -readability/braces
-            ,-whitespace/braces
             ,-whitespace/comments
             ,-whitespace/indent
             ,-whitespace/newline
