@@ -1,5 +1,5 @@
 trigger:
-- master
+- main
 
 pool:
     name: 'Hosted VS2017'  # name of the pool to run this job in
