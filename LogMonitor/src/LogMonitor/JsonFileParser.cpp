@@ -3,7 +3,7 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "./pch.h"
 
 /// JsonFileParser.cpp
 ///
@@ -95,7 +95,6 @@ JsonFileParser::ParseControlCharacter(size_t Offset)
     if (digit1 < 0 || digit2 < 0 || digit3 < 0 || digit4 < 0)
     {
         throw std::invalid_argument("JsonFileParser: Invalid escape sequence");
-    
     }
 
     wchar_t ch = static_cast<wchar_t>((digit1 << 12) | (digit2 << 8) | (digit3 << 4) | digit4);
@@ -118,31 +117,31 @@ JsonFileParser::ParseSpecialCharacter(int Ch)
     case '\\':
     case '/':
         break;
-    
+
     case 'b':
         Ch = '\b';
         break;
-    
+
     case 'f':
         Ch = '\f';
         break;
-    
+
     case 'n':
         Ch = '\n';
         break;
-    
+
     case 'r':
         Ch = '\r';
         break;
-    
+
     case 't':
         Ch = '\t';
         break;
-    
+
     default:
         throw std::invalid_argument("JsonFileParser: Invalid escape sequence");
     }
-    
+
     return (static_cast<wchar_t>(Ch));
 }
 
@@ -263,7 +262,6 @@ JsonFileParser::ParseBooleanValue()
              PeekNextCharacter(3) == 's' &&
              PeekNextCharacter(4) == 'e')
     {
-
         AdvanceBufferPointer(5);
         return false;
     }
@@ -360,7 +358,6 @@ JsonFileParser::ParseNextObjectElement()
     int ch = PeekNextCharacter();
     if (ch == '}')
     {
-    
         AdvanceBufferPointer(1);
         return false;
     }
@@ -395,9 +392,9 @@ JsonFileParser::ParseKey()
 }
 
 ///
-/// Returns the key of the last read object .
+/// Returns the key of the last read object.
 ///
-/// \return A string with the key. It returns a temporary object. 
+/// \return A string with the key. It returns a temporary object.
 ///
 const std::wstring&
 JsonFileParser::GetKey()
@@ -406,9 +403,9 @@ JsonFileParser::GetKey()
 }
 
 ///
-/// Identifies the type of the next value in the buffer the key of the last read object .
+/// Identifies the type of the next value in the buffer the key of the last read object.
 ///
-/// \return A DataType enum value with the identified type. 
+/// \return A DataType enum value with the identified type.
 ///
 JsonFileParser::DataType
 JsonFileParser::GetNextDataType()
@@ -569,7 +566,7 @@ JsonFileParser::AdvanceBufferPointer(
 {
     m_currentPos = min(m_currentPos + Offset, m_bufferLength);
 
-    for (;m_currentPos < m_bufferLength && IsWhiteSpace(m_buffer[m_currentPos]); m_currentPos++)
+    for (; m_currentPos < m_bufferLength && IsWhiteSpace(m_buffer[m_currentPos]); m_currentPos++)
     {
         //
         // Skip whitespaces
@@ -633,6 +630,5 @@ JsonFileParser::IsWhiteSpace(
 
     default:
         return false;
-    }    
+    }
 }
-

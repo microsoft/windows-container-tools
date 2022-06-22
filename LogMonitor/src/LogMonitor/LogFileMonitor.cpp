@@ -3,21 +3,21 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "./pch.h"
 
 using namespace std;
 
 ///
 /// LogFileMonitor.cpp
-/// 
+///
 /// Monitors a log directory for changes to the log files matching the criteria specified by a filter.
-/// 
+///
 /// LogFileMonitor starts a monitor thread that waits for file change notifications from ReadDirectoryChangesW
 /// or for a stop event to be set. It also starts a worker thread that processes the change notification events.
-/// 
-/// The destructor signals the stop event and waits up to LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring 
+///
+/// The destructor signals the stop event and waits up to LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring
 /// thread to exit. To prevent the thread from out-living LogFileMonitor, the destructor fails fast
-/// if the wait fails or times out. This also ensures the callback is not being called and will not be 
+/// if the wait fails or times out. This also ensures the callback is not being called and will not be
 /// called once LogFileMonitor is destroyed.
 ///
 
@@ -96,7 +96,13 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
 
     m_readLogFilesFromStart = false;
 
-    m_logDirMonitorThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)&LogFileMonitor::StartLogFileMonitorStatic, this, 0, nullptr);
+    m_logDirMonitorThread = CreateThread(
+        nullptr,
+        0,
+        (LPTHREAD_START_ROUTINE)&LogFileMonitor::StartLogFileMonitorStatic,
+        this,
+        0,
+        nullptr);
     if(!m_logDirMonitorThread)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
@@ -241,8 +247,8 @@ LogFileMonitor::StartLogFileMonitorStatic(
 
 
 ///
-/// Entry for the spawned log file monitor thread. It loops to wait for either the stop event in which case it exits 
-/// or for the log file changes. When log file changes are notified, it inserts the changed file information into a 
+/// Entry for the spawned log file monitor thread. It loops to wait for either the stop event in which case it exits
+/// or for the log file changes. When log file changes are notified, it inserts the changed file information into a
 /// queue, signal the change notification worker thread, resets, and starts the wait again.
 ///
 /// \return ERROR_SUCCESS: If log monitoring is started successfully
@@ -257,7 +263,7 @@ LogFileMonitor::StartLogFileMonitor()
     bool dirMonitorStartedEventSignalled = false;
 
     //
-    // Order stop event first so that stop is prioritized if both events are already signalled (changes 
+    // Order stop event first so that stop is prioritized if both events are already signalled (changes
     // are available but stop has been called).
     //
     HANDLE events[eventsCount] = {m_stopEvent, m_overlapped.hEvent};
@@ -309,7 +315,7 @@ LogFileMonitor::StartLogFileMonitor()
             );
             return status;
         }
-        
+
         HANDLE dirOpenEvents[eventsCount] = {m_stopEvent, timerEvent};
 
         while (status == ERROR_FILE_NOT_FOUND &&
@@ -318,13 +324,12 @@ LogFileMonitor::StartLogFileMonitor()
             if (!SetWaitableTimer(timerEvent, &liDueTime, 0, NULL, NULL, 0))
             {
                 status = GetLastError();
-                
                 logWriter.TraceError(
                     Utility::FormatString(L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
                 );
                 break;
             }
-            
+
             DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
             switch(wait)
             {
@@ -337,7 +342,7 @@ LogFileMonitor::StartLogFileMonitor()
                     CloseHandle(timerEvent);
                     return status;
                 }
-            
+
                 case WAIT_OBJECT_0 + 1:
                 {
                     //
@@ -345,7 +350,7 @@ LogFileMonitor::StartLogFileMonitor()
                     //
                     break;
                 }
-            
+
                 default:
                 {
                     //
@@ -358,7 +363,6 @@ LogFileMonitor::StartLogFileMonitor()
 
                     return status;
                 }
-                    
             }
 
             m_logDirHandle = CreateFileW (m_logDirectory.c_str(),
@@ -431,19 +435,20 @@ LogFileMonitor::StartLogFileMonitor()
         std::fill(records.begin(), records.end(), (BYTE)0); // Reset previous entries if any.
         m_overlapped.Offset = 0;
         m_overlapped.OffsetHigh = 0;
-        BOOL success = ReadDirectoryChangesW(m_logDirHandle,
-                                             records.data(),
-                                             static_cast<ULONG>(records.size()),
-                                             true,
-                                             LOG_DIR_NOTIFY_FILTERS,
-                                             nullptr,
-                                             &m_overlapped,
-                                             nullptr);
+        BOOL success = ReadDirectoryChangesW(
+            m_logDirHandle,
+            records.data(),
+            static_cast<ULONG>(records.size()),
+            true,
+            LOG_DIR_NOTIFY_FILTERS,
+            nullptr,
+            &m_overlapped,
+            nullptr);
 
-        if (!success) 
+        if (!success)
         {
             status = GetLastError();
-            if (status == ERROR_NOTIFY_ENUM_DIR) 
+            if (status == ERROR_NOTIFY_ENUM_DIR)
             {
                 status = ERROR_SUCCESS;
                 if (!dirMonitorStartedEventSignalled)

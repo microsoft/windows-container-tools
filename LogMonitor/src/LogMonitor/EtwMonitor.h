@@ -12,8 +12,7 @@ typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
 
 class EtwMonitor final
 {
-public:
-
+    public:
     EtwMonitor() = delete;
 
     EtwMonitor(
@@ -23,8 +22,7 @@ public:
 
     ~EtwMonitor();
 
-private:
-
+    private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;
@@ -38,13 +36,13 @@ private:
     std::vector<BYTE>    m_vecStopTracePropsBuffer;
 
     //
-    // Signaled by destructor to request ProcessTrace to stop. 
+    // Signaled by destructor to request ProcessTrace to stop.
     //
     bool m_stopFlag;
 
     //
     // Handle to an event subscriber thread.
-    //    
+    //
     HANDLE m_ETWMonitorThread;
 
     DWORD PointerSize;

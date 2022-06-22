@@ -3,9 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
-#include "Parser/ConfigFileParser.h"
-#include "LogWriter.h"
+#include "./pch.h"
+#include "./Parser/ConfigFileParser.h"
+#include "./LogWriter.h"
 
 /// ConfigFileParser.cpp
 ///
@@ -428,7 +428,6 @@ ReadETWProvider(
             // GUID, ProviderGuidStr will be empty
             //
             Result.SetProviderGuid(Parser.ParseStringValue());
-
         }
         else if (_wcsnicmp(key.c_str(), JSON_TAG_PROVIDER_LEVEL, _countof(JSON_TAG_PROVIDER_LEVEL)) == 0)
         {
@@ -456,7 +455,6 @@ ReadETWProvider(
             // Recover the GUID of the provider
             //
             Result.Keywords = wcstoull(Parser.ParseStringValue().c_str(), NULL, 0);
-
         }
         else
         {
@@ -498,60 +496,59 @@ AddNewSource(
 
     switch (*(LogSourceType*)Attributes[JSON_TAG_TYPE])
     {
-    case LogSourceType::EventLog:
-    {
-        std::shared_ptr<SourceEventLog> sourceEventLog = std::make_shared< SourceEventLog>();
-
-        //
-        // Fill the new EventLog source object, with its attributes
-        //
-        if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog))
+        case LogSourceType::EventLog:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source (it must have a non-empty 'channels')");
-            return false;
+            std::shared_ptr<SourceEventLog> sourceEventLog = std::make_shared< SourceEventLog>();
+
+            //
+            // Fill the new EventLog source object, with its attributes
+            //
+            if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source (it must have a non-empty 'channels')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
+
+            break;
         }
 
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
-
-        break;
-    }
-
-    case LogSourceType::File:
-    {
-        std::shared_ptr<SourceFile> sourceFile = std::make_shared< SourceFile>();
-
-        //
-        // Fill the new File source object, with its attributes
-        //
-        if (!SourceFile::Unwrap(Attributes, *sourceFile))
+        case LogSourceType::File:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid File source (it must have a non-empty 'directory')");
-            return false;
+            std::shared_ptr<SourceFile> sourceFile = std::make_shared< SourceFile>();
+
+            //
+            // Fill the new File source object, with its attributes
+            //
+            if (!SourceFile::Unwrap(Attributes, *sourceFile))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid File source (it must have a non-empty 'directory')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
+
+            break;
         }
 
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
-
-        break;
-    }
-
-    case LogSourceType::ETW:
-    {
-        std::shared_ptr<SourceETW> sourceETW = std::make_shared< SourceETW>();
-
-        //
-        // Fill the new ETW source object, with its attributes
-        //
-        if (!SourceETW::Unwrap(Attributes, *sourceETW))
+        case LogSourceType::ETW:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid ETW source (it must have a non-empty 'providers')");
-            return false;
+            std::shared_ptr<SourceETW> sourceETW = std::make_shared< SourceETW>();
+
+            //
+            // Fill the new ETW source object, with its attributes
+            //
+            if (!SourceETW::Unwrap(Attributes, *sourceETW))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid ETW source (it must have a non-empty 'providers')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
+
+            break;
         }
-
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
-
-        break;
-    }
-   
     }
     return true;
 }
