@@ -2,7 +2,7 @@ trigger:
 - master
 
 pool:
-    vmImage: 'windows-latest'  # name of the pool to run this job in
+    vmImage: 'windows-2019'  # name of the pool to run this job in
     demands: 
       - msbuild
       - visualstudio
