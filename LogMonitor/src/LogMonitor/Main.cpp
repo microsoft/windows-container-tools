@@ -27,7 +27,7 @@ std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
-BOOL ControlHandle(_In_ DWORD dwCtrlType)
+BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
     {
