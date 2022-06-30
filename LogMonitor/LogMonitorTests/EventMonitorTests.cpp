@@ -117,7 +117,7 @@ namespace LogMonitorTests
                 int eventId = 100;
                 EventChannelLogLevel level = EventChannelLogLevel::Error;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
                 int count = 0;
@@ -158,7 +158,7 @@ namespace LogMonitorTests
                 int eventId = 101;
                 EventChannelLogLevel level = EventChannelLogLevel::Warning;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
 
@@ -185,7 +185,7 @@ namespace LogMonitorTests
                 int eventId = 102;
                 EventChannelLogLevel level = EventChannelLogLevel::Information;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
 
@@ -223,7 +223,7 @@ namespace LogMonitorTests
                 int eventId = 100;
                 EventChannelLogLevel level = EventChannelLogLevel::Error;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
                 int count = 0;
@@ -261,7 +261,7 @@ namespace LogMonitorTests
                 int eventId = 101;
                 EventChannelLogLevel level = EventChannelLogLevel::Warning;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
                 int count = 0;
@@ -303,7 +303,7 @@ namespace LogMonitorTests
                 int eventId = 102;
                 EventChannelLogLevel level = EventChannelLogLevel::Information;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
                 int count = 0;
@@ -354,7 +354,7 @@ namespace LogMonitorTests
             int eventId = 102;
             EventChannelLogLevel level = EventChannelLogLevel::Error;
 
-            Assert::AreEqual(1, WriteEvent(level, eventId, message));
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
             EventMonitor eventMonitor(eventChannels, true, true);
             Sleep(WAIT_TIME_EVENTMONITOR_START);
@@ -393,7 +393,7 @@ namespace LogMonitorTests
                 int eventId = 100;
                 EventChannelLogLevel level = EventChannelLogLevel::Error;
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
                 std::wstring output = RecoverOuput();
@@ -439,7 +439,7 @@ namespace LogMonitorTests
                 std::wstring messageWithoutNewline = L"Hello world  Error!";
 
 
-                Assert::AreEqual(1, WriteEvent(level, eventId, message));
+                Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
                 std::wstring output;
                 int count = 0;
