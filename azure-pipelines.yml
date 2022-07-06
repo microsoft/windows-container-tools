@@ -38,3 +38,5 @@ steps:
     searchFolder: '$(System.DefaultWorkingDirectory)' 
     runOnlyImpactedTests: false
     runInParallel: false
+    rerunFailedTests: true
+    rerunMaxAttempts: 3
