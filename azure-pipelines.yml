@@ -47,7 +47,7 @@ jobs:
     steps:
       - task: VSBuild@1
         inputs:
-          platform: 'x32'
+          platform: 'x86'
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
 
