@@ -22,11 +22,11 @@ jobs:
         solution: '$(solution)'
         configuration: '$(buildConfiguration)'
 
-    # - task: ComponentGovernanceComponentDetection@0
-    #   inputs:
-    #     scanType: 'LogOnly'
-    #     verbosity: 'Verbose'
-    #     alertWarningLevel: 'High'
+    - task: ComponentGovernanceComponentDetection@0
+      inputs:
+        scanType: 'LogOnly'
+        verbosity: 'Verbose'
+        alertWarningLevel: 'High'
 
     - task: VisualStudioTestPlatformInstaller@1
       inputs:
@@ -51,11 +51,11 @@ jobs:
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
 
-      # - task: ComponentGovernanceComponentDetection@0
-      #   inputs:
-      #     scanType: 'LogOnly'
-      #     verbosity: 'Verbose'
-      #     alertWarningLevel: 'High'
+      - task: ComponentGovernanceComponentDetection@0
+        inputs:
+          scanType: 'LogOnly'
+          verbosity: 'Verbose'
+          alertWarningLevel: 'High'
 
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
