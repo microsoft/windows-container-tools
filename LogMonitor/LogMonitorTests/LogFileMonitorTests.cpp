@@ -223,7 +223,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
 
@@ -283,7 +283,7 @@ namespace LogMonitorTests
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
                 output = RecoverOuput();
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find((TO_WSTR(content) + L"\n").c_str()) == 0);
             }
         }
         
@@ -449,7 +449,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((content + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -561,7 +561,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
 
@@ -626,8 +626,8 @@ namespace LogMonitorTests
                     Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
-
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -652,7 +652,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
 
@@ -729,7 +729,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -750,7 +750,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -777,7 +777,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content)).c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
 
@@ -858,7 +858,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -884,7 +884,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -910,7 +910,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
 
                 //
                 // Rename it with a filter-unmatching name.
@@ -1043,7 +1043,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
 
             //
@@ -1085,7 +1085,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && retries < READ_OUTPUT_RETRIES);
 
-                Assert::AreEqual((TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
     };

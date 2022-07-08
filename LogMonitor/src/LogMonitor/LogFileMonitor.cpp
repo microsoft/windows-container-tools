@@ -1560,7 +1560,7 @@ LogFileMonitor::ReadLogFile(
     std::wstring currentLineBuffer;
 
     //wprintf(L"ReadLogFile: File = %ws. bytesToRead = %d\n", LogFileInfo->FileName.c_str(), bytesToRead);
-
+    
     //
     // It's important to catch a posible error inside the loop, to at least print
     // the content of currentLineBuffer, if it has any.
@@ -1637,6 +1637,14 @@ LogFileMonitor::ReadLogFile(
                     //
                     foundBomSize = 0;
                 }
+
+                //
+                //log the name of the source log file
+                //
+                logWriter.WriteConsoleLog(
+                    Utility::FormatString(
+                        L"Log File: %ws", LogFileInfo->FileName.c_str()
+                    ).c_str());
 
                 //
                 // Decode read string to UTF16, skipping the BOM if necessary.
