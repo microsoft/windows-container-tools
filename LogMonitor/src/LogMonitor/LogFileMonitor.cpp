@@ -1560,7 +1560,7 @@ LogFileMonitor::ReadLogFile(
     std::wstring currentLineBuffer;
 
     //wprintf(L"ReadLogFile: File = %ws. bytesToRead = %d\n", LogFileInfo->FileName.c_str(), bytesToRead);
- 
+
     //
     // It's important to catch a posible error inside the loop, to at least print
     // the content of currentLineBuffer, if it has any.
