@@ -1093,5 +1093,123 @@ namespace LogMonitorTests
                 Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
         }
+
+        //
+        // Check that if IncludeFileNames field is set to true,
+        // the LogFileMonitor prints the file name
+        //
+        TEST_METHOD(TestIncludeFileNames)
+        {
+            std::wstring output;
+
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+
+            //
+            // Create subdirectory
+            //
+            std::wstring subDirectory = tempDirectory + L"\\sub";
+            long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+            Assert::AreNotEqual(0L, status);
+
+            //
+            // Start the monitor
+            //
+            SourceFile sourceFile;
+            sourceFile.Directory = tempDirectory;
+            sourceFile.Filter = L"*.log";
+            sourceFile.IncludeSubdirectories = true;
+            sourceFile.IncludeFileNames = true;
+
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.IncludeFileNames);
+            Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+            //
+            // Check if the short path could be doing something wrong.
+            //
+            {
+                fflush(stdout);
+                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+                std::string fileName = "includefilename.log";
+                std::wstring longFilename = sourceFile.Directory + L"\\" + TO_WSTR(fileName);
+                std::string content = "Testing!";
+
+                WriteToFile(longFilename, content.c_str(), content.length());
+
+                int retries = 0;
+                do {
+                    retries++;
+                    Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+                    output = RecoverOuput();
+                } while (output.empty() && retries < READ_OUTPUT_RETRIES);
+
+                Assert::IsTrue(output.find(TO_WSTR(fileName)) != std::wstring::npos);
+            }
+        }
+
+        //
+        // Check that if IncludeFileNames field is set to false,
+        // the LogFileMonitor does not print the file name
+        //
+        TEST_METHOD(TestDoNotIncludeFileNames)
+        {
+            std::wstring output;
+
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+
+            //
+            // Create subdirectory
+            //
+            std::wstring subDirectory = tempDirectory + L"\\sub";
+            long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+            Assert::AreNotEqual(0L, status);
+
+            //
+            // Start the monitor
+            //
+            SourceFile sourceFile;
+            sourceFile.Directory = tempDirectory;
+            sourceFile.Filter = L"*.log";
+            sourceFile.IncludeSubdirectories = true;
+            sourceFile.IncludeFileNames = false;
+
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.IncludeFileNames);
+            Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+            //
+            // Check if the short path could be doing something wrong.
+            //
+            {
+                fflush(stdout);
+                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+                std::string fileName = "donotIncludefilename.log";
+                std::wstring longFilename = sourceFile.Directory + L"\\" + TO_WSTR(fileName);
+                std::string content = "Testing!";
+
+                WriteToFile(longFilename, content.c_str(), content.length());
+
+                int retries = 0;
+                do {
+                    retries++;
+                    Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+                    output = RecoverOuput();
+                } while (output.empty() && retries < READ_OUTPUT_RETRIES);
+
+                Assert::IsFalse(output.find(TO_WSTR(fileName)) != std::wstring::npos);
+            }
+        }
     };
 }

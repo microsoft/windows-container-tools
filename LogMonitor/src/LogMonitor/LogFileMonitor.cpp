@@ -1641,7 +1641,7 @@ LogFileMonitor::ReadLogFile(
                 }
 
                 //
-                //log the name of the source log file
+                //log the name of the source log file if includeFileName field if true
                 //
                 if (m_includeFileNames)
                 {
