@@ -20,7 +20,8 @@
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
-        "includeSubdirectories": true
+        "includeSubdirectories": true,
+        "includeFileNames": false
       },
       {
         "type": "ETW",

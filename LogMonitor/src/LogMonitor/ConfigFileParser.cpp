@@ -261,10 +261,12 @@ ReadSourceAttributes(
             // * eventFormatMultiLine
             // * startAtOldestRecord
             // * includeSubdirectories
+            // * includeFileNames
             //
             else if (_wcsnicmp(key.c_str(), JSON_TAG_FORMAT_MULTILINE, _countof(JSON_TAG_FORMAT_MULTILINE)) == 0 ||
                      _wcsnicmp(key.c_str(), JSON_TAG_START_AT_OLDEST_RECORD, _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0)
+                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0 ||
+                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_FILENAMES, _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0)
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }
@@ -593,6 +595,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::wprintf(L"\t\tDirectory: %ls\n", sourceFile->Directory.c_str());
             std::wprintf(L"\t\tFilter: %ls\n", sourceFile->Filter.c_str());
             std::wprintf(L"\t\tIncludeSubdirectories: %ls\n", sourceFile->IncludeSubdirectories ? L"true" : L"false");
+            std::wprintf(L"\t\includeFileNames: %ls\n", sourceFile->IncludeFileNames ? L"true" : L"false");
             std::wprintf(L"\n");
 
             break;

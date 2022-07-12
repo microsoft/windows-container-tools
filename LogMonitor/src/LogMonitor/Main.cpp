@@ -142,7 +142,7 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
 
                     try
                     {
-                        std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(sourceFile->Directory, sourceFile->Filter, sourceFile->IncludeSubdirectories);
+                        std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(sourceFile->Directory, sourceFile->Filter, sourceFile->IncludeSubdirectories, sourceFile->IncludeFileNames);
                         g_logfileMonitors.push_back(std::move(logfileMon));
                     }
                     catch (std::exception& ex)

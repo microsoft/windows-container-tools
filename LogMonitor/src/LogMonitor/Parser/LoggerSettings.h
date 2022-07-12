@@ -20,6 +20,7 @@
 #define JSON_TAG_DIRECTORY L"directory"
 #define JSON_TAG_FILTER L"filter"
 #define JSON_TAG_INCLUDE_SUBDIRECTORIES L"includeSubdirectories"
+#define JSON_TAG_INCLUDE_FILENAMES L"includeFileNames"
 #define JSON_TAG_PROVIDERS L"providers"
 
 ///
@@ -254,6 +255,7 @@ public:
     std::wstring Directory;
     std::wstring Filter;
     bool IncludeSubdirectories = false;
+    bool IncludeFileNames = false;
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -291,6 +293,15 @@ public:
             && Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES] != nullptr)
         {
             NewSource.IncludeSubdirectories = *(bool*)Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES];
+        }
+
+        //
+        // includeFileNames is an optional value
+        //
+        if (Attributes.find(JSON_TAG_INCLUDE_FILENAMES) != Attributes.end()
+            && Attributes[JSON_TAG_INCLUDE_FILENAMES] != nullptr)
+        {
+            NewSource.IncludeFileNames = *(bool*)Attributes[JSON_TAG_INCLUDE_FILENAMES];
         }
 
         return true;
