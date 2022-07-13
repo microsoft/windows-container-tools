@@ -1651,7 +1651,6 @@ LogFileMonitor::ReadLogFile(
                         ).c_str());
                 }
                 
-
                 //
                 // Decode read string to UTF16, skipping the BOM if necessary.
                 //
