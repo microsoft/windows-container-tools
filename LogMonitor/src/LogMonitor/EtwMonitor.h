@@ -12,7 +12,7 @@ typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
 
 class EtwMonitor final
 {
-    public:
+public:
     EtwMonitor() = delete;
 
     EtwMonitor(
@@ -22,7 +22,7 @@ class EtwMonitor final
 
     ~EtwMonitor();
 
-    private:
+private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;

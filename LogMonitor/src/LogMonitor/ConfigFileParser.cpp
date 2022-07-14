@@ -251,8 +251,8 @@ ReadSourceAttributes(
             // * directory
             // * filter
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0
+                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
             }
@@ -263,10 +263,23 @@ ReadSourceAttributes(
             // * includeSubdirectories
             // * includeFileNames
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_FORMAT_MULTILINE, _countof(JSON_TAG_FORMAT_MULTILINE)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_START_AT_OLDEST_RECORD, _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_FILENAMES, _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0)
+            else if (
+                _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_FORMAT_MULTILINE,
+                    _countof(JSON_TAG_FORMAT_MULTILINE)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_START_AT_OLDEST_RECORD,
+                    _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_INCLUDE_SUBDIRECTORIES,
+                    _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_INCLUDE_FILENAMES,
+                    _countof(JSON_TAG_INCLUDE_FILENAMES)))
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }

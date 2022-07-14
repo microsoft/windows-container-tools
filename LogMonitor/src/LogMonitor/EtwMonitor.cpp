@@ -169,7 +169,9 @@ EtwMonitor::FilterValidProviders(
         if (NULL == ptemp)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to allocate memory to enumerate ETW providers. Size=%lu.", bufferSize).c_str()
+                Utility::FormatString(
+                    L"Failed to allocate memory to enumerate ETW providers. Size=%lu.",
+                    bufferSize).c_str()
             );
             status = ERROR_OUTOFMEMORY;
             break;
@@ -544,7 +546,9 @@ EtwMonitor::StartTraceSession(
                 else
                 {
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to enable ETW trace session. Error: %lu, Provider GUID: %s", status, pwsProviderId).c_str()
+                        Utility::FormatString(
+                            L"Failed to enable ETW trace session. Error: %lu, Provider GUID: %s",
+                            status, pwsProviderId).c_str()
                     );
 
                     CoTaskMemFree(pwsProviderId);
@@ -1000,7 +1004,10 @@ EtwMonitor::_FormatData(
 
                 if (ERROR_SUCCESS != status)
                 {
-                    logWriter.TraceError(Utility::FormatString(L"Failed to query ETW event property of type map. Error: %lu", status).c_str());
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Failed to query ETW event property of type map. Error: %lu",
+                            status).c_str());
 
                     if (pMapInfo)
                     {
@@ -1063,7 +1070,10 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %lu", status).c_str());
+                logWriter.TraceError(
+                    Utility::FormatString(
+                        L"Failed to format ETW event property value. Error: %lu",
+                        status).c_str());
                 UserData = NULL;
                 break;
             }

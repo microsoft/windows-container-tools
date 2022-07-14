@@ -161,7 +161,11 @@ LogFileMonitor::~LogFileMonitor()
             if (FAILED(hr))
             {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to wait for log file monitor to stop. Log directory: %s Error: %lu", m_logDirectory.c_str(), hr).c_str()
+                    Utility::FormatString(
+                        L"Failed to wait for log file monitor to stop. Log directory: %s Error: %lu",
+                        m_logDirectory.c_str(),
+                        hr
+                    ).c_str()
                 );
             }
         }
@@ -224,7 +228,11 @@ LogFileMonitor::StartLogFileMonitorStatic(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to start log file monitor. Log files in a directory %s will not be monitored. Error: %lu", pThis->m_logDirectory.c_str(), status).c_str()
+                Utility::FormatString(
+                    L"Failed to start log file monitor. Log files in a directory %s will not be monitored. Error: %lu",
+                    pThis->m_logDirectory.c_str(),
+                    status
+                ).c_str()
             );
         }
         return status;
@@ -232,14 +240,21 @@ LogFileMonitor::StartLogFileMonitorStatic(
     catch (std::exception& ex)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to start log file monitor. Log files in a directory %s will not be monitored. %S", pThis->m_logDirectory.c_str(), ex.what()).c_str()
+            Utility::FormatString(
+                L"Failed to start log file monitor. Log files in a directory %s will not be monitored. %S",
+                pThis->m_logDirectory.c_str(),
+                ex.what()
+            ).c_str()
         );
         return E_FAIL;
     }
     catch (...)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to start log file monitor. Log files in a directory %s will not be monitored.", pThis->m_logDirectory.c_str()).c_str()
+            Utility::FormatString(
+                L"Failed to start log file monitor. Log files in a directory %s will not be monitored.",
+                pThis->m_logDirectory.c_str()
+            ).c_str()
         );
         return E_FAIL;
     }
@@ -325,7 +340,11 @@ LogFileMonitor::StartLogFileMonitor()
             {
                 status = GetLastError();
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+                    Utility::FormatString(
+                        L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
+                        m_logDirectory.c_str(),
+                        status
+                    ).c_str()
                 );
                 break;
             }
@@ -489,8 +508,8 @@ LogFileMonitor::StartLogFileMonitor()
                 ReleaseSRWLockExclusive(&m_eventQueueLock);
 
                 continue;
-            } 
-            else 
+            }
+            else
             {
                 logWriter.TraceError(
                     Utility::FormatString(
@@ -512,7 +531,13 @@ LogFileMonitor::StartLogFileMonitor()
         {
             if (!changeHandlerThreadCreated)
             {
-                m_logFilesChangeHandlerThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)&LogFileMonitor::LogFilesChangeHandlerStatic, this, 0, nullptr);
+                m_logFilesChangeHandlerThread = CreateThread(
+                    nullptr,
+                    0,
+                    (LPTHREAD_START_ROUTINE)&LogFileMonitor::LogFilesChangeHandlerStatic,
+                    this,
+                    0,
+                    nullptr);
                 if (!m_logFilesChangeHandlerThread)
                 {
                     status = GetLastError();
@@ -541,7 +566,7 @@ LogFileMonitor::StartLogFileMonitor()
                     // Clear the event queue
                     //
                     AcquireSRWLockExclusive(&m_eventQueueLock);
-                    
+
                     while (m_directoryChangeEvents.size() > 0)
                     {
                         m_directoryChangeEvents.pop();
@@ -578,7 +603,6 @@ LogFileMonitor::StartLogFileMonitor()
     }
 
     return status;
-
 }
 
 
@@ -650,37 +674,31 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
             {
                 case FILE_ACTION_ADDED:
                 {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> ADDED ===\n", i, fileName.c_str());
                     changeEvent.Action = EventAction::Add;
                     break;
                 }
                 case FILE_ACTION_REMOVED:
                 {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> REMOVED ===\n", i, fileName.c_str());
                     changeEvent.Action = EventAction::Remove;
                     break;
                 }
                 case (FILE_ACTION_MODIFIED):
                 {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> MODIFIED ===\n", i, fileName.c_str());
                     changeEvent.Action = EventAction::Modify;
                     break;
                 }
                 case (FILE_ACTION_RENAMED_OLD_NAME):
                 {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> RENAMED_OLD_NAME ===\n", i, fileName.c_str());
                     changeEvent.Action = EventAction::RenameOld;
                     break;
                 }
                 case (FILE_ACTION_RENAMED_NEW_NAME):
-                {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> RENAMED_NEW_NAME ===\n", i, fileName.c_str());
+                {;
                     changeEvent.Action = EventAction::RenameNew;
                     break;
                 }
                 default:
                 {
-                    //wprintf(L"\t[%d] === DirectoryListenThread: <%ws> UnknownAction = 0x%x ===\n", i, fileName.c_str(), fileNotificationInfo->Action);
                     changeEvent.Action = EventAction::Unknown;
                     break;
                 }
@@ -701,8 +719,7 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
 
                 if (m_directoryChangeEvents.size() == 1)
                 {
-                    //wprintf(L"Signalling worker thread to start processing the event queue\n");
-                    if(!SetEvent(m_workerThreadEvent))
+                    if (!SetEvent(m_workerThreadEvent))
                     {
                         ReleaseSRWLockExclusive(&m_eventQueueLock);
                         return GetLastError();
@@ -711,9 +728,10 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
 
                 ReleaseSRWLockExclusive(&m_eventQueueLock);
             }
-            
+
             dwNextEntryOffset = fileNotificationInfo->NextEntryOffset;
-            fileNotificationInfo = (FILE_NOTIFY_INFORMATION*)((LPBYTE)fileNotificationInfo + fileNotificationInfo->NextEntryOffset);
+            fileNotificationInfo =
+                (FILE_NOTIFY_INFORMATION*)((LPBYTE)fileNotificationInfo + fileNotificationInfo->NextEntryOffset);
 
         } while (dwNextEntryOffset);
     }
@@ -750,7 +768,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
 
         m_readLogFilesFromStart = false;
 
-        for (auto file: logFiles)
+        for (auto file : logFiles)
         {
             const std::wstring& fileName = file.first;
             const FILE_ID_INFO& fileId = file.second;
@@ -758,7 +776,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
             const std::wstring longPath = fileName.substr(m_logDirectory.size() + 1);
 
             auto element = GetLogFilesInformationIt(longPath);
-            
+
             if (element != m_logFilesInformation.end())
             {
                 //
@@ -813,7 +831,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                             ).c_str()
                         );
                     }
-                    else 
+                    else
                     {
                         logFileInfo->NextReadOffset = fileSize.QuadPart;
                     }
@@ -831,18 +849,20 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
             changeEvent.Action = EventAction::Modify;
             changeEvent.FileName = longPath;
             changeEvent.Timestamp = GetTickCount64();
-            
+
             m_directoryChangeEvents.emplace(changeEvent);
 
             if (m_directoryChangeEvents.size() == 1)
             {
-                //wprintf(L"Signalling worker thread to start processing the event queue\n");
                 if(!SetEvent(m_workerThreadEvent))
                 {
                     ReleaseSRWLockExclusive(&m_eventQueueLock);
 
                     logWriter.TraceError(
-                        Utility::FormatString(L"Error in log file monitor. Failed to signal worker thread to process log file changes. Error=%d\n", GetLastError()).c_str()
+                        Utility::FormatString(
+                            L"Error in log file monitor. Failed to signal worker thread to process log file changes. Error=%d\n",
+                            GetLastError()
+                        ).c_str()
                     );
                     return GetLastError();
                 }
@@ -878,7 +898,11 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. Error: %lu", pThis->m_logDirectory.c_str(), status).c_str()
+                Utility::FormatString(
+                    L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. Error: %lu",
+                    pThis->m_logDirectory.c_str(),
+                    status
+                ).c_str()
             );
         }
         return status;
@@ -886,14 +910,21 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
     catch (std::exception& ex)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. %S", pThis->m_logDirectory.c_str(), ex.what()).c_str()
+            Utility::FormatString(
+                L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. %S",
+                pThis->m_logDirectory.c_str(),
+                ex.what()
+            ).c_str()
         );
         return E_FAIL;
     }
     catch (...)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored", pThis->m_logDirectory.c_str()).c_str()
+            Utility::FormatString(
+                L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored",
+                pThis->m_logDirectory.c_str()
+            ).c_str()
         );
         return E_FAIL;
     }
@@ -916,7 +947,11 @@ LogFileMonitor::LogFilesChangeHandler()
     {
         status = GetLastError();
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to create timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+            Utility::FormatString(
+                L"Failed to create timer object to monitor log file changes in directory %s. Error: %lu",
+                m_logDirectory.c_str(),
+                status
+            ).c_str()
         );
         return status;
     }
@@ -928,7 +963,10 @@ LogFileMonitor::LogFilesChangeHandler()
     if (status != ERROR_SUCCESS)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to enumerate log directory %ws. Some log files may not be monitored for application logs", m_logDirectory.c_str()).c_str()
+            Utility::FormatString(
+                L"Failed to enumerate log directory %ws. Some log files may not be monitored for application logs",
+                m_logDirectory.c_str()
+            ).c_str()
         );
     }
 
@@ -937,7 +975,11 @@ LogFileMonitor::LogFilesChangeHandler()
         status = GetLastError();
         
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+            Utility::FormatString(
+                L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
+                m_logDirectory.c_str(),
+                status
+            ).c_str()
         );
     }
 
@@ -964,7 +1006,7 @@ LogFileMonitor::LogFilesChangeHandler()
 
                     //
                     // Try to recover the long path. The worst case is when it's already
-                    // a long path, and it will make a useless variable reassign. 
+                    // a long path, and it will make a useless variable reassign.
                     //
                     auto it = m_longPaths.find(event.FileName);
 
@@ -974,7 +1016,7 @@ LogFileMonitor::LogFilesChangeHandler()
                     }
 
                     ReleaseSRWLockExclusive(&m_eventQueueLock);
-                    
+
                     switch (event.Action)
                     {
                         case EventAction::Add:
@@ -1041,7 +1083,7 @@ LogFileMonitor::LogFilesChangeHandler()
                         default:
                             break;
                     }
-                    
+
                     AcquireSRWLockExclusive(&m_eventQueueLock);
                 }
 
@@ -1050,7 +1092,11 @@ LogFileMonitor::LogFilesChangeHandler()
                     status = GetLastError();
 
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to reset event object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+                        Utility::FormatString(
+                            L"Failed to reset event object to monitor log file changes in directory %s. Error: %lu",
+                            m_logDirectory.c_str(),
+                            status
+                        ).c_str()
                     );
                     stopWatching = true;
                 }
@@ -1060,7 +1106,11 @@ LogFileMonitor::LogFilesChangeHandler()
                     status = GetLastError();
 
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+                        Utility::FormatString(
+                            L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
+                            m_logDirectory.c_str(),
+                            status
+                        ).c_str()
                     );
                 }
 
@@ -1084,7 +1134,11 @@ LogFileMonitor::LogFilesChangeHandler()
                     status = GetLastError();
 
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+                        Utility::FormatString(
+                            L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
+                            m_logDirectory.c_str(),
+                            status
+                        ).c_str()
                     );
                 }
             }
@@ -1093,9 +1147,13 @@ LogFileMonitor::LogFilesChangeHandler()
             default:
             {
                 status = GetLastError();
-                
+
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to wait on directory change notification events to monitor log file changes in directory %s. Error: %lu", m_logDirectory.c_str(), status).c_str()
+                    Utility::FormatString(
+                        L"Failed to wait on directory change notification events to monitor log file changes in directory %s. Error: %lu",
+                        m_logDirectory.c_str(),
+                        status
+                    ).c_str()
                 );
                 stopWatching = true;
             }
@@ -1122,7 +1180,7 @@ LogFileMonitor::LogFileAddEventHandler(
         // Log file already exist. Do nothing.
         //
     }
-    else 
+    else
     {
         const std::wstring fullLongPath = Utility::GetLongPath(m_logDirectory + L'\\' + Event.FileName);
 
@@ -1210,7 +1268,7 @@ LogFileMonitor::LogFileRemoveEventHandler(
         {
             m_longPaths.erase(longPathIterator);
         }
-        
+
         auto fileIdIterator =
             std::find_if(
                 m_fileIds.begin(),
@@ -1230,7 +1288,6 @@ LogFileMonitor::LogFileRemoveEventHandler(
     }
 
     return status;
-
 }
 
 
@@ -1291,7 +1348,7 @@ LogFileMonitor::LogFileRenameNewEventHandler(
 
             GetFilesInDirectory(fullLongPath, m_filter, logFiles, m_includeSubfolders);
 
-            for (auto file : logFiles)  
+            for (auto file : logFiles)
             {
                 const std::wstring& fileName = file.first;
                 const FILE_ID_INFO& fileId = file.second;
@@ -1305,7 +1362,7 @@ LogFileMonitor::LogFileRenameNewEventHandler(
             }
         }
     }
-    else 
+    else
     {
         FILE_ID_INFO fileId{ 0 };
         GetFileId(fullLongPath, fileId);
@@ -1388,12 +1445,14 @@ LogFileMonitor::RenameFileInMaps(
         //
         // Look for the map element with value equal to long path.
         //
-        longPathIterator = 
+        longPathIterator =
             std::find_if(
                 m_longPaths.begin(),
                 m_longPaths.end(),
-                [&OldName](const auto& it) { return _wcsicmp(it.second.c_str(), OldName.c_str()) == 0; });
-
+                [&OldName](const auto& it) {
+                    return _wcsicmp(it.second.c_str(), OldName.c_str()) == 0;
+                }
+            );
     }
 
     if (longPathIterator != m_longPaths.end())
@@ -1419,7 +1478,7 @@ LogFileMonitor::LogFileReInitEventHandler(
 
     if (status == ERROR_SUCCESS)
     {
-        for (auto file: logFiles)
+        for (auto file : logFiles)
         {
             const std::wstring& fileName = file.first;
             const FILE_ID_INFO& fileId = file.second;
@@ -1448,7 +1507,6 @@ LogFileMonitor::LogFileReInitEventHandler(
                 m_logFilesInformation[longPath] = std::move(logFileInfo);
                 m_fileIds[fileId] = longPath;
             }
-
         }
     }
     else
@@ -1485,7 +1543,6 @@ LogFileMonitor::ReadLogFile(
     BYTE bom[3 * sizeof(char)] = { 0, 0, 0 }; // Bom could be up to 3 bytes size in UTF8.
     bool wasBomRead = false;
 
-    //wprintf(L"ReadLogFile: Reading file %ws, offset=%I64d\n", LogFileInfo->FileName.c_str(), LogFileInfo->NextReadOffset);
     const std::wstring fullLongPath = m_logDirectory + L'\\' + LogFileInfo->FileName;
 
     HANDLE logFile = CreateFileW(fullLongPath.c_str(),
@@ -1594,7 +1651,6 @@ LogFileMonitor::ReadLogFile(
                 if (status == ERROR_HANDLE_EOF)
                 {
                     bytesRead = 0;
-                    //wprintf(L"ReadLogFile:End of file. File = %ws. Error = %d\n", LogFileInfo->FileName.c_str(), status);
                     status = ERROR_SUCCESS;
                 }
                 else
@@ -1622,11 +1678,23 @@ LogFileMonitor::ReadLogFile(
                 {
                     if (wasBomRead)
                     {
-                        LogFileInfo->EncodingType = this->FileTypeFromBuffer(logFileContents.data(), bytesRead, bom, sizeof(bom), foundBomSize);
+                        LogFileInfo->EncodingType = this->FileTypeFromBuffer(
+                            logFileContents.data(),
+                            bytesRead,
+                            bom,
+                            sizeof(bom),
+                            foundBomSize
+                        );
                     }
                     else
                     {
-                        LogFileInfo->EncodingType = this->FileTypeFromBuffer(logFileContents.data(), bytesRead, logFileContents.data(), bytesRead, foundBomSize);
+                        LogFileInfo->EncodingType = this->FileTypeFromBuffer(
+                            logFileContents.data(),
+                            bytesRead,
+                            logFileContents.data(),
+                            bytesRead,
+                            foundBomSize
+                        );
                     }
                 }
 
@@ -1658,7 +1726,11 @@ LogFileMonitor::ReadLogFile(
                 //
                 // Decode read string to UTF16, skipping the BOM if necessary.
                 //
-                const std::wstring decodedString = ConvertStringToUTF16(logFileContents.data() + foundBomSize, bytesRead - foundBomSize, LogFileInfo->EncodingType);
+                const std::wstring decodedString = ConvertStringToUTF16(
+                    logFileContents.data() + foundBomSize,
+                    bytesRead - foundBomSize,
+                    LogFileInfo->EncodingType
+                );
 
                 //
                 // Search 'new line' characters, and if found, print the line.
@@ -1679,9 +1751,11 @@ LogFileMonitor::ReadLogFile(
                         //
                         found--;
                     }
-                    // TODO: handle the writing to file case. The UTF-16 BOM should be added at the beginning, and use WriteLog function.
-                    // Also, in the writing to file scenario, instead of print each line here, we should store the lines to print, and then,
-                    // print them once time.
+
+                    // TODO(annandaa): handle the writing to file case. The UTF-16 BOM should be added at
+                    // the beginning, and use WriteLog function.
+                    // Also, in the writing to file scenario, instead of print each line here,
+                    // we should store the lines to print, and then, print them once time.
 
                     //
                     // Write to console log.
@@ -1690,7 +1764,11 @@ LogFileMonitor::ReadLogFile(
                     {
                         try
                         {
-                            currentLineBuffer.insert(currentLineBuffer.end(), decodedString.begin(), decodedString.begin() + found);
+                            currentLineBuffer.insert(
+                                currentLineBuffer.end(),
+                                decodedString.begin(),
+                                decodedString.begin() + found
+                            );
                             logWriter.WriteConsoleLog(currentLineBuffer);
                         }
                         catch (...)
@@ -1739,8 +1817,6 @@ LogFileMonitor::ReadLogFile(
                     }
                 }
             }
-
-            //wprintf(L"Log file %ws read succeeded.\n", LogFileInfo->FileName.c_str());    
 
             LogFileInfo->NextReadOffset += bytesRead;
         } while (bytesRead > 0);
@@ -1811,8 +1887,9 @@ LogFileMonitor::GetFilesInDirectory(
                 //
                 // Filter out the files that do not match the specified filter.
                 //
-                if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && FileMatchesFilter(ffd.cFileName, SearchPattern.c_str()))
-                { 
+                if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                    && FileMatchesFilter(ffd.cFileName, SearchPattern.c_str()))
+                {
                     std::wstring fileName = FolderPath + L"\\" + ffd.cFileName;
 
                     FILE_ID_INFO fileId{ 0 };
@@ -1825,7 +1902,7 @@ LogFileMonitor::GetFilesInDirectory(
             } while (FindNextFile(hFind, &ffd) != 0);
 
             status = GetLastError();
-            
+
             if (status == ERROR_NO_MORE_FILES)
             {
                 status = ERROR_SUCCESS;
