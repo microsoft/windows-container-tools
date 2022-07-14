@@ -39,11 +39,13 @@ using namespace std;
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
-                               _In_ bool IncludeSubfolders
+                               _In_ bool IncludeSubfolders,
+                               _In_ bool IncludeFileNames
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
-                               m_includeSubfolders(IncludeSubfolders)
+                               m_includeSubfolders(IncludeSubfolders),
+                               m_includeFileNames(IncludeFileNames)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1638,6 +1640,16 @@ LogFileMonitor::ReadLogFile(
                     foundBomSize = 0;
                 }
 
+                //
+                //log the name of the source log file if includeFileName field if true
+                //
+                if (m_includeFileNames)
+                {
+                    logWriter.WriteConsoleLog(
+                        Utility::FormatString(
+                            L"Log File: %ws", LogFileInfo->FileName.c_str()
+                        ).c_str());
+                }
                 //
                 // Decode read string to UTF16, skipping the BOM if necessary.
                 //
