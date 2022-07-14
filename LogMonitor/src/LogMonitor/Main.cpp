@@ -3,7 +3,7 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "./pch.h"
 #include "Version.h"
 
 using namespace std;
@@ -11,13 +11,11 @@ using namespace std;
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
 #pragma comment(lib, "ws2_32.lib")  // For ntohs function
-#pragma comment(lib, "shlwapi.lib") 
+#pragma comment(lib, "shlwapi.lib")
 
 #define ARGV_OPTION_CONFIG_FILE L"/Config"
 #define ARGV_OPTION_HELP1 L"/?"
 #define ARGV_OPTION_HELP2 L"--help"
-
-
 
 LogWriter logWriter;
 
@@ -43,7 +41,7 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
             g_hStopEvent = INVALID_HANDLE_VALUE;
 
             //
-            // Propagate the CTRL signal 
+            // Propagate the CTRL signal
             //
             SetConsoleCtrlHandler(NULL, TRUE);
             GenerateConsoleCtrlEvent(dwCtrlType, 0);
@@ -60,7 +58,13 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 
 void PrintUsage()
 {
-    wprintf(L"\n\tLogMonitor Tool Version %d.%d.%d.%d \n\n", LM_MAJORNUMBER, LM_MINORNUMBER, LM_BUILDNUMBER, LM_BUILDMINORVERSION);
+    wprintf(
+        L"\n\tLogMonitor Tool Version %d.%d.%d.%d \n\n",
+        LM_MAJORNUMBER,
+        LM_MINORNUMBER,
+        LM_BUILDNUMBER,
+        LM_BUILDMINORVERSION
+    );
     wprintf(L"\tUsage: LogMonitor.exe [/?] | [--help] | [[/CONFIG <PATH>][COMMAND [PARAMETERS]]] \n\n");
     wprintf(L"\t/?|--help   Shows help information\n");
     wprintf(L"\t<PATH>      Specifies the path of the Json configuration file. This is\n");
@@ -124,7 +128,8 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
                 {
                 case LogSourceType::EventLog:
                 {
-                    std::shared_ptr<SourceEventLog> sourceEventLog = std::reinterpret_pointer_cast<SourceEventLog>(source);
+                    std::shared_ptr<SourceEventLog> sourceEventLog =
+                        std::reinterpret_pointer_cast<SourceEventLog>(source);
 
                     for (auto channel : sourceEventLog->Channels)
                     {
@@ -142,19 +147,31 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
 
                     try
                     {
-                        std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(sourceFile->Directory, sourceFile->Filter, sourceFile->IncludeSubdirectories, sourceFile->IncludeFileNames);
+                        std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
+                            sourceFile->Directory,
+                            sourceFile->Filter,
+                            sourceFile->IncludeSubdirectories,
+                            sourceFile->IncludeFileNames
+                        );
                         g_logfileMonitors.push_back(std::move(logfileMon));
                     }
                     catch (std::exception& ex)
                     {
                         logWriter.TraceError(
-                            Utility::FormatString(L"Instantiation of a LogFileMonitor object failed for directory %ws. %S", sourceFile->Directory.c_str(), ex.what()).c_str()
+                            Utility::FormatString(
+                                L"Instantiation of a LogFileMonitor object failed for directory %ws. %S",
+                                sourceFile->Directory.c_str(),
+                                ex.what()
+                            ).c_str()
                         );
                     }
                     catch (...)
                     {
                         logWriter.TraceError(
-                            Utility::FormatString(L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.", sourceFile->Directory.c_str()).c_str()
+                            Utility::FormatString(
+                                L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
+                                sourceFile->Directory.c_str()
+                            ).c_str()
                         );
                     }
 
@@ -190,13 +207,18 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
             catch (std::exception& ex)
             {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Instantiation of a EventMonitor object failed. %S", ex.what()).c_str()
+                    Utility::FormatString(
+                        L"Instantiation of a EventMonitor object failed. %S",
+                        ex.what()
+                    ).c_str()
                 );
             }
             catch (...)
             {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Instantiation of a EventMonitor object failed. Unknown error occurred.").c_str()
+                    Utility::FormatString(
+                        L"Instantiation of a EventMonitor object failed. Unknown error occurred."
+                    ).c_str()
                 );
             }
         }
@@ -216,7 +238,9 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
     else
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Configuration file '%s' not found. Logs will not be monitored.", ConfigFileName
+            Utility::FormatString(
+                L"Configuration file '%s' not found. Logs will not be monitored.",
+                ConfigFileName
             ).c_str()
         );
         success = false;
@@ -265,7 +289,6 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             configFileName = argv[2];
             indexCommandArgument = 3;
         }
-
     }
 
     StartMonitors(configFileName);
@@ -276,7 +299,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     SetConsoleCtrlHandler(ControlHandle, TRUE);
 
     //
-    // Create the child process. 
+    // Create the child process.
     //
     if (argc > indexCommandArgument)
     {

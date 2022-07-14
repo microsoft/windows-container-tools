@@ -318,7 +318,7 @@ public:
     std::wstring ProviderGuidStr;
     GUID ProviderGuid = { 0 };
     ULONGLONG Keywords = 0;
-    UCHAR Level = 2; // Error level 
+    UCHAR Level = 2; // Error level
 
     inline bool IsValid()
     {

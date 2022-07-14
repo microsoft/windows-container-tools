@@ -658,7 +658,8 @@ EventMonitor::EnableEventLogChannel(
             Utility::FormatString(
                 L"Failed to query event channel configuration. Channel: %ws Error: 0x%X",
                 ChannelPath,
-                status).c_str()
+                status
+            ).c_str()
         );
     }
 
