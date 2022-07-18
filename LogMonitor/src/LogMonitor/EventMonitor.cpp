@@ -277,29 +277,24 @@ EventMonitor::ConstructWindowsEventQuery(
         // Construct the query portion for the log level
         //
         std::wstring logLevelQuery = L"";
-
         logLevelQuery = L"(";
 
         if (eventChannel.Level >= EventChannelLogLevel::Critical)
         {
             logLevelQuery += L"Level=1 or ";
         }
-
         if (eventChannel.Level >= EventChannelLogLevel::Error)
         {
             logLevelQuery += L"Level=2 or ";
         }
-
         if (eventChannel.Level >= EventChannelLogLevel::Warning)
         {
             logLevelQuery += L"Level=3 or ";
         }
-
         if (eventChannel.Level >= EventChannelLogLevel::Information)
         {
             logLevelQuery += L"Level=4 or ";
         }
-
         if (eventChannel.Level >= EventChannelLogLevel::Verbose)
         {
             logLevelQuery += L"Level=5 or ";
@@ -309,7 +304,6 @@ EventMonitor::ConstructWindowsEventQuery(
         // Remove last ' or '
         //
         logLevelQuery.erase(logLevelQuery.size() - 4);
-
         logLevelQuery += L")";
 
         query += Utility::FormatString(

@@ -279,7 +279,7 @@ ReadSourceAttributes(
                 || _wcsnicmp(
                     key.c_str(),
                     JSON_TAG_INCLUDE_FILENAMES,
-                    _countof(JSON_TAG_INCLUDE_FILENAMES)))
+                    _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0)
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }

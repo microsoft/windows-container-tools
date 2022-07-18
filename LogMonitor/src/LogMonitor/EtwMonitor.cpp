@@ -173,7 +173,8 @@ EtwMonitor::FilterValidProviders(
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to allocate memory to enumerate ETW providers. Size=%lu.",
-                    bufferSize).c_str()
+                    bufferSize
+                ).c_str()
             );
             status = ERROR_OUTOFMEMORY;
             break;
