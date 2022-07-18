@@ -3,7 +3,7 @@
 // Licensed under the MIT license.
 //
 
-#include "./pch.h"
+#include "pch.h"
 
 using namespace std;
 
@@ -37,7 +37,8 @@ EventMonitor::EventMonitor(
     m_eventMonitorThread = NULL;
 
     m_stopEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-    if(!m_stopEvent)
+
+    if (!m_stopEvent)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
     }
@@ -48,8 +49,10 @@ EventMonitor::EventMonitor(
         (LPTHREAD_START_ROUTINE)&EventMonitor::StartEventMonitorStatic,
         this,
         0,
-        nullptr);
-    if(!m_eventMonitorThread)
+        nullptr
+    );
+
+    if (!m_eventMonitorThread)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
     }
@@ -57,7 +60,7 @@ EventMonitor::EventMonitor(
 
 EventMonitor::~EventMonitor()
 {
-    if(!SetEvent(m_stopEvent))
+    if (!SetEvent(m_stopEvent))
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to gracefully stop event log monitor %lu", GetLastError()).c_str()
@@ -180,7 +183,9 @@ EventMonitor::StartEventMonitor()
         NULL,
         NULL,
         NULL,
-        evtSubscribeFlags);
+        evtSubscribeFlags
+    );
+
     if (NULL == hSubscription)
     {
         status = GetLastError();
@@ -367,7 +372,8 @@ EventMonitor::EnumerateResults(
                 logWriter.TraceWarning(
                     Utility::FormatString(
                         L"Failed to render event log event. The event will not be processed. Error: %lu.",
-                        status).c_str()
+                        status
+                    ).c_str()
                 );
                 status = ERROR_SUCCESS;
             }
@@ -444,7 +450,9 @@ EventMonitor::PrintEvent(
         renderContext = EvtCreateRenderContext(
             static_cast<DWORD>(valuePaths.size()),
             &valuePaths[0],
-            EvtRenderContextValues);
+            EvtRenderContextValues
+        );
+
         if (!renderContext)
         {
             return GetLastError();
@@ -555,7 +563,8 @@ EventMonitor::PrintEvent(
                     channelName.c_str(),
                     c_LevelToString[static_cast<UINT8>(level)].c_str(),
                     eventId,
-                    (LPWSTR)(&m_eventMessageBuffer[0]));
+                    (LPWSTR)(&m_eventMessageBuffer[0])
+                );
 
                 //
                 // If the multi-line option is disabled, remove all new lines from the output.

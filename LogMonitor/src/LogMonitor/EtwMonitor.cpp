@@ -3,7 +3,7 @@
 // Licensed under the MIT license.
 //
 
-#include "./pch.h"
+#include "pch.h"
 
 #define MAX_NAME 256
 
@@ -54,8 +54,10 @@ EtwMonitor::EtwMonitor(
         (LPTHREAD_START_ROUTINE)&EtwMonitor::StartEtwMonitorStatic,
         this,
         0,
-        nullptr);
-    if(m_ETWMonitorThread == NULL)
+        nullptr
+    );
+
+    if (m_ETWMonitorThread == NULL)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
     }
@@ -1007,7 +1009,9 @@ EtwMonitor::_FormatData(
                     logWriter.TraceError(
                         Utility::FormatString(
                             L"Failed to query ETW event property of type map. Error: %lu",
-                            status).c_str());
+                            status
+                        ).c_str()
+                    );
 
                     if (pMapInfo)
                     {
@@ -1073,7 +1077,9 @@ EtwMonitor::_FormatData(
                 logWriter.TraceError(
                     Utility::FormatString(
                         L"Failed to format ETW event property value. Error: %lu",
-                        status).c_str());
+                        status
+                    ).c_str()
+                );
                 UserData = NULL;
                 break;
             }

@@ -3,7 +3,7 @@
 // Licensed under the MIT license.
 //
 
-#include "./pch.h"
+#include "pch.h"
 #include "Version.h"
 
 using namespace std;
