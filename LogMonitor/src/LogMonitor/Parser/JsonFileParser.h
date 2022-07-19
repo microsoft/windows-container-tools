@@ -54,7 +54,6 @@ public:
     void SkipValue();
 
 private:
-
     //
     // Buffer to parse
     //

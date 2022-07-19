@@ -48,8 +48,16 @@ EtwMonitor::EtwMonitor(
         throw std::invalid_argument("Invalid providers");
     }
 
-    m_ETWMonitorThread  = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)&EtwMonitor::StartEtwMonitorStatic, this, 0, nullptr);
-    if(m_ETWMonitorThread == NULL)
+    m_ETWMonitorThread  = CreateThread(
+        nullptr,
+        0,
+        (LPTHREAD_START_ROUTINE)&EtwMonitor::StartEtwMonitorStatic,
+        this,
+        0,
+        nullptr
+    );
+
+    if (m_ETWMonitorThread == NULL)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
     }
@@ -152,8 +160,8 @@ EtwMonitor::FilterValidProviders(
     status = TdhEnumerateProviders(penum, &bufferSize);
 
     //
-    // Allocate the required buffer and call TdhEnumerateProviders. The list of 
-    // providers can change between the time you retrieved the required buffer 
+    // Allocate the required buffer and call TdhEnumerateProviders. The list of
+    // providers can change between the time you retrieved the required buffer
     // size and the time you enumerated the providers, so call TdhEnumerateProviders
     // in a loop until the function does not return ERROR_INSUFFICIENT_BUFFER.
     //
@@ -163,7 +171,10 @@ EtwMonitor::FilterValidProviders(
         if (NULL == ptemp)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to allocate memory to enumerate ETW providers. Size=%lu.", bufferSize).c_str()
+                Utility::FormatString(
+                    L"Failed to allocate memory to enumerate ETW providers. Size=%lu.",
+                    bufferSize
+                ).c_str()
             );
             status = ERROR_OUTOFMEMORY;
             break;
@@ -184,7 +195,7 @@ EtwMonitor::FilterValidProviders(
     else
     {
         //
-        // Loop through the list of providers and print the provider's name, GUID, 
+        // Loop through the list of providers and print the provider's name, GUID,
         // and the source of the information (MOF class or instrumentation manifest).
         //
         for (DWORD i = 0; i < penum->NumberOfProviders; i++)
@@ -273,7 +284,7 @@ EtwMonitor::StartEtwMonitorStatic(
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW monitor").c_str()
         );
-        return E_FAIL;    
+        return E_FAIL;
     }
 }
 
@@ -363,7 +374,7 @@ EtwMonitor::BufferEventCallback(
 
 ///
 /// Entry for the spawned ETW monitor thread. It starts a session and blocks
-/// the current thread when ProcessTrace is called. 
+/// the current thread when ProcessTrace is called.
 ///
 /// \return A DWORD with a windows error value. If the function succeded, it returns
 ///     ERROR_SUCCESS.
@@ -384,7 +395,7 @@ EtwMonitor::StartEtwMonitor()
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW trace session. Error: %lu", status).c_str()
         );
-        if (m_startTraceHandle != NULL) 
+        if (m_startTraceHandle != NULL)
         {
             CloseTrace(this->m_startTraceHandle);
         }
@@ -400,7 +411,7 @@ EtwMonitor::StartEtwMonitor()
     trace.EventRecordCallback = (PEVENT_RECORD_CALLBACK)(OnEventRecordTramp);
     trace.BufferCallback = (PEVENT_TRACE_BUFFER_CALLBACK)(StaticBufferEventCallback);
     trace.ProcessTraceMode = PROCESS_TRACE_MODE_EVENT_RECORD | PROCESS_TRACE_MODE_REAL_TIME;
-    
+
     this->m_startTraceHandle = OpenTrace(&trace);
     if (INVALID_PROCESSTRACE_HANDLE == this->m_startTraceHandle)
     {
@@ -459,7 +470,7 @@ EtwMonitor::StartTraceSession(
     PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES) &this->m_vecEventTracePropsBuffer[0];
     petp->Wnode.BufferSize = (ULONG)this->m_vecEventTracePropsBuffer.size();
 
-    petp->Wnode.ClientContext = 1;	//use QPC for timestamp resolution
+    petp->Wnode.ClientContext = 1;  //use QPC for timestamp resolution
     petp->Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     petp->LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
     petp->FlushTimer = 1;
@@ -538,7 +549,9 @@ EtwMonitor::StartTraceSession(
                 else
                 {
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to enable ETW trace session. Error: %lu, Provider GUID: %s", status, pwsProviderId).c_str()
+                        Utility::FormatString(
+                            L"Failed to enable ETW trace session. Error: %lu, Provider GUID: %s",
+                            status, pwsProviderId).c_str()
                     );
 
                     CoTaskMemFree(pwsProviderId);
@@ -585,7 +598,7 @@ EtwMonitor::OnRecordEvent(
             break;
         }
     }
-    
+
     if (!skipEvent)
     {
         DWORD bufferSize = 0;
@@ -594,7 +607,7 @@ EtwMonitor::OnRecordEvent(
         // Retrieve the required buffer size for the event metadata.
         //
         status = TdhGetEventInformation(EventRecord, 0, NULL, pInfo, &bufferSize);
-        
+
         if (ERROR_INSUFFICIENT_BUFFER == status)
         {
             try
@@ -619,7 +632,7 @@ EtwMonitor::OnRecordEvent(
                 status = TdhGetEventInformation(EventRecord, 0, NULL, pInfo, &bufferSize);
             }
         }
-        
+
         if (ERROR_SUCCESS != status)
         {
             logWriter.TraceError(
@@ -631,7 +644,7 @@ EtwMonitor::OnRecordEvent(
         //
         // Process all the event types, but WPP kind.
         //
-        if (status == ERROR_SUCCESS && 
+        if (status == ERROR_SUCCESS &&
                (pInfo->DecodingSource == DecodingSourceXMLFile ||
                 pInfo->DecodingSource == DecodingSourceWbem ||
                 pInfo->DecodingSource == DecodingSourceTlg))
@@ -759,7 +772,7 @@ EtwMonitor::FormatMetadata(
             Utility::FormatString(L"Failed to convert ETW provider GUID to string. Error: 0x%x\n", hr).c_str()
         );
         return hr;
-    }   
+    }
 
     oss << L"<Provider idGuid=\"" << pwsProviderId << "\"/>";
     CoTaskMemFree(pwsProviderId);
@@ -768,7 +781,7 @@ EtwMonitor::FormatMetadata(
     //
     // Names of the DecodingSource enum values
     //
-    const static std::vector<std::wstring> c_DecodingSourceToString =
+    static const std::vector<std::wstring> c_DecodingSourceToString =
     {
         L"DecodingSourceXMLFile",
         L"DecodingSourceWbem",
@@ -788,7 +801,7 @@ EtwMonitor::FormatMetadata(
     //
     // Print Level and Keyword
     //
-    const static std::vector<std::wstring> c_LevelToString =
+    static const std::vector<std::wstring> c_LevelToString =
     {
         L"None",
         L"Critical",
@@ -798,11 +811,11 @@ EtwMonitor::FormatMetadata(
         L"Verbose",
     };
 
-    oss << L"<Level>" 
-        << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level] 
+    oss << L"<Level>"
+        << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
         << L"</Level>";
 
-    oss << L"<Keyword>" 
+    oss << L"<Keyword>"
         << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
         << L"</Keyword>";
 
@@ -815,7 +828,7 @@ EtwMonitor::FormatMetadata(
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
 
-        if (FAILED(hr)) 
+        if (FAILED(hr))
         {
             logWriter.TraceError(
                 Utility::FormatString(L"Failed to convert GUID to string. Error: 0x%x\n", hr).c_str()
@@ -874,8 +887,8 @@ EtwMonitor::FormatData(
     }
 
     //
-    // Print the event data for all the top-level properties. Metadata for all the 
-    // top-level properties come before structure member properties in the 
+    // Print the event data for all the top-level properties. Metadata for all the
+    // top-level properties come before structure member properties in the
     // property information array. If the EVENT_HEADER_FLAG_STRING_ONLY flag is set,
     // the event data is a null-terminated string, so just print it.
     //
@@ -994,7 +1007,12 @@ EtwMonitor::_FormatData(
 
                 if (ERROR_SUCCESS != status)
                 {
-                    logWriter.TraceError(Utility::FormatString(L"Failed to query ETW event property of type map. Error: %lu", status).c_str());
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Failed to query ETW event property of type map. Error: %lu",
+                            status
+                        ).c_str()
+                    );
 
                     if (pMapInfo)
                     {
@@ -1057,7 +1075,12 @@ EtwMonitor::_FormatData(
             }
             else
             {
-                logWriter.TraceError(Utility::FormatString(L"Failed to format ETW event property value. Error: %lu", status).c_str());
+                logWriter.TraceError(
+                    Utility::FormatString(
+                        L"Failed to format ETW event property value. Error: %lu",
+                        status
+                    ).c_str()
+                );
                 UserData = NULL;
                 break;
             }
@@ -1072,14 +1095,14 @@ EtwMonitor::_FormatData(
 ///
 /// Get the length of the property data. For MOF-based events, the size is inferred from the data type
 /// of the property. For manifest-based events, the property can specify the size of the property value
-/// using the length attribute. The length attribue can specify the size directly or specify the name 
-/// of another property in the event data that contains the size. If the property does not include the 
+/// using the length attribute. The length attribue can specify the size directly or specify the name
+/// of another property in the event data that contains the size. If the property does not include the
 /// length attribute, the size is inferred from the data type. The length will be zero for variable
 /// length, null-terminated strings and structures.
 ///
 /// \param EventRecord  The event record received by EventRecordCallback
 /// \param EventInfo    A struct with event metadata.
-/// \param Index        Index of the property to request. 
+/// \param Index        Index of the property to request.
 /// \param arraySize    Size of the property, obtained in this function.
 ///
 /// \return A DWORD with a windows error value. If the function succeded, it returns
@@ -1103,8 +1126,8 @@ EtwMonitor::GetPropertyLength(
     PropertyLength = 0;
 
     //
-    // If the property is a binary blob and is defined in a manifest, the property can 
-    // specify the blob's size or it can point to another property that defines the 
+    // If the property is a binary blob and is defined in a manifest, the property can
+    // specify the blob's size or it can point to another property that defines the
     // blob's size. The PropertyParamLength flag tells you where the blob's size is defined.
     //
     if ((EventInfo->EventPropertyInfoArray[Index].Flags & PropertyParamLength) == PropertyParamLength)
@@ -1128,8 +1151,8 @@ EtwMonitor::GetPropertyLength(
         {
             //
             // If the property is a binary blob and is defined in a MOF class, the extension
-            // qualifier is used to determine the size of the blob. However, if the extension 
-            // is IPAddrV6, you must set the propertyLength variable yourself because the 
+            // qualifier is used to determine the size of the blob. However, if the extension
+            // is IPAddrV6, you must set the propertyLength variable yourself because the
             // EVENT_PROPERTY_INFO.length field will be zero.
             //
             if (TDH_INTYPE_BINARY == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType &&
@@ -1166,7 +1189,7 @@ EtwMonitor::GetPropertyLength(
 ///
 /// \param EventRecord  The event record received by EventRecordCallback
 /// \param EventInfo    A struct with event metadata.
-/// \param Index        Index of the array to request. 
+/// \param Index        Index of the array to request.
 /// \param arraySize    Size of the array, obtained in this function.
 ///
 /// \return A DWORD with a windows error value. If the function succeded, it returns
@@ -1196,7 +1219,6 @@ EtwMonitor::GetArraySize(
         {
             ArraySize = 0;
             return ERROR_SUCCESS;
-
         }
         status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)& count);
         ArraySize = (USHORT)count;
@@ -1214,7 +1236,7 @@ EtwMonitor::GetArraySize(
 ///
 /// \param EventRecord      The event record received by EventRecordCallback
 /// \param MapName          The index of the map to request.
-/// \param DecodingSource   The decoding type of the current event. 
+/// \param DecodingSource   The decoding type of the current event.
 /// \param MapInfo          The map's data obtained in this function.
 ///
 /// \return A DWORD with a windows error value. If the function succeded, it returns
@@ -1277,7 +1299,7 @@ EtwMonitor::GetMapInfo(
 
     return status;
 }
-    
+
 ///
 /// In XML decoding, there are trailing spaces. This functions removes them.
 ///

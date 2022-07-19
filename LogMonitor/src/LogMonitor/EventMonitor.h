@@ -8,7 +8,6 @@
 class EventMonitor final
 {
 public:
-
     EventMonitor() = delete;
 
     EventMonitor(
@@ -20,7 +19,6 @@ public:
     ~EventMonitor();
 
 private:
-
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int EVENT_ARRAY_SIZE = 10;
 
@@ -35,7 +33,7 @@ private:
 
     //
     // Handle to an event subscriber thread.
-    //    
+    //
     HANDLE m_eventMonitorThread;
 
     std::vector<wchar_t> m_eventMessageBuffer;

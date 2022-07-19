@@ -13,13 +13,13 @@ using namespace std;
 ///
 /// Monitors a event log for new events in specified channels.
 ///
-/// EventMonitor starts a monitor thread that waits for events from EvtSubscribe 
+/// EventMonitor starts a monitor thread that waits for events from EvtSubscribe
 /// or for a stop event to be set. The same thread processes the changes and invokes the callback.
 /// Note: The constructor blocks until the spwaned thread starts listening for changes or dies.
 ///
-/// The destructor signals the stop event and waits up to MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring 
+/// The destructor signals the stop event and waits up to MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring
 /// thread to exit. To prevent the thread from out-living EventMonitor, the destructor fails fast
-/// if the wait fails or times out. This also ensures the callback is not being called and will not be 
+/// if the wait fails or times out. This also ensures the callback is not being called and will not be
 /// called once EventMonitor is destroyed.
 ///
 
@@ -37,13 +37,22 @@ EventMonitor::EventMonitor(
     m_eventMonitorThread = NULL;
 
     m_stopEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-    if(!m_stopEvent)
+
+    if (!m_stopEvent)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
     }
 
-    m_eventMonitorThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)&EventMonitor::StartEventMonitorStatic, this, 0, nullptr);
-    if(!m_eventMonitorThread)
+    m_eventMonitorThread = CreateThread(
+        nullptr,
+        0,
+        (LPTHREAD_START_ROUTINE)&EventMonitor::StartEventMonitorStatic,
+        this,
+        0,
+        nullptr
+    );
+
+    if (!m_eventMonitorThread)
     {
         throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
     }
@@ -51,7 +60,7 @@ EventMonitor::EventMonitor(
 
 EventMonitor::~EventMonitor()
 {
-    if(!SetEvent(m_stopEvent))
+    if (!SetEvent(m_stopEvent))
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to gracefully stop event log monitor %lu", GetLastError()).c_str()
@@ -125,7 +134,7 @@ EventMonitor::StartEventMonitorStatic(
 
 
 ///
-/// Entry for the spawned event monitor thread. Loops to wait for either the stop event in which case it exits 
+/// Entry for the spawned event monitor thread. Loops to wait for either the stop event in which case it exits
 /// or for events to be arrived. When new events are arrived, it invokes the callback, resets,
 /// and starts the wait again.
 ///
@@ -142,7 +151,7 @@ EventMonitor::StartEventMonitor()
     EnableEventLogChannels();
 
     //
-    // Order stop event first so that stop is prioritized if both events are already signalled (changes 
+    // Order stop event first so that stop is prioritized if both events are already signalled (changes
     // are available but stop has been called).
     //
     HANDLE aWaitHandles[eventsCount];
@@ -163,18 +172,31 @@ EventMonitor::StartEventMonitor()
     //
     // Subscribe to events.
     //
-    DWORD evtSubscribeFlags = this->m_startAtOldestRecord ? EvtSubscribeStartAtOldestRecord : EvtSubscribeToFutureEvents;
+    DWORD evtSubscribeFlags = this->m_startAtOldestRecord ?
+        EvtSubscribeStartAtOldestRecord : EvtSubscribeToFutureEvents;
 
-    hSubscription = EvtSubscribe(NULL, aWaitHandles[1], NULL, ConstructWindowsEventQuery(m_eventChannels).c_str(), NULL, NULL, NULL, evtSubscribeFlags);
+    hSubscription = EvtSubscribe(
+        NULL,
+        aWaitHandles[1],
+        NULL,
+        ConstructWindowsEventQuery(m_eventChannels).c_str(),
+        NULL,
+        NULL,
+        NULL,
+        evtSubscribeFlags
+    );
+
     if (NULL == hSubscription)
     {
         status = GetLastError();
-    
+
         if (ERROR_EVT_CHANNEL_NOT_FOUND == status)
             logWriter.TraceError(L"Failed to subscribe to event log channel. The specified event channel was not found.");
         else if (ERROR_EVT_INVALID_QUERY == status)
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to subscribe to event log channel. Event query %s is not valid.", pwsQuery).c_str()
+                Utility::FormatString(
+                    L"Failed to subscribe to event log channel. Event query %s is not valid.",
+                    pwsQuery).c_str()
             );
         else
             logWriter.TraceError(
@@ -207,7 +229,9 @@ EventMonitor::StartEventMonitor()
                 if (WAIT_FAILED == wait)
                 {
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to subscribe to event log channel. Wait operation on event handle failed. Error: %lu.", GetLastError()).c_str()
+                        Utility::FormatString(
+                            L"Failed to subscribe to event log channel. Wait operation on event handle failed. Error: %lu.",
+                            GetLastError()).c_str()
                     );
                 }
                 break;
@@ -253,29 +277,24 @@ EventMonitor::ConstructWindowsEventQuery(
         // Construct the query portion for the log level
         //
         std::wstring logLevelQuery = L"";
-        
         logLevelQuery = L"(";
-    
+
         if (eventChannel.Level >= EventChannelLogLevel::Critical)
         {
             logLevelQuery += L"Level=1 or ";
         }
-    
         if (eventChannel.Level >= EventChannelLogLevel::Error)
         {
             logLevelQuery += L"Level=2 or ";
         }
-    
         if (eventChannel.Level >= EventChannelLogLevel::Warning)
         {
             logLevelQuery += L"Level=3 or ";
         }
-    
         if (eventChannel.Level >= EventChannelLogLevel::Information)
         {
             logLevelQuery += L"Level=4 or ";
         }
-    
         if (eventChannel.Level >= EventChannelLogLevel::Verbose)
         {
             logLevelQuery += L"Level=5 or ";
@@ -285,7 +304,6 @@ EventMonitor::ConstructWindowsEventQuery(
         // Remove last ' or '
         //
         logLevelQuery.erase(logLevelQuery.size() - 4);
-    
         logLevelQuery += L")";
 
         query += Utility::FormatString(
@@ -346,7 +364,10 @@ EventMonitor::EnumerateResults(
             if (ERROR_SUCCESS != status)
             {
                 logWriter.TraceWarning(
-                    Utility::FormatString(L"Failed to render event log event. The event will not be processed. Error: %lu.", status).c_str()
+                    Utility::FormatString(
+                        L"Failed to render event log event. The event will not be processed. Error: %lu.",
+                        status
+                    ).c_str()
                 );
                 status = ERROR_SUCCESS;
             }
@@ -398,7 +419,7 @@ EventMonitor::PrintEvent(
         L"Event/System/TimeCreated/@SystemTime",
     };
 
-    const static std::vector<std::wstring> c_LevelToString =
+    static const std::vector<std::wstring> c_LevelToString =
     {
         L"Unknown",
         L"Critical",
@@ -408,7 +429,7 @@ EventMonitor::PrintEvent(
         L"Verbose",
     };
 
-    const static DWORD defaultValuePathsCount = sizeof(defaultValuePaths) / sizeof(LPCWSTR);
+    static const DWORD defaultValuePathsCount = sizeof(defaultValuePaths) / sizeof(LPCWSTR);
 
     try
     {
@@ -420,7 +441,12 @@ EventMonitor::PrintEvent(
         //
         // Collect event system properties
         //
-        renderContext = EvtCreateRenderContext(static_cast<DWORD>(valuePaths.size()), &valuePaths[0], EvtRenderContextValues);
+        renderContext = EvtCreateRenderContext(
+            static_cast<DWORD>(valuePaths.size()),
+            &valuePaths[0],
+            EvtRenderContextValues
+        );
+
         if (!renderContext)
         {
             return GetLastError();
@@ -448,7 +474,13 @@ EventMonitor::PrintEvent(
             //
             variants.resize((bufferSize / sizeof(EVT_VARIANT)) + 1, EVT_VARIANT{});
             if(!EvtRender(
-                renderContext, EventHandle, EvtRenderEventValues, bufferSize, &variants[0], &bufferSize, &propertyCount))
+                renderContext,
+                EventHandle,
+                EvtRenderEventValues,
+                bufferSize,
+                &variants[0],
+                &bufferSize,
+                &propertyCount))
             {
                 status = GetLastError();
 
@@ -498,7 +530,15 @@ EventMonitor::PrintEvent(
                     }
 
                     if (!EvtFormatMessage(
-                        publisher, EventHandle, 0, 0, nullptr, EvtFormatMessageEvent, bufferSize, &m_eventMessageBuffer[0], &bufferSize))
+                        publisher,
+                        EventHandle,
+                        0,
+                        0,
+                        nullptr,
+                        EvtFormatMessageEvent,
+                        bufferSize,
+                        &m_eventMessageBuffer[0],
+                        &bufferSize))
                     {
                         status = GetLastError();
                     }
@@ -512,12 +552,13 @@ EventMonitor::PrintEvent(
             if (status == ERROR_SUCCESS)
             {
                 std::wstring formattedEvent = Utility::FormatString(
-                                                        L"<Source>EventLog</Source><Time>%s</Time><LogEntry><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>",
-                                                        Utility::FileTimeToString(fileTimeCreated).c_str(),
-                                                        channelName.c_str(),
-                                                        c_LevelToString[static_cast<UINT8>(level)].c_str(),
-                                                        eventId,
-                                                        (LPWSTR)(&m_eventMessageBuffer[0]));
+                    L"<Source>EventLog</Source><Time>%s</Time><LogEntry><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>",
+                    Utility::FileTimeToString(fileTimeCreated).c_str(),
+                    channelName.c_str(),
+                    c_LevelToString[static_cast<UINT8>(level)].c_str(),
+                    eventId,
+                    (LPWSTR)(&m_eventMessageBuffer[0])
+                );
 
                 //
                 // If the multi-line option is disabled, remove all new lines from the output.
@@ -548,7 +589,7 @@ EventMonitor::PrintEvent(
     {
         EvtClose(publisher);
     }
-    
+
     if (renderContext)
     {
         EvtClose(renderContext);
@@ -598,7 +639,12 @@ EventMonitor::EnableEventLogChannel(
         goto Exit;
     }
 
-    if (EvtGetChannelConfigProperty(channelConfig, EvtChannelConfigEnabled, 0, sizeof(EVT_VARIANT), &propValue, &dwPropValSize))
+    if (EvtGetChannelConfigProperty(channelConfig,
+        EvtChannelConfigEnabled,
+        0,
+        sizeof(EVT_VARIANT),
+        &propValue,
+        &dwPropValSize))
     {
         //
         // Return if event channel is slready enabled.
@@ -612,7 +658,11 @@ EventMonitor::EnableEventLogChannel(
     {
         status = GetLastError();
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to query event channel configuration. Channel: %ws Error: 0x%X", ChannelPath, status).c_str()
+            Utility::FormatString(
+                L"Failed to query event channel configuration. Channel: %ws Error: 0x%X",
+                ChannelPath,
+                status
+            ).c_str()
         );
     }
 

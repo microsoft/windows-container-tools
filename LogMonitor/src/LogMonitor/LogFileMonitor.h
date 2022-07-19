@@ -45,7 +45,7 @@ enum class EventAction
 
 
 struct DirChangeNotificationEvent
-{    
+{
     std::wstring FileName;
     EventAction Action;
     UINT64 Timestamp;
@@ -55,7 +55,6 @@ struct DirChangeNotificationEvent
 class LogFileMonitor final
 {
 public:
-
     LogFileMonitor() = delete;
 
     LogFileMonitor(
@@ -68,7 +67,6 @@ public:
     ~LogFileMonitor();
 
 private:
-
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int RECORDS_BUFFER_SIZE_BYTES = 8 * 1024;
 
@@ -89,7 +87,6 @@ private:
 
     HANDLE m_logDirHandle;
 
-    
     OVERLAPPED m_overlapped;
     HANDLE m_overlappedEvent;
 
@@ -100,12 +97,12 @@ private:
 
     //
     // Handle to an event subscriber thread.
-    //    
+    //
     HANDLE m_logDirMonitorThread;
 
     //
     // Handle to an change notification event handler thread.
-    //    
+    //
     HANDLE m_logFilesChangeHandlerThread;
 
     SRWLOCK m_eventQueueLock;

@@ -21,7 +21,7 @@ using namespace std;
 ///
 /// \param SystemTime         SYSTEMTIME with the time to format.
 ///
-/// \return The string with the human-readable time. 
+/// \return The string with the human-readable time.
 ///
 std::wstring
 Utility::SystemTimeToString(
@@ -46,7 +46,7 @@ Utility::SystemTimeToString(
 ///
 /// \param FileTime         FILETIME with the time to format.
 ///
-/// \return The string with the human-readable time. 
+/// \return The string with the human-readable time.
 ///
 std::wstring
 Utility::FileTimeToString(
@@ -58,14 +58,13 @@ Utility::FileTimeToString(
     return SystemTimeToString(systemTime);
 }
 
-
 ///
 /// Returns a formatted wide string.
 ///
 /// \param FormatString         Format string that follows the same specifications as format in printf.
 /// \param ...                  Variable arguments list
 ///
-/// \return The composed string. 
+/// \return The composed string.
 ///
 std::wstring
 Utility::FormatString(
@@ -103,9 +102,9 @@ Utility::FormatString(
 /// ( See https://tools.ietf.org/html/rfc2279 )
 ///
 /// \param lpstrInputStream     Pointer to a buffer with the wide text to evaluate.
-/// \param iLen                 Size of the buffer.    
+/// \param iLen                 Size of the buffer.
 ///
-/// \return If the text is UTF-8, return true. Otherwise, false 
+/// \return If the text is UTF-8, return true. Otherwise, false.
 ///
 bool
 Utility::IsTextUTF8(
@@ -127,9 +126,9 @@ Utility::IsTextUTF8(
 /// Verify if the input stream is in Unicode format.
 ///
 /// \param lpstrInputStream     Pointer to a buffer with the wide text to evaluate.
-/// \param iLen                 Size of the buffer.    
+/// \param iLen                 Size of the buffer.
 ///
-/// \return If the text is unicode, return true. Otherwise, false 
+/// \return If the text is unicode, return true. Otherwise, false.
 ///
 bool
 Utility::IsInputTextUnicode(
@@ -152,7 +151,6 @@ Utility::IsInputTextUnicode(
         bUnicode = false;
     }
 
-
     return bUnicode;
 }
 
@@ -163,7 +161,7 @@ Utility::IsInputTextUnicode(
 ///
 /// \param Path Full path of a file or directory
 ///
-/// \return Short path of a file or directory 
+/// \return Short path of a file or directory
 ///
 std::wstring
 Utility::GetShortPath(
@@ -199,7 +197,7 @@ Utility::GetShortPath(
 ///
 /// \param Path Full path of a file or directory
 ///
-/// \return Long path of a file or directory 
+/// \return Long path of a file or directory
 ///
 std::wstring
 Utility::GetLongPath(
