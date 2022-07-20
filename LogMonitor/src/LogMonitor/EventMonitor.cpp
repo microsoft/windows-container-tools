@@ -441,6 +441,11 @@ EventMonitor::PrintEvent(
             status = ERROR_SUCCESS;
         }
 
+        if (ERROR_EVT_UNRESOLVED_VALUE_INSERT == GetLastError())
+        {
+            status = ERROR_SUCCESS;
+        }
+
         if (status == ERROR_SUCCESS)
         {
             //
@@ -488,6 +493,11 @@ EventMonitor::PrintEvent(
                 if (status != ERROR_EVT_MESSAGE_NOT_FOUND)
                 {
                     if (ERROR_INSUFFICIENT_BUFFER == status)
+                    {
+                        status = ERROR_SUCCESS;
+                    }
+
+                    if (ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
                     {
                         status = ERROR_SUCCESS;
                     }
