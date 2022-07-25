@@ -45,7 +45,7 @@ jobs:
     
     - task: PublishPipelineArtifact@1
       inputs:
-        targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
+        targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
         artifactType: 'pipeline'
         artifactName: 'LogMonitorX64'
     
@@ -80,6 +80,6 @@ jobs:
       
       - task: PublishPipelineArtifact@1
         inputs:
-          targetPath: '$(Build.SourcesDirectory)\LogMonitor\x86\Release\'
+          targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
           artifactType: 'pipeline'
           artifactName: 'LogMonitorX86'
