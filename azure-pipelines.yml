@@ -22,11 +22,11 @@ jobs:
         solution: '$(solution)'
         configuration: '$(buildConfiguration)'
 
-    # - task: ComponentGovernanceComponentDetection@0
-    #   inputs:
-    #     scanType: 'LogOnly'
-    #     verbosity: 'Verbose'
-    #     alertWarningLevel: 'High'
+    - task: ComponentGovernanceComponentDetection@0
+      inputs:
+        scanType: 'LogOnly'
+        verbosity: 'Verbose'
+        alertWarningLevel: 'High'
 
     - task: VisualStudioTestPlatformInstaller@1
       inputs:
@@ -47,7 +47,7 @@ jobs:
       inputs:
         targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
         artifactType: 'pipeline'
-        artifactName: '64 Bit LogMonitor'
+        artifactName: '64-bit'
     
   - job: x86_build
     steps:
@@ -57,11 +57,11 @@ jobs:
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
 
-      # - task: ComponentGovernanceComponentDetection@0
-      #   inputs:
-      #     scanType: 'LogOnly'
-      #     verbosity: 'Verbose'
-      #     alertWarningLevel: 'High'
+      - task: ComponentGovernanceComponentDetection@0
+        inputs:
+          scanType: 'LogOnly'
+          verbosity: 'Verbose'
+          alertWarningLevel: 'High'
 
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
@@ -82,4 +82,4 @@ jobs:
         inputs:
           targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
           artifactType: 'pipeline'
-          artifactName: '32 Bit LogMonitor'
+          artifactName: '32-bit'
