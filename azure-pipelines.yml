@@ -22,11 +22,11 @@ jobs:
         solution: '$(solution)'
         configuration: '$(buildConfiguration)'
 
-    - task: ComponentGovernanceComponentDetection@0
-      inputs:
-        scanType: 'LogOnly'
-        verbosity: 'Verbose'
-        alertWarningLevel: 'High'
+    # - task: ComponentGovernanceComponentDetection@0
+    #   inputs:
+    #     scanType: 'LogOnly'
+    #     verbosity: 'Verbose'
+    #     alertWarningLevel: 'High'
 
     - task: VisualStudioTestPlatformInstaller@1
       inputs:
@@ -43,6 +43,12 @@ jobs:
         rerunFailedTests: true
         rerunMaxAttempts: 3
     
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Pipeline.Workspace)\x64\Release\'
+        artifactType: 'pipeline'
+        artifactName: 'LogMonitorX64'
+    
   - job: x86_build
     steps:
       - task: VSBuild@1
@@ -51,11 +57,11 @@ jobs:
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
 
-      - task: ComponentGovernanceComponentDetection@0
-        inputs:
-          scanType: 'LogOnly'
-          verbosity: 'Verbose'
-          alertWarningLevel: 'High'
+      # - task: ComponentGovernanceComponentDetection@0
+      #   inputs:
+      #     scanType: 'LogOnly'
+      #     verbosity: 'Verbose'
+      #     alertWarningLevel: 'High'
 
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
@@ -71,3 +77,9 @@ jobs:
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
+      
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Pipeline.Workspace)\x86\Release\'
+          artifactType: 'pipeline'
+          artifactName: 'LogMonitorX86'
