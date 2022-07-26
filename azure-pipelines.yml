@@ -43,6 +43,12 @@ jobs:
         rerunFailedTests: true
         rerunMaxAttempts: 3
     
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
+        artifactType: 'pipeline'
+        artifactName: '64-bit'
+    
   - job: x86_build
     steps:
       - task: VSBuild@1
@@ -71,3 +77,9 @@ jobs:
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
+      
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
+          artifactType: 'pipeline'
+          artifactName: '32-bit'
