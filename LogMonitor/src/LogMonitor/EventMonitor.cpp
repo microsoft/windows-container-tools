@@ -462,7 +462,8 @@ EventMonitor::PrintEvent(
             status = ERROR_INVALID_HANDLE;
         }
 
-        if (ERROR_INSUFFICIENT_BUFFER == (status = GetLastError()))
+        status = GetLastError();
+        if (ERROR_INSUFFICIENT_BUFFER == status || ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
         {
             status = ERROR_SUCCESS;
         }
@@ -519,7 +520,7 @@ EventMonitor::PrintEvent(
 
                 if (status != ERROR_EVT_MESSAGE_NOT_FOUND)
                 {
-                    if (ERROR_INSUFFICIENT_BUFFER == status)
+                    if (ERROR_INSUFFICIENT_BUFFER == status || ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
                     {
                         status = ERROR_SUCCESS;
                     }
