@@ -436,7 +436,7 @@ EventMonitor::PrintEvent(
             status = ERROR_INVALID_HANDLE;
         }
 
-        if (ERROR_INSUFFICIENT_BUFFER == (status = GetLastError()) || ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
+        if (ERROR_INSUFFICIENT_BUFFER == (status = GetLastError()))
         {
             status = ERROR_SUCCESS;
         }
@@ -512,7 +512,7 @@ EventMonitor::PrintEvent(
             if (status == ERROR_SUCCESS)
             {
                 std::wstring formattedEvent = Utility::FormatString(
-                                                        L"<Source>EventLog</Source><Time>%s</Time><LogEntry><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>",
+                                                        L"<Source>EventLog</Source><Time>%1%s</Time><LogEntry><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>",
                                                         Utility::FileTimeToString(fileTimeCreated).c_str(),
                                                         channelName.c_str(),
                                                         c_LevelToString[static_cast<UINT8>(level)].c_str(),
