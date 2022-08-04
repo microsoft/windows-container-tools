@@ -4,9 +4,9 @@
 //
 
 #include "pch.h"
+#include "Version.h"
 #include <locale>
 #include <codecvt>
-#include "Version.h"
 
 using namespace std;
 
