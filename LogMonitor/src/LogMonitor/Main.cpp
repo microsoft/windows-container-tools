@@ -4,9 +4,9 @@
 //
 
 #include "pch.h"
-#include "Version.h"
-#include <codecvt>
 #include <locale>
+#include <codecvt>
+#include "Version.h"
 
 using namespace std;
 
@@ -85,7 +85,8 @@ bool StartMonitors(_In_ const PWCHAR ConfigFileName)
     bool success;
 
     std::wifstream configFileStream(ConfigFileName);
-    configFileStream.imbue(std::locale(configFileStream.getloc(), new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
+    configFileStream.imbue(std::locale(configFileStream.getloc(),
+        new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
     if (configFileStream.is_open())
     {
         std::vector<EventLogChannel> eventChannels;
