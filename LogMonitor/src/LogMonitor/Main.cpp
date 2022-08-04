@@ -6,10 +6,10 @@
 #include "pch.h"
 #include "Version.h"
 
+using namespace std;
+
 #include <locale>
 #include <codecvt>
-
-using namespace std;
 
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
