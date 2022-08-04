@@ -112,7 +112,7 @@ EtwMonitor::~EtwMonitor()
 /// \param Providers        The ETWProvider specified by the user in the configuration.
 /// \param ValidProviders   The providers that met the requirements listed above.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -253,7 +253,7 @@ EtwMonitor::FilterValidProviders(
 /// \param Context Callback context to the ETW monitor thread.
 ///                It's ETWMonitor object that started this thread.
 ///
-/// \return Status of ETW monitoring opeartion.
+/// \return Status of ETW monitoring operation.
 ///
 DWORD
 EtwMonitor::StartEtwMonitorStatic(
@@ -376,7 +376,7 @@ EtwMonitor::BufferEventCallback(
 /// Entry for the spawned ETW monitor thread. It starts a session and blocks
 /// the current thread when ProcessTrace is called.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -451,7 +451,7 @@ EtwMonitor::StartEtwMonitor()
 ///
 /// \param TraceSessionHandle       The handle of the session started in this method.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -577,7 +577,7 @@ EtwMonitor::StartTraceSession(
 ///
 /// \param EventRecord      The event record received by EventRecordCallback
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -669,7 +669,7 @@ EtwMonitor::OnRecordEvent(
 /// \param EventRecord  The event record received by EventRecordCallback
 /// \param EventInfo    A struct with event metadata.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -864,7 +864,7 @@ EtwMonitor::FormatMetadata(
 /// \param EventInfo    A struct with event metadata.
 /// \param Result       A string with the formatted data.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -931,7 +931,7 @@ EtwMonitor::FormatData(
 /// \param StructIndex      Used to retrieve the property if it is inside a struct.
 /// \param Result           A wide string stream, where the formatted values are appended.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -956,7 +956,7 @@ EtwMonitor::_FormatData(
     if (ERROR_SUCCESS != status)
     {
         logWriter.TraceError(
-            Utility::FormatString(L"Failed to query ETW event propery length. Error: %ul", status).c_str()
+            Utility::FormatString(L"Failed to query ETW event property length. Error: %ul", status).c_str()
         );
         UserData = NULL;
 
@@ -1095,7 +1095,7 @@ EtwMonitor::_FormatData(
 ///
 /// Get the length of the property data. For MOF-based events, the size is inferred from the data type
 /// of the property. For manifest-based events, the property can specify the size of the property value
-/// using the length attribute. The length attribue can specify the size directly or specify the name
+/// using the length attribute. The length attribute can specify the size directly or specify the name
 /// of another property in the event data that contains the size. If the property does not include the
 /// length attribute, the size is inferred from the data type. The length will be zero for variable
 /// length, null-terminated strings and structures.
@@ -1105,7 +1105,7 @@ EtwMonitor::_FormatData(
 /// \param Index        Index of the property to request.
 /// \param arraySize    Size of the property, obtained in this function.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -1192,7 +1192,7 @@ EtwMonitor::GetPropertyLength(
 /// \param Index        Index of the array to request.
 /// \param arraySize    Size of the array, obtained in this function.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -1239,7 +1239,7 @@ EtwMonitor::GetArraySize(
 /// \param DecodingSource   The decoding type of the current event.
 /// \param MapInfo          The map's data obtained in this function.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
