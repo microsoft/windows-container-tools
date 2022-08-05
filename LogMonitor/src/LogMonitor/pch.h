@@ -40,6 +40,8 @@
 #include <fstream>
 #include <streambuf>
 #include <system_error>
+#include <locale>
+#include <codecvt>
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
@@ -52,6 +54,4 @@
 #include "EventMonitor.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
-#include <locale>
-#include <codecvt>
 #endif //PCH_H
