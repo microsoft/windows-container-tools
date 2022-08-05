@@ -52,5 +52,6 @@
 #include "EventMonitor.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
-
+#include <locale>
+#include <codecvt>
 #endif //PCH_H

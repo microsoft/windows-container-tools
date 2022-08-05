@@ -5,8 +5,6 @@
 
 #include "pch.h"
 #include "Version.h"
-#include <locale>
-#include <codecvt>
 
 using namespace std;
 
