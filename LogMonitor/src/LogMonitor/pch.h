@@ -40,6 +40,8 @@
 #include <fstream>
 #include <streambuf>
 #include <system_error>
+#include <locale>
+#include <codecvt>
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
