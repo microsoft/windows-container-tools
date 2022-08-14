@@ -315,7 +315,7 @@ ReadSourceAttributes(
             else
             {
                 //
-                // Discart unwanted attributes
+                // Discard unwanted attributes
                 //
                 Parser.SkipValue();
             }
@@ -386,7 +386,7 @@ ReadLogChannel(
         else
         {
             //
-            // Discart unwanted attributes
+            // Discard unwanted attributes
             //
             Parser.SkipValue();
         }
@@ -472,7 +472,7 @@ ReadETWProvider(
         else
         {
             //
-            // Discart unwanted attributes
+            // Discard unwanted attributes
             //
             Parser.SkipValue();
         }
@@ -605,7 +605,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::wprintf(L"\t\tDirectory: %ls\n", sourceFile->Directory.c_str());
             std::wprintf(L"\t\tFilter: %ls\n", sourceFile->Filter.c_str());
             std::wprintf(L"\t\tIncludeSubdirectories: %ls\n", sourceFile->IncludeSubdirectories ? L"true" : L"false");
-            std::wprintf(L"\t\includeFileNames: %ls\n", sourceFile->IncludeFileNames ? L"true" : L"false");
+            std::wprintf(L"\t\tIncludeFileNames: %ls\n", sourceFile->IncludeFileNames ? L"true" : L"false");
             std::wprintf(L"\n");
 
             break;
