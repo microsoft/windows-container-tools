@@ -47,6 +47,7 @@
 #include <fstream>
 #include <streambuf>
 #include <system_error>
+#include <codecvt>
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h> 

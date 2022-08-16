@@ -7,16 +7,21 @@
 #include "./Parser/ConfigFileParser.h"
 #include "./LogWriter.h"
 
-using namespace std;
-
 /// ConfigFileParser.cpp
 ///
 /// Reads the configuration file content (as a string), parsing it with a
 /// JsonFileParser object previously created.
 ///
-/// The main entry point in this file is ReadConfigFile.
+/// The main entry point in this file is OpenConfigFile.
 ///
 
+///
+/// Open the config file and convert the document content into json
+///
+/// \param FileName       Config File name.
+///
+/// \return True if the configuration file was valid. Otherwise false
+///
 bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
 {
     bool success;
