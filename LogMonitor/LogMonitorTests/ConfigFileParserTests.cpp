@@ -1524,11 +1524,32 @@ namespace LogMonitorTests
             }
         }
 
-        TEST_METHOD(TestConfigFileReading)
+        TEST_METHOD(TestUTF8EncodedConfigFileReading)
         {
-            PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
-            bool succcess = OpenConfigFile(configFileName);
+            std::wstring filename = L"C:\\LogMonitor\\LogMonitorConfigTesting.json";
+            std::wstring configFileStr =
+                Utility::FormatString(L"$var = @\"\n{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"ETW\",\
+                                \"providers\" : [\
+                                    {\
+                                        \"providerGuid\": \"305FC87B-002A-5E26-D297-60223012CA9C\",\
+                                        \"level\": \"Info\"\
+                                    }\
+                                ]\
+                            }\
+                        ]\
+                    }\
+                }\
+                \n\"@\
+                \n$var | powershell Out-File -FilePath \"%s\" -Encoding utf8", filename.c_str());
 
+            int status = _wsystem(configFileStr.c_str());
+            Assert::AreEqual(status, 0);
+
+            bool succcess = OpenConfigFile((PWCHAR)filename.c_str());
             Assert::AreEqual(succcess, true);
         }
     };
