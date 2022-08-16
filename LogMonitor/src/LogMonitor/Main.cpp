@@ -116,8 +116,7 @@ bool OpenandReadConfigFile(_In_ const PWCHAR ConfigFileName)
             success = false;
         }
 
-    } else
-    {
+    } else {
         logWriter.TraceError(
             Utility::FormatString(
                 L"Configuration file '%s' not found. Logs will not be monitored.",
@@ -128,7 +127,6 @@ bool OpenandReadConfigFile(_In_ const PWCHAR ConfigFileName)
     }
 
     return success;
-
 }
 
 void StartMonitors()
@@ -145,73 +143,72 @@ void StartMonitors()
     {
         switch (source->Type)
         {
-        case LogSourceType::EventLog:
-        {
-            std::shared_ptr<SourceEventLog> sourceEventLog =
-                std::reinterpret_pointer_cast<SourceEventLog>(source);
-
-            for (auto channel : sourceEventLog->Channels)
+            case LogSourceType::EventLog:
             {
-                eventChannels.push_back(channel);
+                std::shared_ptr<SourceEventLog> sourceEventLog =
+                    std::reinterpret_pointer_cast<SourceEventLog>(source);
+
+                for (auto channel : sourceEventLog->Channels)
+                {
+                    eventChannels.push_back(channel);
+                }
+
+                eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
+                eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
+
+                break;
             }
-
-            eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
-            eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
-
-            break;
-        }
-        case LogSourceType::File:
-        {
-            std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(source);
-
-            try
+            case LogSourceType::File:
             {
-                std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
-                    sourceFile->Directory,
-                    sourceFile->Filter,
-                    sourceFile->IncludeSubdirectories,
-                    sourceFile->IncludeFileNames
-                );
-                g_logfileMonitors.push_back(std::move(logfileMon));
+                std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(source);
+
+                try
+                {
+                    std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
+                        sourceFile->Directory,
+                        sourceFile->Filter,
+                        sourceFile->IncludeSubdirectories,
+                        sourceFile->IncludeFileNames
+                    );
+                    g_logfileMonitors.push_back(std::move(logfileMon));
+                }
+                catch (std::exception& ex)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Instantiation of a LogFileMonitor object failed for directory %ws. %S",
+                            sourceFile->Directory.c_str(),
+                            ex.what()
+                        ).c_str()
+                    );
+                }
+                catch (...)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
+                            sourceFile->Directory.c_str()
+                        ).c_str()
+                    );
+                }
+
+                break;
             }
-            catch (std::exception& ex)
+            case LogSourceType::ETW:
             {
-                logWriter.TraceError(
-                    Utility::FormatString(
-                        L"Instantiation of a LogFileMonitor object failed for directory %ws. %S",
-                        sourceFile->Directory.c_str(),
-                        ex.what()
-                    ).c_str()
-                );
+                std::shared_ptr<SourceETW> sourceETW = std::reinterpret_pointer_cast<SourceETW>(source);
+
+                for (auto provider : sourceETW->Providers)
+                {
+                    etwProviders.push_back(provider);
+                }
+
+                etwMonMultiLine = sourceETW->EventFormatMultiLine;
+
+                break;
             }
-            catch (...)
-            {
-                logWriter.TraceError(
-                    Utility::FormatString(
-                        L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
-                        sourceFile->Directory.c_str()
-                    ).c_str()
-                );
-            }
-
-            break;
-        }
-        case LogSourceType::ETW:
-        {
-            std::shared_ptr<SourceETW> sourceETW = std::reinterpret_pointer_cast<SourceETW>(source);
-
-            for (auto provider : sourceETW->Providers)
-            {
-                etwProviders.push_back(provider);
-            }
-
-            etwMonMultiLine = sourceETW->EventFormatMultiLine;
-
-            break;
-        }
         } // Switch
     }
-    
 
     if (!eventChannels.empty())
     {
@@ -301,8 +298,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     if (configFileReadSuccess)
     {
         StartMonitors();
-    } 
-    else {
+    } else {
         logWriter.TraceError(L"Invalid configuration file.");
     }
 
