@@ -1523,5 +1523,13 @@ namespace LogMonitorTests
                 Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
             }
         }
+
+        TEST_METHOD(TestConfigFileReading)
+        {
+            PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
+            bool succcess = OpenConfigFile(configFileName);
+
+            Assert::AreEqual(succcess, true);
+        }
     };
 }

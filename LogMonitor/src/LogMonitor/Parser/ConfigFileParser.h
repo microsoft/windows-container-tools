@@ -18,6 +18,10 @@ bool ReadConfigFile(
     _Out_ LoggerSettings& Config
 );
 
+bool OpenConfigFile(
+    _In_ const PWCHAR ConfigFileName
+);
+
 bool ReadLogConfigObject(
     _In_ JsonFileParser& Parser,
     _Out_ LoggerSettings& Config

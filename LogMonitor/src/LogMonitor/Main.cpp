@@ -77,58 +77,6 @@ void PrintUsage()
     wprintf(L"\tfile.\n\n");
 }
 
-bool OpenandReadConfigFile(_In_ const PWCHAR ConfigFileName)
-{
-    bool success;
-    std::wifstream configFileStream(ConfigFileName);
-    configFileStream.imbue(std::locale(configFileStream.getloc(),
-        new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
-
-    if (configFileStream.is_open())
-    {
-        LoggerSettings settings;
-
-        try
-        {
-            //
-            // Convert the document content to a string, to pass it to JsonFileParser constructor.
-            //
-            std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
-                std::istreambuf_iterator<wchar_t>());
-            configFileStr.erase(remove(configFileStr.begin(), configFileStr.end(), 0xFEFF), configFileStr.end());
-
-            JsonFileParser jsonParser(configFileStr);
-
-            success = ReadConfigFile(jsonParser, settings);
-        }
-        catch (std::exception& ex)
-        {
-            logWriter.TraceError(
-                Utility::FormatString(L"Failed to read json configuration file. %S", ex.what()).c_str()
-            );
-            success = false;
-        }
-        catch (...)
-        {
-            logWriter.TraceError(
-                Utility::FormatString(L"Failed to read json configuration file. Unknown error occurred.").c_str()
-            );
-            success = false;
-        }
-
-    } else {
-        logWriter.TraceError(
-            Utility::FormatString(
-                L"Configuration file '%s' not found. Logs will not be monitored.",
-                ConfigFileName
-            ).c_str()
-        );
-        success = false;
-    }
-
-    return success;
-}
-
 void StartMonitors()
 {
     std::vector<EventLogChannel> eventChannels;
@@ -292,7 +240,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     }
 
     //read the config file
-    bool configFileReadSuccess = OpenandReadConfigFile(configFileName);
+    bool configFileReadSuccess = OpenConfigFile(configFileName);
 
     //start the monitors
     if (configFileReadSuccess)

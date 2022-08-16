@@ -7,6 +7,8 @@
 #include "./Parser/ConfigFileParser.h"
 #include "./LogWriter.h"
 
+using namespace std;
+
 /// ConfigFileParser.cpp
 ///
 /// Reads the configuration file content (as a string), parsing it with a
@@ -15,6 +17,58 @@
 /// The main entry point in this file is ReadConfigFile.
 ///
 
+bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
+{
+    bool success;
+    std::wifstream configFileStream(ConfigFileName);
+    configFileStream.imbue(std::locale(configFileStream.getloc(),
+        new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
+
+    if (configFileStream.is_open())
+    {
+        LoggerSettings settings;
+
+        try
+        {
+            //
+            // Convert the document content to a string, to pass it to JsonFileParser constructor.
+            //
+            std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
+                std::istreambuf_iterator<wchar_t>());
+            configFileStr.erase(remove(configFileStr.begin(), configFileStr.end(), 0xFEFF), configFileStr.end());
+
+            JsonFileParser jsonParser(configFileStr);
+
+            success = ReadConfigFile(jsonParser, settings);
+        }
+        catch (std::exception& ex)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. %S", ex.what()).c_str()
+            );
+            success = false;
+        }
+        catch (...)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. Unknown error occurred.").c_str()
+            );
+            success = false;
+        }
+
+    }
+    else {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Configuration file '%s' not found. Logs will not be monitored.",
+                ConfigFileName
+            ).c_str()
+        );
+        success = false;
+    }
+
+    return success;
+}
 
 ///
 /// Read the root JSON of the config file
