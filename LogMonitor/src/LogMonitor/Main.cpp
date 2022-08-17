@@ -77,7 +77,7 @@ void PrintUsage()
     wprintf(L"\tfile.\n\n");
 }
 
-void StartMonitors(_Out_ LoggerSettings& settings)
+void StartMonitors(_In_ LoggerSettings& settings)
 {
     std::vector<EventLogChannel> eventChannels;
     std::vector<ETWProvider> etwProviders;
