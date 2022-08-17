@@ -1524,5 +1524,43 @@ namespace LogMonitorTests
             }
         }
 
+        ///
+        /// Check that UTF8 encoded config file is opened and read by OpenConfigFile.
+        ///
+        TEST_METHOD(TestUTF8EncodedConfigFileReading)
+        {
+            std::wstring folderName = L"D:\\LogMonitor";
+            std::wstring fileName = L"LogMonitorConfigTesting.json";
+            std::wstring fullFilePath = folderName + L"\\" + fileName;
+
+            //create a temp folder to hold config file
+            int createFolder = _wsystem(Utility::FormatString(L"mkdir %s", folderName.c_str()).c_str());
+            Assert::AreEqual(createFolder, 0);
+
+            //create the utf8 encoded config file
+            std::wstring configFileStr =
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                        ]\
+                    }\
+                }";
+
+            std::wofstream wof;
+            wof.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>));
+            wof.open(fullFilePath);
+            wof << configFileStr;
+            wof.close();
+
+            //check if the file can be successfully read by OpenConfigFile
+            LoggerSettings settings;
+            bool succcess = OpenConfigFile((PWCHAR)fullFilePath.c_str(), settings);
+            Assert::AreEqual(succcess, true);
+
+            //clean up
+            _wsystem(Utility::FormatString(L"del /f /s /q %s 1>nul", folderName.c_str()).c_str());
+            Assert::AreEqual(_wsystem(Utility::FormatString(L"rmdir /s /q %s", folderName.c_str()).c_str()), 0);
+        }
+
     };
 }

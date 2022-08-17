@@ -22,7 +22,7 @@
 ///
 /// \return True if the configuration file was valid. Otherwise false
 ///
-bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
+bool OpenConfigFile(_In_ const PWCHAR ConfigFileName, _Out_ LoggerSettings& Config)
 {
     bool success;
     std::wifstream configFileStream(ConfigFileName);
@@ -31,8 +31,6 @@ bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
 
     if (configFileStream.is_open())
     {
-        LoggerSettings settings;
-
         try
         {
             //
@@ -44,7 +42,7 @@ bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
 
             JsonFileParser jsonParser(configFileStr);
 
-            success = ReadConfigFile(jsonParser, settings);
+            success = ReadConfigFile(jsonParser, Config);
         }
         catch (std::exception& ex)
         {
@@ -60,9 +58,7 @@ bool OpenConfigFile(_In_ const PWCHAR ConfigFileName)
             );
             success = false;
         }
-
-    }
-    else {
+    } else {
         logWriter.TraceError(
             Utility::FormatString(
                 L"Configuration file '%s' not found. Logs will not be monitored.",

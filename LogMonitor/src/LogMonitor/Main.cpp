@@ -77,15 +77,13 @@ void PrintUsage()
     wprintf(L"\tfile.\n\n");
 }
 
-void StartMonitors()
+void StartMonitors(_Out_ LoggerSettings& settings)
 {
     std::vector<EventLogChannel> eventChannels;
     std::vector<ETWProvider> etwProviders;
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
-
-    LoggerSettings settings;
 
     for (auto source : settings.Sources)
     {
@@ -239,13 +237,14 @@ int __cdecl wmain(int argc, WCHAR *argv[])
         }
     }
 
+    LoggerSettings settings;
     //read the config file
-    bool configFileReadSuccess = OpenConfigFile(configFileName);
+    bool configFileReadSuccess = OpenConfigFile(configFileName, settings);
 
     //start the monitors
     if (configFileReadSuccess)
     {
-        StartMonitors();
+        StartMonitors(settings);
     } else {
         logWriter.TraceError(L"Invalid configuration file.");
     }

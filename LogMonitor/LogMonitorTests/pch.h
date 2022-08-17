@@ -49,6 +49,7 @@
 #include <system_error>
 #include <codecvt>
 #include "shlwapi.h"
+#include <direct.h >
 #include <io.h> 
 #include <fcntl.h> 
 #include "../src/LogMonitor/Utility.h"
