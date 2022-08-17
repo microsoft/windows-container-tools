@@ -132,8 +132,7 @@ void StartMonitors(_Out_ LoggerSettings& settings)
                 {
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"Instantiation of a LogFileMonitor object failed for directory %ws. \
-                                Unknown error occurred.",
+                            L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
                             sourceFile->Directory.c_str()
                         ).c_str()
                     );
