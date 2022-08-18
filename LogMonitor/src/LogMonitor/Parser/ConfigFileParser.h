@@ -15,7 +15,7 @@
 
 bool OpenConfigFile(
     _In_ const PWCHAR ConfigFileName,
-    _In_ LoggerSettings& Config
+    _Out_ LoggerSettings& Config
 );
 
 bool ReadConfigFile(
