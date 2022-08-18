@@ -65,6 +65,37 @@ namespace LogMonitorTests
             return str;
         }
 
+        ///
+        /// Add the path of the created directories, to be removed during
+        /// cleanup.
+        ///
+        std::vector<std::wstring> directoriesToDeleteAtCleanup;
+
+       ///
+       /// Creates a new random-name directory inside the Temp directory. 
+       ///
+       /// \return The new directory path. If an error occurs, it's empty.
+       ///
+        std::wstring CreateTempDirectory()
+        {
+            WCHAR tempDirectory[L_tmpnam_s];
+            ZeroMemory(tempDirectory, sizeof(tempDirectory));
+
+            errno_t err = _wtmpnam_s(tempDirectory, L_tmpnam_s);
+            if (err)
+            {
+                return L"";
+            }
+
+            long status = CreateDirectoryW(tempDirectory, NULL);
+            if (status == 0)
+            {
+                return L"";
+            }
+
+            return std::wstring(tempDirectory);
+        }
+
     public:
 
         ///
@@ -1529,13 +1560,19 @@ namespace LogMonitorTests
         ///
         TEST_METHOD(TestUTF8EncodedConfigFileReading)
         {
-            std::wstring folderName = L"D:\\LogMonitor";
-            std::wstring fileName = L"LogMonitorConfigTesting.json";
-            std::wstring fullFilePath = folderName + L"\\" + fileName;
+            //create a temp folder to hold config 
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+            //
+            // Create subdirectory
+            //
+            std::wstring subDirectory = tempDirectory + L"\\LogMonitor";
+            long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+            Assert::AreNotEqual(0L, status);
 
-            //create a temp folder to hold config file
-            int createFolder = _wsystem(Utility::FormatString(L"mkdir %s", folderName.c_str()).c_str());
-            Assert::AreEqual(createFolder, 0);
+            std::wstring fileName = L"LogMonitorConfigTesting.json";
+            std::wstring fullFileName = subDirectory + L"\\" + fileName;
 
             //create the utf8 encoded config file
             std::wstring configFileStr =
@@ -1548,18 +1585,14 @@ namespace LogMonitorTests
 
             std::wofstream wof;
             wof.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>));
-            wof.open(fullFilePath);
+            wof.open(fullFileName);
             wof << configFileStr;
             wof.close();
 
             //check if the file can be successfully read by OpenConfigFile
             LoggerSettings settings;
-            bool succcess = OpenConfigFile((PWCHAR)fullFilePath.c_str(), settings);
+            bool succcess = OpenConfigFile((PWCHAR)fullFileName.c_str(), settings);
             Assert::AreEqual(succcess, true);
-
-            //clean up
-            _wsystem(Utility::FormatString(L"del /f /s /q %s 1>nul", folderName.c_str()).c_str());
-            Assert::AreEqual(_wsystem(Utility::FormatString(L"rmdir /s /q %s", folderName.c_str()).c_str()), 0);
         }
 
     };
