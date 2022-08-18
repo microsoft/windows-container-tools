@@ -22,7 +22,7 @@
 ///
 /// \return True if the configuration file was valid. Otherwise false
 ///
-bool OpenConfigFile(_In_ const PWCHAR ConfigFileName, _In_ LoggerSettings& Config)
+bool OpenConfigFile(_In_ const PWCHAR ConfigFileName, _Out_ LoggerSettings& Config)
 {
     bool success;
     std::wifstream configFileStream(ConfigFileName);
