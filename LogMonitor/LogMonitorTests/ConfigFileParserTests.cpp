@@ -320,7 +320,7 @@ namespace LogMonitorTests
                                 \"type\": \"File\",\
                                 \"directory\": \"%s\",\
                                 \"filter\": \"%s\",\
-                                \"includeSubdirectories\": %s\,\
+                                \"includeSubdirectories\": %s,\
                                 \"includeFileNames\" : %s\
                             }\
                         ]\
