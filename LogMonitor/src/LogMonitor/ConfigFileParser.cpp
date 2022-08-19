@@ -12,9 +12,64 @@
 /// Reads the configuration file content (as a string), parsing it with a
 /// JsonFileParser object previously created.
 ///
-/// The main entry point in this file is ReadConfigFile.
+/// The main entry point in this file is OpenConfigFile.
 ///
 
+///
+/// Open the config file and convert the document content into json
+///
+/// \param FileName       Config File name.
+///
+/// \return True if the configuration file was valid. Otherwise false
+///
+bool OpenConfigFile(_In_ const PWCHAR ConfigFileName, _Out_ LoggerSettings& Config)
+{
+    bool success;
+    std::wifstream configFileStream(ConfigFileName);
+    configFileStream.imbue(std::locale(configFileStream.getloc(),
+        new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
+
+    if (configFileStream.is_open())
+    {
+        try
+        {
+            //
+            // Convert the document content to a string, to pass it to JsonFileParser constructor.
+            //
+            std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
+                std::istreambuf_iterator<wchar_t>());
+            configFileStr.erase(remove(configFileStr.begin(), configFileStr.end(), 0xFEFF), configFileStr.end());
+
+            JsonFileParser jsonParser(configFileStr);
+
+            success = ReadConfigFile(jsonParser, Config);
+        }
+        catch (std::exception& ex)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. %S", ex.what()).c_str()
+            );
+            success = false;
+        }
+        catch (...)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. Unknown error occurred.").c_str()
+            );
+            success = false;
+        }
+    } else {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Configuration file '%s' not found. Logs will not be monitored.",
+                ConfigFileName
+            ).c_str()
+        );
+        success = false;
+    }
+
+    return success;
+}
 
 ///
 /// Read the root JSON of the config file
