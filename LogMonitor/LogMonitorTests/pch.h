@@ -61,4 +61,5 @@
 #include "../src/LogMonitor/EventMonitor.h"
 #include "../src/LogMonitor/LogFileMonitor.h"
 #include "../src/LogMonitor/ProcessMonitor.h"
+#include "Utility.h"
 #endif //PCH_H
