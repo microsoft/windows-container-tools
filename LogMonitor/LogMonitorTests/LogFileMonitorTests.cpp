@@ -47,32 +47,6 @@ namespace LogMonitorTests
             return std::wstring(bigOutBuf);
         }
 
-
-        ///
-        /// Creates a new random-name directory inside the Temp directory. 
-        ///
-        /// \return The new directory path. If an error occurs, it's empty.
-        ///
-        std::wstring CreateTempDirectory()
-        {
-            WCHAR tempDirectory[L_tmpnam_s];
-            ZeroMemory(tempDirectory, sizeof(tempDirectory));
-
-            errno_t err = _wtmpnam_s(tempDirectory, L_tmpnam_s);
-            if (err)
-            {
-                return L"";
-            }
-
-            long status = CreateDirectoryW(tempDirectory, NULL);
-            if (status == 0)
-            {
-                return L"";
-            }
-
-            return std::wstring(tempDirectory);
-        }
-
         ///
         /// Writes to a new or existing file. 
         ///
