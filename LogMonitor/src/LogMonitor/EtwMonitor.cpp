@@ -561,34 +561,28 @@ EtwMonitor::StartTraceSession(
                 switch (status)
                 {
                 case ERROR_INVALID_PARAMETER:
-                    logWriter.TraceWarning(L"The ProviderId id NULL or the TraceHandle is 0.");
+                    logWriter.TraceError(L"The ProviderId id NULL or the TraceHandle is 0.");
                     break;
                 case ERROR_TIMEOUT:
-                    logWriter.TraceWarning(L"The timeout value expired before the enable callback completed.");
+                    logWriter.TraceError(L"The timeout value expired before the enable callback completed.");
                     break;
                 case ERROR_INVALID_FUNCTION:
-                    logWriter.TraceWarning(L"You cannot update the level when the provider is not registered.");
+                    logWriter.TraceError(L"You cannot update the level when the provider is not registered.");
                     break;
                 case ERROR_NO_SYSTEM_RESOURCES:
-                    logWriter.TraceWarning(L"Exceeded the number of ETW trace sessions that the provider can enable.");
+                    logWriter.TraceError(L"Exceeded the number of ETW trace sessions that the provider can enable.");
                     break;
                 case ERROR_ACCESS_DENIED:
-                    logWriter.TraceWarning(L"Only users with administrative privileges can enable event providers to a cross-process session.");
+                    logWriter.TraceError(L"Only users with administrative privileges can enable event providers to a cross-process session.");
                     break;
                 default:
+                    logWriter.TraceError(
+                        Utility::FormatString(L"An unknown error occurred: %lu", status).c_str()
+                    );
                     break;
                 }
 
                 return status;
-                // {
-                //     logWriter.TraceWarning(L"The ProviderId id NULL or the TraceHandle is 0.");
-                //     return status;
-                // }
-
-                {
-                    logWriter.TraceWarning(L"Only users with administrative privileges can enable event providers to a cross-process session.");
-                    return status;
-                }
             }
         }
     }
