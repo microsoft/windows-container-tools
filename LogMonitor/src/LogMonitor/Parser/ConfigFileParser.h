@@ -13,6 +13,11 @@
 #include <memory>
 #include <variant>
 
+bool OpenConfigFile(
+    _In_ const PWCHAR ConfigFileName,
+    _Out_ LoggerSettings& Config
+);
+
 bool ReadConfigFile(
     _In_ JsonFileParser& Parser,
     _Out_ LoggerSettings& Config

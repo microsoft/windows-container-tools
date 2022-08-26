@@ -65,6 +65,12 @@ namespace LogMonitorTests
             return str;
         }
 
+        ///
+        /// Add the path of the created directories, to be removed during
+        /// cleanup.
+        ///
+        std::vector<std::wstring> directoriesToDeleteAtCleanup;
+
     public:
 
         ///
@@ -320,7 +326,8 @@ namespace LogMonitorTests
                                 \"type\": \"File\",\
                                 \"directory\": \"%s\",\
                                 \"filter\": \"%s\",\
-                                \"includeSubdirectories\" : %s\
+                                \"includeSubdirectories\": %s,\
+                                \"includeFileNames\" : %s\
                             }\
                         ]\
                     }\
@@ -330,6 +337,7 @@ namespace LogMonitorTests
             // First, try with this values.
             //
             bool includeSubdirectories = true;
+            bool includeFileNames = true;
 
             std::wstring directory = L"C:\\LogMonitor\\logs";
             std::wstring filter = L"*.*";
@@ -338,7 +346,8 @@ namespace LogMonitorTests
                     configFileStrFormat.c_str(),
                     ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
-                    includeSubdirectories ? L"true" : L"false"
+                    includeSubdirectories ? L"true" : L"false",
+                    includeFileNames ? L"true" : L"false"
                 );
 
                 JsonFileParser jsonParser(configFileStr);
@@ -365,12 +374,14 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
                 Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
+                Assert::AreEqual(includeFileNames, sourceFile->IncludeFileNames);
             }
 
             //
             // Try with different values
             //
             includeSubdirectories = false;
+            includeFileNames = false;
 
             directory = L"c:\\\\inetpub\\\\logs";
             filter = L"*.log";
@@ -380,7 +391,8 @@ namespace LogMonitorTests
                     configFileStrFormat.c_str(),
                     ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
-                    includeSubdirectories ? L"true" : L"false"
+                    includeSubdirectories ? L"true" : L"false",
+                    includeFileNames ? L"true" : L"false"
                 );
 
                 JsonFileParser jsonParser(configFileStr);
@@ -407,6 +419,7 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
                 Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
+                Assert::AreEqual(includeFileNames, sourceFile->IncludeFileNames);
             }
         }
 
@@ -460,6 +473,7 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(L"", sourceFile->Filter.c_str());
                 Assert::AreEqual(false, sourceFile->IncludeSubdirectories);
+                Assert::AreEqual(false, sourceFile->IncludeFileNames);
             }
         }
 
@@ -1515,5 +1529,46 @@ namespace LogMonitorTests
                 Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
             }
         }
+
+        ///
+        /// Check that UTF8 encoded config file is opened and read by OpenConfigFile.
+        ///
+        TEST_METHOD(TestUTF8EncodedConfigFileReading)
+        {
+            //create a temp folder to hold config 
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+            //
+            // Create subdirectory
+            //
+            std::wstring subDirectory = tempDirectory + L"\\LogMonitor";
+            long status = CreateDirectoryW(subDirectory.c_str(), NULL);
+            Assert::AreNotEqual(0L, status);
+
+            std::wstring fileName = L"LogMonitorConfigTesting.json";
+            std::wstring fullFileName = subDirectory + L"\\" + fileName;
+
+            //create the utf8 encoded config file
+            std::wstring configFileStr =
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                        ]\
+                    }\
+                }";
+
+            std::wofstream wof;
+            wof.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>));
+            wof.open(fullFileName);
+            wof << configFileStr;
+            wof.close();
+
+            //check if the file can be successfully read by OpenConfigFile
+            LoggerSettings settings;
+            bool succcess = OpenConfigFile((PWCHAR)fullFileName.c_str(), settings);
+            Assert::AreEqual(succcess, true);
+        }
+
     };
 }

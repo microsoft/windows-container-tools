@@ -1,0 +1,34 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-cpp:
+    name: Lint C++
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: reviewdog/action-cpplint@master
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-check
+          level: warning
+          flags: --linelength=120 --exclude=LogMonitor/LogMonitorTests/*
+          filter: +build/include_order
+            ,+build/include_subdir
+            ,+whitespace/comma
+            ,+whitespace/end_of_line
+            ,-build/namespaces
+            ,-readability/casting
+            ,-runtime/reference
+            ,-whitespace/braces
+            ,-whitespace/parens
+            ,-whitespace/newline
+            ,-whitespace/comments
+            ,-build/c++11

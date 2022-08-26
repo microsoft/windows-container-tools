@@ -4,17 +4,72 @@
 //
 
 #include "pch.h"
-#include "Parser/ConfigFileParser.h"
-#include "LogWriter.h"
+#include "./Parser/ConfigFileParser.h"
+#include "./LogWriter.h"
 
 /// ConfigFileParser.cpp
 ///
 /// Reads the configuration file content (as a string), parsing it with a
 /// JsonFileParser object previously created.
 ///
-/// The main entry point in this file is ReadConfigFile.
+/// The main entry point in this file is OpenConfigFile.
 ///
 
+///
+/// Open the config file and convert the document content into json
+///
+/// \param FileName       Config File name.
+///
+/// \return True if the configuration file was valid. Otherwise false
+///
+bool OpenConfigFile(_In_ const PWCHAR ConfigFileName, _Out_ LoggerSettings& Config)
+{
+    bool success;
+    std::wifstream configFileStream(ConfigFileName);
+    configFileStream.imbue(std::locale(configFileStream.getloc(),
+        new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>));
+
+    if (configFileStream.is_open())
+    {
+        try
+        {
+            //
+            // Convert the document content to a string, to pass it to JsonFileParser constructor.
+            //
+            std::wstring configFileStr((std::istreambuf_iterator<wchar_t>(configFileStream)),
+                std::istreambuf_iterator<wchar_t>());
+            configFileStr.erase(remove(configFileStr.begin(), configFileStr.end(), 0xFEFF), configFileStr.end());
+
+            JsonFileParser jsonParser(configFileStr);
+
+            success = ReadConfigFile(jsonParser, Config);
+        }
+        catch (std::exception& ex)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. %S", ex.what()).c_str()
+            );
+            success = false;
+        }
+        catch (...)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(L"Failed to read json configuration file. Unknown error occurred.").c_str()
+            );
+            success = false;
+        }
+    } else {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Configuration file '%s' not found. Logs will not be monitored.",
+                ConfigFileName
+            ).c_str()
+        );
+        success = false;
+    }
+
+    return success;
+}
 
 ///
 /// Read the root JSON of the config file
@@ -251,8 +306,8 @@ ReadSourceAttributes(
             // * directory
             // * filter
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0
+                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
             }
@@ -261,10 +316,25 @@ ReadSourceAttributes(
             // * eventFormatMultiLine
             // * startAtOldestRecord
             // * includeSubdirectories
+            // * includeFileNames
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_FORMAT_MULTILINE, _countof(JSON_TAG_FORMAT_MULTILINE)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_START_AT_OLDEST_RECORD, _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0 ||
-                     _wcsnicmp(key.c_str(), JSON_TAG_INCLUDE_SUBDIRECTORIES, _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0)
+            else if (
+                _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_FORMAT_MULTILINE,
+                    _countof(JSON_TAG_FORMAT_MULTILINE)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_START_AT_OLDEST_RECORD,
+                    _countof(JSON_TAG_START_AT_OLDEST_RECORD)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_INCLUDE_SUBDIRECTORIES,
+                    _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_INCLUDE_FILENAMES,
+                    _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0)
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }
@@ -300,7 +370,7 @@ ReadSourceAttributes(
             else
             {
                 //
-                // Discart unwanted attributes
+                // Discard unwanted attributes
                 //
                 Parser.SkipValue();
             }
@@ -371,7 +441,7 @@ ReadLogChannel(
         else
         {
             //
-            // Discart unwanted attributes
+            // Discard unwanted attributes
             //
             Parser.SkipValue();
         }
@@ -426,7 +496,6 @@ ReadETWProvider(
             // GUID, ProviderGuidStr will be empty
             //
             Result.SetProviderGuid(Parser.ParseStringValue());
-
         }
         else if (_wcsnicmp(key.c_str(), JSON_TAG_PROVIDER_LEVEL, _countof(JSON_TAG_PROVIDER_LEVEL)) == 0)
         {
@@ -454,12 +523,11 @@ ReadETWProvider(
             // Recover the GUID of the provider
             //
             Result.Keywords = wcstoull(Parser.ParseStringValue().c_str(), NULL, 0);
-
         }
         else
         {
             //
-            // Discart unwanted attributes
+            // Discard unwanted attributes
             //
             Parser.SkipValue();
         }
@@ -496,60 +564,59 @@ AddNewSource(
 
     switch (*(LogSourceType*)Attributes[JSON_TAG_TYPE])
     {
-    case LogSourceType::EventLog:
-    {
-        std::shared_ptr<SourceEventLog> sourceEventLog = std::make_shared< SourceEventLog>();
-
-        //
-        // Fill the new EventLog source object, with its attributes
-        //
-        if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog))
+        case LogSourceType::EventLog:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source (it must have a non-empty 'channels')");
-            return false;
+            std::shared_ptr<SourceEventLog> sourceEventLog = std::make_shared< SourceEventLog>();
+
+            //
+            // Fill the new EventLog source object, with its attributes
+            //
+            if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source (it must have a non-empty 'channels')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
+
+            break;
         }
 
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
-
-        break;
-    }
-
-    case LogSourceType::File:
-    {
-        std::shared_ptr<SourceFile> sourceFile = std::make_shared< SourceFile>();
-
-        //
-        // Fill the new File source object, with its attributes
-        //
-        if (!SourceFile::Unwrap(Attributes, *sourceFile))
+        case LogSourceType::File:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid File source (it must have a non-empty 'directory')");
-            return false;
+            std::shared_ptr<SourceFile> sourceFile = std::make_shared< SourceFile>();
+
+            //
+            // Fill the new File source object, with its attributes
+            //
+            if (!SourceFile::Unwrap(Attributes, *sourceFile))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid File source (it must have a non-empty 'directory')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
+
+            break;
         }
 
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
-
-        break;
-    }
-
-    case LogSourceType::ETW:
-    {
-        std::shared_ptr<SourceETW> sourceETW = std::make_shared< SourceETW>();
-
-        //
-        // Fill the new ETW source object, with its attributes
-        //
-        if (!SourceETW::Unwrap(Attributes, *sourceETW))
+        case LogSourceType::ETW:
         {
-            logWriter.TraceError(L"Error parsing configuration file. Invalid ETW source (it must have a non-empty 'providers')");
-            return false;
+            std::shared_ptr<SourceETW> sourceETW = std::make_shared< SourceETW>();
+
+            //
+            // Fill the new ETW source object, with its attributes
+            //
+            if (!SourceETW::Unwrap(Attributes, *sourceETW))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid ETW source (it must have a non-empty 'providers')");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
+
+            break;
         }
-
-        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
-
-        break;
-    }
-   
     }
     return true;
 }
@@ -593,6 +660,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::wprintf(L"\t\tDirectory: %ls\n", sourceFile->Directory.c_str());
             std::wprintf(L"\t\tFilter: %ls\n", sourceFile->Filter.c_str());
             std::wprintf(L"\t\tIncludeSubdirectories: %ls\n", sourceFile->IncludeSubdirectories ? L"true" : L"false");
+            std::wprintf(L"\t\tIncludeFileNames: %ls\n", sourceFile->IncludeFileNames ? L"true" : L"false");
             std::wprintf(L"\n");
 
             break;

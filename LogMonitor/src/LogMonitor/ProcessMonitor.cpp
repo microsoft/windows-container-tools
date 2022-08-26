@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define BUFSIZE 4096 
+#define BUFSIZE 4096
 
 HANDLE g_hChildStd_OUT_Rd = NULL;
 HANDLE g_hChildStd_OUT_Wr = NULL;
@@ -28,21 +28,24 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
     DWORD status = ERROR_SUCCESS;
 
     //
-    // Set the bInheritHandle flag so pipe handles are inherited. 
+    // Set the bInheritHandle flag so pipe handles are inherited.
     //
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
     //
-    // Create a pipe for the child process's STDOUT. 
+    // Create a pipe for the child process's STDOUT.
     //
     if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
     {
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"Process monitor error. Failed to create stdout pipe. Error: %lu", status).c_str()
+            Utility::FormatString(
+                L"Process monitor error. Failed to create stdout pipe. Error: %lu",
+                status
+            ).c_str()
         );
 
         return status;
@@ -56,15 +59,19 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
         status = GetLastError();
 
         logWriter.TraceError(
-            Utility::FormatString(L"Process monitor error. Failed to update handle to stdout pipe. Error: %lu", status).c_str()
+            Utility::FormatString(
+                L"Process monitor error. Failed to update handle to stdout pipe. Error: %lu",
+                status
+            ).c_str()
         );
 
         return status;
     }
 
     //
-    // Create the child process. 
+    // Create the child process.
     //
+
     return CreateChildProcess(Cmdline);
 }
 
@@ -85,12 +92,12 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
     wcscpy_s(cmdl, 32768, Cmdline.c_str());
 
     //
-    // Set up members of the PROCESS_INFORMATION structure. 
+    // Set up members of the PROCESS_INFORMATION structure.
     //
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
     //
-    // Set up members of the STARTUPINFO structure. 
+    // Set up members of the STARTUPINFO structure.
     // This structure specifies the STDIN and STDOUT handles for redirection.
     //
     ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
@@ -101,18 +108,18 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
     //
-    // Create the child process. 
+    // Create the child process.
     //
     bSuccess = CreateProcess(NULL,
-        cmdl,          // command line 
-        NULL,          // process security attributes 
-        NULL,          // primary thread security attributes 
-        TRUE,          // handles are inherited 
-        0,             // creation flags 
-        NULL,          // use parent's environment 
-        NULL,          // use parent's current directory 
-        &siStartInfo,  // STARTUPINFO pointer 
-        &piProcInfo);  // receives PROCESS_INFORMATION
+                             cmdl,          // command line
+                             NULL,          // process security attributes
+                             NULL,          // primary thread security attributes
+                             TRUE,          // handles are inherited
+                             0,             // creation flags
+                             NULL,          // use parent's environment
+                             NULL,          // use parent's current directory
+                             &siStartInfo,  // STARTUPINFO pointer
+                             &piProcInfo);  // receives PROCESS_INFORMATION
 
 //
 // If an error occurs, exit the application.
@@ -139,7 +146,10 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
         else
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Process monitor error. Failed to get entrypoint process exit code. Error: %d", GetLastError()).c_str()
+                Utility::FormatString(
+                    L"Process monitor error. Failed to get entrypoint process exit code. Error: %d",
+                    GetLastError()
+                ).c_str()
             );
         }
 
@@ -155,7 +165,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 
 ///
 /// Read output from the child process's pipe for STDOUT
-/// and write to the parent process's pipe for STDOUT. 
+/// and write to the parent process's pipe for STDOUT.
 /// Stop when there is no more data.
 ///
 /// \param Param        UNUSED.
@@ -179,10 +189,11 @@ DWORD ReadFromPipe(LPVOID Param)
         }
 
         bSuccess = logWriter.WriteLog(hParentStdOut,
-            chBuf,
-            dwRead,
-            &dwWritten,
-            NULL);
+                                      chBuf,
+                                      dwRead,
+                                      &dwWritten,
+                                      NULL);
+
         if (!bSuccess)
         {
             break;

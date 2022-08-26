@@ -8,7 +8,6 @@
 class LogWriter final
 {
 public:
-
     LogWriter()
     {
         InitializeSRWLock(&m_stdoutLock);
@@ -21,12 +20,13 @@ public:
         }
 
         m_isConsole = true;
+
+        _setmode(_fileno(stdout), _O_U8TEXT);
     };
 
-    ~LogWriter() {};
+    ~LogWriter() {}
 
 private:
-
     SRWLOCK m_stdoutLock;
     bool m_isConsole;
 
@@ -39,7 +39,6 @@ private:
     }
 
 public :
-
     bool WriteLog(
         _In_ HANDLE       FileHandle,
         _In_ LPCVOID      Buffer,
@@ -51,7 +50,7 @@ public :
         bool result;
 
         AcquireSRWLockExclusive(&m_stdoutLock);
-        
+
         result = WriteFile(FileHandle, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, Overlapped);
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
@@ -124,7 +123,6 @@ public :
 
         WriteConsoleLog(formattedMessage);
     }
-
 };
 
 extern LogWriter logWriter;

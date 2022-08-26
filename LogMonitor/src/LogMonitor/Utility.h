@@ -8,7 +8,6 @@
 class Utility final
 {
 public:
-
     static std::wstring SystemTimeToString(
         SYSTEMTIME SystemTime
     );
@@ -39,5 +38,4 @@ public:
     static std::wstring GetLongPath(
         _In_ const std::wstring& Path
     );
-
 };

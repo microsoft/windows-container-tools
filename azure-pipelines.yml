@@ -1,8 +1,8 @@
 trigger:
-- master
+- main
 
 pool:
-    name: 'Hosted VS2017'  # name of the pool to run this job in
+    vmImage: 'windows-2022'  # name of the pool to run this job in
     demands: 
       - msbuild
       - visualstudio
@@ -13,28 +13,73 @@ variables:
   buildPlatform: 'x86|x64|ARM'
   buildConfiguration: 'Release'
 
-steps:
-- task: VSBuild@1
-  inputs:
-    platform: 'x64'
-    solution: '$(solution)'
-    configuration: '$(buildConfiguration)'
+jobs:
+  - job: x64_build
+    steps:
+    - task: VSBuild@1
+      inputs:
+        platform: 'x64'
+        solution: '$(solution)'
+        configuration: '$(buildConfiguration)'
 
-- task: ComponentGovernanceComponentDetection@0
-  inputs:
-    scanType: 'LogOnly'
-    verbosity: 'Verbose'
-    alertWarningLevel: 'High'
+    - task: ComponentGovernanceComponentDetection@0
+      inputs:
+        scanType: 'LogOnly'
+        verbosity: 'Verbose'
+        alertWarningLevel: 'High'
 
-- task: VisualStudioTestPlatformInstaller@1
-  inputs:
-    packageFeedSelector: 'nugetOrg'
-    versionSelector: 'latestPreRelease'
+    - task: VisualStudioTestPlatformInstaller@1
+      inputs:
+        packageFeedSelector: 'nugetOrg'
+        versionSelector: 'latestPreRelease'
 
-- task: VSTest@2
-  inputs:
-    testSelector: 'testAssemblies'
-    testAssemblyVer2: '**\*test*.dll'
-    searchFolder: '$(System.DefaultWorkingDirectory)' 
-    runOnlyImpactedTests: false
-    runInParallel: false
+    - task: VSTest@2
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: '**\*test*.dll'
+        searchFolder: '$(System.DefaultWorkingDirectory)' 
+        runOnlyImpactedTests: false
+        runInParallel: false
+        rerunFailedTests: true
+        rerunMaxAttempts: 3
+    
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
+        artifactType: 'pipeline'
+        artifactName: '64-bit'
+    
+  - job: x86_build
+    steps:
+      - task: VSBuild@1
+        inputs:
+          platform: 'x86'
+          solution: '$(solution)'
+          configuration: '$(buildConfiguration)'
+
+      - task: ComponentGovernanceComponentDetection@0
+        inputs:
+          scanType: 'LogOnly'
+          verbosity: 'Verbose'
+          alertWarningLevel: 'High'
+
+      - task: VisualStudioTestPlatformInstaller@1
+        inputs:
+          packageFeedSelector: 'nugetOrg'
+          versionSelector: 'latestPreRelease'
+
+      - task: VSTest@2
+        inputs:
+          testSelector: 'testAssemblies'
+          testAssemblyVer2: '**\*test*.dll'
+          searchFolder: '$(System.DefaultWorkingDirectory)' 
+          runOnlyImpactedTests: false
+          runInParallel: false
+          rerunFailedTests: true
+          rerunMaxAttempts: 3
+      
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
+          artifactType: 'pipeline'
+          artifactName: '32-bit'
