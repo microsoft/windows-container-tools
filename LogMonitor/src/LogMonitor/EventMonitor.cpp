@@ -15,7 +15,7 @@ using namespace std;
 ///
 /// EventMonitor starts a monitor thread that waits for events from EvtSubscribe
 /// or for a stop event to be set. The same thread processes the changes and invokes the callback.
-/// Note: The constructor blocks until the spwaned thread starts listening for changes or dies.
+/// Note: The constructor blocks until the spawned thread starts listening for changes or dies.
 ///
 /// The destructor signals the stop event and waits up to MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring
 /// thread to exit. To prevent the thread from out-living EventMonitor, the destructor fails fast
@@ -97,7 +97,7 @@ EventMonitor::~EventMonitor()
 /// \param Context Callback context to the event monitor thread.
 ///                It's EventMonitor object that started this thread.
 ///
-/// \return Status of event monitoring opeartion.
+/// \return Status of event monitoring operation.
 ///
 DWORD
 EventMonitor::StartEventMonitorStatic(
@@ -138,7 +138,7 @@ EventMonitor::StartEventMonitorStatic(
 /// or for events to be arrived. When new events are arrived, it invokes the callback, resets,
 /// and starts the wait again.
 ///
-/// \return Status of event monitoring opeartion.
+/// \return Status of event monitoring operation.
 ///
 DWORD
 EventMonitor::StartEventMonitor()
@@ -324,7 +324,7 @@ EventMonitor::ConstructWindowsEventQuery(
 ///
 /// \param EventChannels         The handle to the subscription that EvtSubscribe function returned.
 ///
-/// \return A DWORD with a windows error value. If the function succeded, it returns
+/// \return A DWORD with a windows error value. If the function succeeded, it returns
 ///     ERROR_SUCCESS.
 ///
 DWORD
@@ -648,7 +648,7 @@ EventMonitor::EnableEventLogChannel(
         &dwPropValSize))
     {
         //
-        // Return if event channel is slready enabled.
+        // Return if event channel is already enabled.
         //
         if (propValue.BooleanVal)
         {

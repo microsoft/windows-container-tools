@@ -524,16 +524,16 @@ EtwMonitor::StartTraceSession(
         //
         for (auto provider : m_providersConfig)
         {
-            status = EnableTraceEx(
-                &provider.ProviderGuid,
-                NULL,
+            status = EnableTraceEx2(
                 TraceSessionHandle,
+                &provider.ProviderGuid,
                 EVENT_CONTROL_CODE_ENABLE_PROVIDER,
                 provider.Level,
                 provider.Keywords,
                 0,
                 0,
-                NULL);
+                NULL
+            );
 
             if (status != ERROR_SUCCESS)
             {
@@ -558,12 +558,31 @@ EtwMonitor::StartTraceSession(
                     pwsProviderId = NULL;
                 }
 
-                if (status == ERROR_NO_SYSTEM_RESOURCES)
+                switch (status)
                 {
-                    logWriter.TraceWarning(L"Exceeded the number of ETW trace sessions that the provider can enable.");
-
-                    return status;
+                case ERROR_INVALID_PARAMETER:
+                    logWriter.TraceError(L"The ProviderId id NULL or the TraceHandle is 0.");
+                    break;
+                case ERROR_TIMEOUT:
+                    logWriter.TraceError(L"The timeout value expired before the enable callback completed.");
+                    break;
+                case ERROR_INVALID_FUNCTION:
+                    logWriter.TraceError(L"You cannot update the level when the provider is not registered.");
+                    break;
+                case ERROR_NO_SYSTEM_RESOURCES:
+                    logWriter.TraceError(L"Exceeded the number of ETW trace sessions that the provider can enable.");
+                    break;
+                case ERROR_ACCESS_DENIED:
+                    logWriter.TraceError(L"Only users with administrative privileges can enable event providers to a cross-process session.");
+                    break;
+                default:
+                    logWriter.TraceError(
+                        Utility::FormatString(L"An unknown error occurred: %lu", status).c_str()
+                    );
+                    break;
                 }
+
+                return status;
             }
         }
     }
