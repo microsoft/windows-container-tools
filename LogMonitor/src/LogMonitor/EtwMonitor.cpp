@@ -39,8 +39,6 @@ EtwMonitor::EtwMonitor(
     //
     m_stopFlag = false;
 
-    m_ETWMonitorThread = NULL;
-
     FilterValidProviders(Providers, m_providersConfig);
 
     if (m_providersConfig.empty())
@@ -48,7 +46,7 @@ EtwMonitor::EtwMonitor(
         throw std::invalid_argument("Invalid providers");
     }
 
-    m_ETWMonitorThread  = CreateThread(
+    m_ETWMonitorThread = CreateThread(
         nullptr,
         0,
         (LPTHREAD_START_ROUTINE)&EtwMonitor::StartEtwMonitorStatic,
@@ -70,15 +68,41 @@ EtwMonitor::~EtwMonitor()
     const std::wstring mySessionName = g_sessionName;
     PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)&this->m_vecStopTracePropsBuffer[0];
 
-    status = ::StopTrace(m_startTraceHandle, mySessionName.c_str(), petp);
+    status = ::ControlTraceW(m_startTraceHandle, mySessionName.c_str(), petp, EVENT_TRACE_CONTROL_STOP);
     if (status != ERROR_SUCCESS)
     {
-        logWriter.TraceWarning(
-            Utility::FormatString(L"Failed to stop ETW trace session. Error: %lu", status).c_str()
-        );
+        switch (status)
+        {
+        case ERROR_INVALID_PARAMETER:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Invalid TraceHandle or InstanceName is Null or both. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_ACCESS_DENIED:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Only users running with elevated administrative privileges can control event tracing sessions. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_WMI_INSTANCE_NOT_FOUND:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"The given session is not running. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_ACTIVE_CONNECTIONS:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"The session is already in the process of stopping. Error: %lu", status).c_str()
+            );
+            break;
+        default:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Another issue might be preventing the stop of the event tracing session. Error: %lu", status).c_str()
+            );
+            break;
+        }
     }
+    
 
-    status = CloseTrace(m_startTraceHandle);
+    CloseTrace(m_startTraceHandle);
 
     //
     // Wait for watch thread to exit.

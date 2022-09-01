@@ -27,13 +27,13 @@ private:
 
     std::vector<ETWProvider> m_providersConfig;
     bool m_eventFormatMultiLine;
-    TRACEHANDLE  m_startTraceHandle;
+    TRACEHANDLE m_startTraceHandle;
 
     //
     // Vectors used to store an EVENT_TRACE_PROPERTIES object.
     //
-    std::vector<BYTE>    m_vecEventTracePropsBuffer;
-    std::vector<BYTE>    m_vecStopTracePropsBuffer;
+    std::vector<BYTE> m_vecEventTracePropsBuffer;
+    std::vector<BYTE> m_vecStopTracePropsBuffer;
 
     //
     // Signaled by destructor to request ProcessTrace to stop.
