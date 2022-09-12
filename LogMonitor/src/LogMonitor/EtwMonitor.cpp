@@ -39,8 +39,6 @@ EtwMonitor::EtwMonitor(
     //
     m_stopFlag = false;
 
-    m_ETWMonitorThread = NULL;
-
     FilterValidProviders(Providers, m_providersConfig);
 
     if (m_providersConfig.empty())
@@ -48,7 +46,7 @@ EtwMonitor::EtwMonitor(
         throw std::invalid_argument("Invalid providers");
     }
 
-    m_ETWMonitorThread  = CreateThread(
+    m_ETWMonitorThread = CreateThread(
         nullptr,
         0,
         (LPTHREAD_START_ROUTINE)&EtwMonitor::StartEtwMonitorStatic,
@@ -70,15 +68,41 @@ EtwMonitor::~EtwMonitor()
     const std::wstring mySessionName = g_sessionName;
     PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)&this->m_vecStopTracePropsBuffer[0];
 
-    status = ::StopTrace(m_startTraceHandle, mySessionName.c_str(), petp);
+    status = ::ControlTraceW(m_startTraceHandle, mySessionName.c_str(), petp, EVENT_TRACE_CONTROL_STOP);
     if (status != ERROR_SUCCESS)
     {
-        logWriter.TraceWarning(
-            Utility::FormatString(L"Failed to stop ETW trace session. Error: %lu", status).c_str()
-        );
+        switch (status)
+        {
+        case ERROR_INVALID_PARAMETER:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Invalid TraceHandle or InstanceName is Null or both. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_ACCESS_DENIED:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Only users running with elevated administrative privileges can control event tracing sessions. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_WMI_INSTANCE_NOT_FOUND:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"The given session is not running. Error: %lu", status).c_str()
+            );
+            break;
+        case ERROR_ACTIVE_CONNECTIONS:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"The session is already in the process of stopping. Error: %lu", status).c_str()
+            );
+            break;
+        default:
+            logWriter.TraceWarning(
+                Utility::FormatString(L"Another issue might be preventing the stop of the event tracing session. Error: %lu", status).c_str()
+            );
+            break;
+        }
     }
+    
 
-    status = CloseTrace(m_startTraceHandle);
+    CloseTrace(m_startTraceHandle);
 
     //
     // Wait for watch thread to exit.
@@ -524,16 +548,16 @@ EtwMonitor::StartTraceSession(
         //
         for (auto provider : m_providersConfig)
         {
-            status = EnableTraceEx(
-                &provider.ProviderGuid,
-                NULL,
+            status = EnableTraceEx2(
                 TraceSessionHandle,
+                &provider.ProviderGuid,
                 EVENT_CONTROL_CODE_ENABLE_PROVIDER,
                 provider.Level,
                 provider.Keywords,
                 0,
                 0,
-                NULL);
+                NULL
+            );
 
             if (status != ERROR_SUCCESS)
             {
@@ -558,12 +582,31 @@ EtwMonitor::StartTraceSession(
                     pwsProviderId = NULL;
                 }
 
-                if (status == ERROR_NO_SYSTEM_RESOURCES)
+                switch (status)
                 {
-                    logWriter.TraceWarning(L"Exceeded the number of ETW trace sessions that the provider can enable.");
-
-                    return status;
+                case ERROR_INVALID_PARAMETER:
+                    logWriter.TraceError(L"The ProviderId id NULL or the TraceHandle is 0.");
+                    break;
+                case ERROR_TIMEOUT:
+                    logWriter.TraceError(L"The timeout value expired before the enable callback completed.");
+                    break;
+                case ERROR_INVALID_FUNCTION:
+                    logWriter.TraceError(L"You cannot update the level when the provider is not registered.");
+                    break;
+                case ERROR_NO_SYSTEM_RESOURCES:
+                    logWriter.TraceError(L"Exceeded the number of ETW trace sessions that the provider can enable.");
+                    break;
+                case ERROR_ACCESS_DENIED:
+                    logWriter.TraceError(L"Only users with administrative privileges can enable event providers to a cross-process session.");
+                    break;
+                default:
+                    logWriter.TraceError(
+                        Utility::FormatString(L"An unknown error occurred: %lu", status).c_str()
+                    );
+                    break;
                 }
+
+                return status;
             }
         }
     }

@@ -200,6 +200,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
 {
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
+    int exitcode = 0;
 
     g_hStopEvent = CreateEvent(nullptr,            // default security attributes
                                TRUE,               // manual-reset event
@@ -267,7 +268,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             cmdline += argv[i];
         }
 
-        CreateAndMonitorProcess(cmdline);
+        exitcode = CreateAndMonitorProcess(cmdline);
     }
     else
     {
@@ -283,6 +284,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
                 logWriter.TraceError(
                     Utility::FormatString(L"Log monitor wait failed. Error: %d", GetLastError()).c_str()
                 );
+                exitcode = 1;
                 break;
         }
     }
@@ -293,5 +295,5 @@ int __cdecl wmain(int argc, WCHAR *argv[])
         g_hStopEvent = INVALID_HANDLE_VALUE;
     }
 
-    return 0;
+    return exitcode;
 }
