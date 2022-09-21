@@ -193,6 +193,16 @@ void StartMonitors(_In_ LoggerSettings& settings)
         }
     }
 
+    // Create Pipe Monitor in new Thread
+    CreateThread( 
+        NULL,
+        0,
+        (LPTHREAD_START_ROUTINE) StartLogMonitorPipe,
+        NULL,
+        0,
+        NULL
+    );
+    
 }
 
 

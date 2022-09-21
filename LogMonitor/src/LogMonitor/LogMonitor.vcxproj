@@ -162,6 +162,7 @@
     <ClInclude Include="Parser\LoggerSettings.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ProcessMonitor.h" />
+    <ClInclude Include="PipeMonitor.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="version.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="EventMonitor.cpp" />
     <ClCompile Include="JsonFileParser.cpp" />
     <ClCompile Include="LogFileMonitor.cpp" />
+    <ClCompile Include="PipeMonitor.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
