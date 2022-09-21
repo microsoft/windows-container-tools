@@ -54,5 +54,6 @@
 #include "EventMonitor.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
+#include "PipeMonitor.h"
 
 #endif //PCH_H
