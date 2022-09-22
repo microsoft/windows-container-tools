@@ -45,7 +45,6 @@ DWORD HandlePipeStream(HANDLE hPipe) {
                 logWriter.TraceError(
                     Utility::FormatString(L"Another issue caused readFile failed. Error: %lu", readFileError).c_str()
                 );
-                logWriter.WriteConsoleLog(std::to_wstring(readFileError));
                 break;
             }
             
