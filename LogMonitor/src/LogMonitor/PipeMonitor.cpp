@@ -88,7 +88,7 @@ DWORD ConnectToClient(HANDLE hPipe)
         hThread = CreateThread( 
             NULL,
             0,
-            HandlePipeStream,
+            (LPTHREAD_START_ROUTINE)HandlePipeStream,
             hPipe,
             0, 
             &dwThreadId
