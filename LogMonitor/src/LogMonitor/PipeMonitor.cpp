@@ -31,8 +31,8 @@ DWORD HandlePipeStream(HANDLE hPipe) {
             switch (readFileError)
             {
             case ERROR_BROKEN_PIPE:
-                logWriter.TraceError(
-                    Utility::FormatString(L"Client disconnected. Error: %lu", readFileError).c_str()
+                logWriter.TraceInfo(
+                    Utility::FormatString(L"Client disconnected.").c_str()
                 );
                 break;
                 //more cases can be handled here apart from these two
