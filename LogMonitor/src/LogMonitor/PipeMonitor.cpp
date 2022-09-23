@@ -11,7 +11,7 @@ const DWORD BUFSIZE = 2048;
 
 DWORD HandlePipeStream(HANDLE hPipe) {
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwRead = 0, dwWritten;
+    DWORD bytesRead = 0;
     char chBuf[BUFSIZE];
     bool bSuccess = false;
 
@@ -22,22 +22,17 @@ DWORD HandlePipeStream(HANDLE hPipe) {
             hPipe,      // handle to pipe 
             chBuf,      // buffer to receive data
             BUFSIZE * sizeof(char), // size of buffer
-            &dwRead,                // number of bytes read
+            &bytesRead,                // number of bytes read
             NULL);                  // not overlapped I/O 
 
         DWORD readFileError = GetLastError();
-        if (!bSuccess || dwRead == 0)
+        if (!bSuccess && readFileError != ERROR_MORE_DATA)
         {
             switch (readFileError)
             {
             case ERROR_BROKEN_PIPE:
                 logWriter.TraceError(
                     Utility::FormatString(L"Client disconnected. Error: %lu", readFileError).c_str()
-                );
-                break;
-            case ERROR_MORE_DATA:
-                logWriter.TraceError(
-                    Utility::FormatString(L"The next message is longer than number of bytes parameter specifies to read. Error: %lu", readFileError).c_str()
                 );
                 break;
                 //more cases can be handled here apart from these two
@@ -53,8 +48,8 @@ DWORD HandlePipeStream(HANDLE hPipe) {
 
         bSuccess = logWriter.WriteLog(hParentStdOut,
                                     chBuf,
-                                    dwRead,
-                                    &dwWritten,
+                                    bytesRead,
+                                    NULL,
                                     NULL);
 
     }
