@@ -7,32 +7,56 @@
 #include "pch.h"
 
 const DWORD BUFSIZE = 2048;
-HANDLE hPipe = INVALID_HANDLE_VALUE, hThread = NULL; 
 
 
 DWORD HandlePipeStream(HANDLE hPipe) {
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwRead = 0, dwWritten;
+    DWORD bytesRead = 0;
     char chBuf[BUFSIZE];
     bool bSuccess = false;
 
+    // Loop until done reading
     while (1) {
-        bSuccess = ReadFile(hPipe, chBuf, BUFSIZE * sizeof(char), &dwRead, NULL);
+        // Read client requests from the pipe. only allows messages up to BUFSIZE characters in length.
+        bSuccess = ReadFile(
+            hPipe,      // handle to pipe 
+            chBuf,      // buffer to receive data
+            BUFSIZE * sizeof(char), // size of buffer
+            &bytesRead,                // number of bytes read
+            NULL);                  // not overlapped I/O 
 
         DWORD readFileError = GetLastError();
-        if (!bSuccess || dwRead == 0)
+        if (!bSuccess && readFileError != ERROR_MORE_DATA)
         {
-            logWriter.WriteConsoleLog(std::to_wstring(readFileError));
+            switch (readFileError)
+            {
+            case ERROR_BROKEN_PIPE:
+                logWriter.TraceInfo(
+                    Utility::FormatString(L"Client disconnected.").c_str()
+                );
+                break;
+                //more cases can be handled here apart from these two
+            default:
+                logWriter.TraceError(
+                    Utility::FormatString(L"Another issue caused readFile failed. Error: %lu", readFileError).c_str()
+                );
+                break;
+            }
+            
             break;
         }
 
         bSuccess = logWriter.WriteLog(hParentStdOut,
                                     chBuf,
-                                    dwRead,
-                                    &dwWritten,
+                                    bytesRead,
+                                    NULL,
                                     NULL);
 
     }
+
+    // Flush the pipe to allow the client to read the pipe's contents 
+    // before disconnecting. Then disconnect the pipe, and close the 
+    // handle to this pipe instance. 
 
     FlushFileBuffers(hPipe); 
     DisconnectNamedPipe(hPipe);
@@ -43,7 +67,6 @@ DWORD HandlePipeStream(HANDLE hPipe) {
 
 DWORD ConnectToClient(HANDLE hPipe)
 {
-
     BOOL connected = FALSE;
     DWORD  dwThreadId = 0; 
     HANDLE hThread = NULL;
@@ -52,24 +75,28 @@ DWORD ConnectToClient(HANDLE hPipe)
 
     connected = ConnectNamedPipe(hPipe, NULL) ? 
         TRUE : (GetLastError() == ERROR_PIPE_CONNECTED); 
-
+        
+    // Create a thread for this client. 
     if(connected) {
         
         hThread = CreateThread( 
             NULL,
             0,
-            HandlePipeStream,
+            (LPTHREAD_START_ROUTINE)HandlePipeStream,
             hPipe,
             0, 
             &dwThreadId
         );
 
-        if (hThread != NULL) {
+        if (hThread == NULL) {
+            throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
+            return -1;
+        } else {
             CloseHandle(hThread);
         }
 
     } else {
-        // failed to connect, close the pipe
+        // The client could not connect, close the pipe
         CloseHandle(hPipe);
     }
         
@@ -82,14 +109,16 @@ HANDLE CreatePipe() {
     LPCTSTR lpszPipename = TEXT("\\\\.\\pipe\\logMonitor"); 
 
     return CreateNamedPipe(
-        lpszPipename,
-        PIPE_ACCESS_INBOUND,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,   
-        PIPE_UNLIMITED_INSTANCES,
-        512,
-        0,
-        5000,
-        NULL
+        lpszPipename,           // pipe name
+        PIPE_ACCESS_INBOUND,    // read/write access
+        PIPE_TYPE_MESSAGE |    // message type pipe
+        PIPE_READMODE_MESSAGE | // message-read mode
+        PIPE_WAIT,              // blocking mode
+        PIPE_UNLIMITED_INSTANCES, // max. instances
+        512,                        // output buffer size
+        0,                          // input buffer size
+        5000,                       // client time-out
+        NULL                        // default security attribute
     );
 }
 
@@ -108,6 +137,7 @@ TODO:
 - Not tested on a container yet
 */
 DWORD StartLogMonitorPipe() {
+    HANDLE hPipe = INVALID_HANDLE_VALUE;
     while(1) {
         hPipe = CreatePipe();
 

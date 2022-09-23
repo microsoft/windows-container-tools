@@ -84,6 +84,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+    HANDLE pipeMonitorThread = NULL;
 
     for (auto source : settings.Sources)
     {
@@ -194,7 +195,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     }
 
     // Create Pipe Monitor in new Thread
-    CreateThread( 
+    pipeMonitorThread = CreateThread( 
         NULL,
         0,
         (LPTHREAD_START_ROUTINE) StartLogMonitorPipe,
@@ -202,6 +203,11 @@ void StartMonitors(_In_ LoggerSettings& settings)
         0,
         NULL
     );
+
+    if (pipeMonitorThread == NULL)
+    {
+        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
+    }
     
 }
 
