@@ -51,7 +51,7 @@ public :
 
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        result = WriteFile(FileHandle, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, Overlapped);
+        result = WriteConsoleA(FileHandle, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, Overlapped);
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
 
