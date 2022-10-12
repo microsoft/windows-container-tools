@@ -1632,8 +1632,6 @@ LogFileMonitor::ReadLogFile(
 
     std::wstring currentLineBuffer;
 
-    //wprintf(L"ReadLogFile: File = %ws. bytesToRead = %d\n", LogFileInfo->FileName.c_str(), bytesToRead);
-
     //
     // It's important to catch a posible error inside the loop, to at least print
     // the content of currentLineBuffer, if it has any.
@@ -1788,7 +1786,6 @@ LogFileMonitor::ReadLogFile(
                         //
                         // newLineBuffer was empty, so only print the found line.
                         //
-                        //std::wstring decodedAll = Utility::ReplaceAll(decodedString.substr(0, found), L"\n", L"\n" + fileName);
                         logWriter.WriteConsoleLog(Utility::ReplaceAll(decodedString.substr(0, found), L"\n", L"\n" + fileName));
                     }
                 }
