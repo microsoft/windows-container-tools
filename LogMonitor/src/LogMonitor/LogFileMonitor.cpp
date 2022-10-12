@@ -1616,6 +1616,15 @@ LogFileMonitor::ReadLogFile(
         }
     }
 
+    //
+    //log the name of the source log file if includeFileNames field if true
+    //
+    wstring fileName;
+    if (m_includeFileNames)
+    {
+        fileName = Utility::FormatString(L"[Log File: %ws] ", LogFileInfo->FileName.c_str()).c_str();
+    }
+
     const DWORD bytesToRead = 4096;
     std::vector<BYTE> logFileContents(
         static_cast<size_t>(bytesToRead));
@@ -1714,16 +1723,6 @@ LogFileMonitor::ReadLogFile(
                 }
 
                 //
-                //log the name of the source log file if includeFileNames field if true
-                //
-                if (m_includeFileNames)
-                {
-                    logWriter.WriteConsoleLog(
-                        Utility::FormatString(
-                            L"Log File: %ws", LogFileInfo->FileName.c_str()
-                        ).c_str());
-                }
-                //
                 // Decode read string to UTF16, skipping the BOM if necessary.
                 //
                 const std::wstring decodedString = ConvertStringToUTF16(
@@ -1769,17 +1768,17 @@ LogFileMonitor::ReadLogFile(
                                 decodedString.begin(),
                                 decodedString.begin() + found
                             );
-                            logWriter.WriteConsoleLog(currentLineBuffer);
+                            logWriter.WriteConsoleLog(fileName + currentLineBuffer);
                         }
                         catch (...)
                         {
                             //
                             // If insert failed, print them now.
                             //
-                            logWriter.WriteConsoleLog(currentLineBuffer);
+                            logWriter.WriteConsoleLog(fileName + currentLineBuffer);
 
                             std::wstring remainingBuffer = decodedString.substr(0, found);
-                            logWriter.WriteConsoleLog(remainingBuffer);
+                            logWriter.WriteConsoleLog(fileName + remainingBuffer);
                         }
 
                         currentLineBuffer.clear();
@@ -1789,7 +1788,8 @@ LogFileMonitor::ReadLogFile(
                         //
                         // newLineBuffer was empty, so only print the found line.
                         //
-                        logWriter.WriteConsoleLog(decodedString.substr(0, found));
+                        //std::wstring decodedAll = Utility::ReplaceAll(decodedString.substr(0, found), L"\n", L"\n" + fileName);
+                        logWriter.WriteConsoleLog(Utility::ReplaceAll(decodedString.substr(0, found), L"\n", L"\n" + fileName));
                     }
                 }
                 //
@@ -1811,8 +1811,8 @@ LogFileMonitor::ReadLogFile(
                         //
                         std::wstring remainingBuffer(decodedString.begin() + remainingStringIndex, decodedString.end());
 
-                        logWriter.WriteConsoleLog(currentLineBuffer);
-                        logWriter.WriteConsoleLog(remainingBuffer);
+                        logWriter.WriteConsoleLog(fileName + currentLineBuffer);
+                        logWriter.WriteConsoleLog(fileName + remainingBuffer);
                         currentLineBuffer.clear();
                     }
                 }
@@ -1828,7 +1828,7 @@ LogFileMonitor::ReadLogFile(
         //
         // If we reach EOF, print the last line.
         //
-        logWriter.WriteConsoleLog(currentLineBuffer);
+        logWriter.WriteConsoleLog(fileName + currentLineBuffer);
     }
 
     CloseHandle(logFile);

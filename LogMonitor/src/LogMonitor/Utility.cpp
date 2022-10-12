@@ -226,3 +226,22 @@ Utility::GetLongPath(
     return Path;
 }
 
+///
+/// Replaces all the occurrences in a wstring. 
+///
+/// \param Str      The string to search substrings and replace them.
+/// \param From     The substring to being replaced.
+/// \param To       The substring to replace.
+///
+/// \return A wstring.
+///
+std::wstring Utility::ReplaceAll(std::wstring Str, const std::wstring& From, const std::wstring& To) {
+    size_t start_pos = 0;
+
+    while ((start_pos = Str.find(From, start_pos)) != std::string::npos) {
+        Str.replace(start_pos, From.length(), To);
+        start_pos += To.length(); // Handles case where 'To' is a substring of 'From'
+    }
+    return Str;
+}
+
