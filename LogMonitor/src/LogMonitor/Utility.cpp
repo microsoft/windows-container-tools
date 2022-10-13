@@ -235,7 +235,7 @@ Utility::GetLongPath(
 ///
 /// \return A wstring.
 ///
-std::wstring Utility::ReplaceAll(std::wstring Str, const std::wstring& From, const std::wstring& To) {
+std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring& From, _In_ const std::wstring& To) {
     size_t start_pos = 0;
 
     while ((start_pos = Str.find(From, start_pos)) != std::string::npos) {
