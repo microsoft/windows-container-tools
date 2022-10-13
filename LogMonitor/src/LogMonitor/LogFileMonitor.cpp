@@ -1786,7 +1786,8 @@ LogFileMonitor::ReadLogFile(
                         //
                         // newLineBuffer was empty, so only print the found line.
                         //
-                        logWriter.WriteConsoleLog(Utility::ReplaceAll(decodedString.substr(0, found), L"\n", L"\n" + fileName));
+                        std::wstring foundLineBuffer = decodedString.substr(0, found);
+                        logWriter.WriteConsoleLog(Utility::ReplaceAll(foundLineBuffer, L"\n", L"\n" + fileName));
                     }
                 }
                 //

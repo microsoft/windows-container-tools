@@ -227,7 +227,7 @@ Utility::GetLongPath(
 }
 
 ///
-/// Replaces all the occurrences in a wstring. 
+/// Replaces all the occurrences in a wstring.
 ///
 /// \param Str      The string to search substrings and replace them.
 /// \param From     The substring to being replaced.
