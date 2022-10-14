@@ -950,7 +950,7 @@ namespace LogMonitorTests
                 // It should the FULL content of the file, that's why we need
                 // to concatenate twice the content.
                 //
-                Assert::AreEqual((TO_WSTR(content) + TO_WSTR(content) + L"\n").c_str(), output.c_str());
+                Assert::IsTrue(output.find((TO_WSTR(content) + TO_WSTR(content) + L"\n").c_str()) != std::wstring::npos);
             }
         }
 
