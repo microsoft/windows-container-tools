@@ -245,7 +245,6 @@ LogFileMonitor::StartLogFileMonitorStatic(
 }
 
 DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, BOOLEAN lock = TRUE) {
-
     if (event.Action != EventAction::ReInit && event.Action != EventAction::RenameNew)
     {
         if (!FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
@@ -274,7 +273,9 @@ DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, B
         {
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"Failed to signal worker thread of log changes. This may cause lag in log file monitoring or lost log messages. Log directory: %ws, Error: %d",
+                    L"Failed to signal worker thread of log changes."
+                    " This may cause lag in log file monitoring or lost log messages." 
+                    " Log directory: %ws, Error: %d",
                     m_logDirectory.c_str(),
                     GetLastError()
                 ).c_str()
@@ -283,7 +284,7 @@ DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, B
     }
 
     if(lock) ReleaseSRWLockExclusive(&m_eventQueueLock);
-    
+
     return ERROR_SUCCESS;
 }
 
@@ -708,7 +709,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                                 GetLastError()
                             ).c_str()
                         );
-                    } 
+                    }
                     else
                     {
                         logFileInfo->NextReadOffset = fileSize.QuadPart;

@@ -6,7 +6,7 @@
 #pragma once
 
 HANDLE CreateFileMonitorEvent(
-    _In_ BOOL bManualReset, 
+    _In_ BOOL bManualReset,
     _In_ BOOL bInitialState);
 
 HANDLE GetLogDirHandle(
