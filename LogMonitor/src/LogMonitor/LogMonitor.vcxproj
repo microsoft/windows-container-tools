@@ -155,7 +155,7 @@
   <ItemGroup>
     <ClInclude Include="EtwMonitor.h" />
     <ClInclude Include="EventMonitor.h" />
-    <ClInclude Include="LogFileMonitor.h" />
+    <ClInclude Include="FileMonitor\*.h" />
     <ClInclude Include="LogWriter.h" />
     <ClInclude Include="Parser\ConfigFileParser.h" />
     <ClInclude Include="Parser\JsonFileParser.h" />
@@ -171,6 +171,7 @@
     <ClCompile Include="EtwMonitor.cpp" />
     <ClCompile Include="EventMonitor.cpp" />
     <ClCompile Include="JsonFileParser.cpp" />
+    <ClCompile Include="FileMonitor\*.cpp" />
     <ClCompile Include="LogFileMonitor.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp">

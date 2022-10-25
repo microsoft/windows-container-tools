@@ -143,6 +143,8 @@ private:
 
     bool m_readLogFilesFromStart;
 
+    DWORD EnqueueDirChangeEvents(DirChangeNotificationEvent event, BOOLEAN lock);
+
     DWORD StartLogFileMonitor();
 
     static DWORD StartLogFileMonitorStatic(
