@@ -274,7 +274,7 @@ DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, B
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to signal worker thread of log changes."
-                    " This may cause lag in log file monitoring or lost log messages." 
+                    " This may cause lag in log file monitoring or lost log messages."
                     " Log directory: %ws, Error: %d",
                     m_logDirectory.c_str(),
                     GetLastError()
@@ -338,9 +338,8 @@ LogFileMonitor::StartLogFileMonitor()
     {
         m_readLogFilesFromStart = true;
     }
-      
 
-    m_logDirHandle = logDirHandle; 
+    m_logDirHandle = logDirHandle;
 
     //
     // Now that the directory was open, we can obtain its long and short path.
