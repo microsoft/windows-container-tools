@@ -312,6 +312,9 @@ LogFileMonitor::StartLogFileMonitor()
     HANDLE events[eventsCount] = {m_stopEvent, m_overlapped.hEvent};
     bool stopWatching = false;
 
+    SetEvent(m_dirMonitorStartedEvent);
+    dirMonitorStartedEventSignalled = true;
+
     // Get Log Dir Handle
     HANDLE logDirHandle = GetLogDirHandle(m_logDirectory, m_stopEvent);
 
@@ -328,10 +331,16 @@ LogFileMonitor::StartLogFileMonitor()
         return status;
     }
 
+    // Handle cases where log file didn't exist during init and we need to read content added within 15 second wait
+    DWORD lastLogHandleError = GetLastError();
+    if (lastLogHandleError == ERROR_FILE_NOT_FOUND ||
+        lastLogHandleError == ERROR_PATH_NOT_FOUND)
+    {
+        m_readLogFilesFromStart = true;
+    }
+      
+
     m_logDirHandle = logDirHandle; 
-    m_readLogFilesFromStart = true;
-    SetEvent(m_dirMonitorStartedEvent);
-    dirMonitorStartedEventSignalled = true;
 
     //
     // Now that the directory was open, we can obtain its long and short path.
