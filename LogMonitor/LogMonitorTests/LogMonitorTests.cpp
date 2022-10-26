@@ -9,6 +9,7 @@
 #include "../src/LogMonitor/EtwMonitor.cpp"
 #include "../src/LogMonitor/EventMonitor.cpp"
 #include "../src/LogMonitor/JsonFileParser.cpp"
+#include "../src/LogMonitor/FileMonitor/Utilities.cpp"
 #include "../src/LogMonitor/LogFileMonitor.cpp"
 #include "../src/LogMonitor/ProcessMonitor.cpp"
 #include "../src/LogMonitor/Utility.cpp"

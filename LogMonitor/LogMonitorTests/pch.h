@@ -59,6 +59,7 @@
 #include "../src/LogMonitor/LogWriter.h"
 #include "../src/LogMonitor/EtwMonitor.h"
 #include "../src/LogMonitor/EventMonitor.h"
+#include "../src/LogMonitor/FileMonitor/Utilities.h"
 #include "../src/LogMonitor/LogFileMonitor.h"
 #include "../src/LogMonitor/ProcessMonitor.h"
 #include "Utility.h"

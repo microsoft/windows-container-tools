@@ -68,31 +68,15 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
         m_filter = L"*";
     }
 
-    m_stopEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-    if(!m_stopEvent)
-    {
-        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
-    }
+    m_stopEvent = CreateFileMonitorEvent(TRUE, FALSE);
 
-    m_overlappedEvent = CreateEvent(nullptr, TRUE, TRUE, nullptr);
-    if(!m_overlappedEvent)
-    {
-        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
-    }
+    m_overlappedEvent = CreateFileMonitorEvent(TRUE, TRUE);
 
     m_overlapped.hEvent = m_overlappedEvent;
 
-    m_workerThreadEvent = CreateEvent(nullptr, TRUE, TRUE, nullptr);
-    if(!m_workerThreadEvent)
-    {
-        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
-    }
+    m_workerThreadEvent = CreateFileMonitorEvent(TRUE, TRUE);
 
-    m_dirMonitorStartedEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-    if(!m_dirMonitorStartedEvent)
-    {
-        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateEvent");
-    }
+    m_dirMonitorStartedEvent = CreateFileMonitorEvent(TRUE, FALSE);
 
     m_readLogFilesFromStart = false;
 
@@ -260,6 +244,50 @@ LogFileMonitor::StartLogFileMonitorStatic(
     }
 }
 
+DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, BOOLEAN lock = TRUE) {
+    if (event.Action != EventAction::ReInit && event.Action != EventAction::RenameNew)
+    {
+        if (!FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
+        {
+            //
+            // It could be because the name was short formatted. Make it long path and try again.
+            //
+            event.FileName = Utility::GetLongPath(m_logDirectory + L'\\' + event.FileName)
+                                        .substr(m_logDirectory.size() + 1);
+
+            if (!FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
+            {
+                return ERROR_NO_MATCH;
+            }
+        }
+    }
+
+    if(lock) AcquireSRWLockExclusive(&m_eventQueueLock);
+
+    m_directoryChangeEvents.emplace(event);
+
+    if (m_directoryChangeEvents.size() == 1)
+    {
+        //wprintf(L"Signalling worker thread to start processing the event queue\n");
+        if(!SetEvent(m_workerThreadEvent))
+        {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Failed to signal worker thread of log changes."
+                    " This may cause lag in log file monitoring or lost log messages."
+                    " Log directory: %ws, Error: %d",
+                    m_logDirectory.c_str(),
+                    GetLastError()
+                ).c_str()
+            );
+        }
+    }
+
+    if(lock) ReleaseSRWLockExclusive(&m_eventQueueLock);
+
+    return ERROR_SUCCESS;
+}
+
 
 ///
 /// Entry for the spawned log file monitor thread. It loops to wait for either the stop event in which case it exits
@@ -284,132 +312,15 @@ LogFileMonitor::StartLogFileMonitor()
     HANDLE events[eventsCount] = {m_stopEvent, m_overlapped.hEvent};
     bool stopWatching = false;
 
-    m_logDirHandle = CreateFileW (m_logDirectory.c_str(),
-                                 FILE_LIST_DIRECTORY,
-                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                 nullptr,
-                                 OPEN_EXISTING,
-                                 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-                                 nullptr);
+    SetEvent(m_dirMonitorStartedEvent);
+    dirMonitorStartedEventSignalled = true;
 
-    if (m_logDirHandle == INVALID_HANDLE_VALUE)
-    {
+    // Get Log Dir Handle
+    HANDLE logDirHandle = GetLogDirHandle(m_logDirectory, m_stopEvent);
+
+    if(logDirHandle == INVALID_HANDLE_VALUE) {
         status = GetLastError();
-    }
 
-    if (status == ERROR_FILE_NOT_FOUND ||
-        status == ERROR_PATH_NOT_FOUND)
-    {
-        //
-        // Log directory is not created yet. Keep retrying every
-        // 15 seconds for upto five minutes. Also start reading the
-        // log files from the begining, instead of current end of
-        // file.
-        //
-        const DWORD maxRetryCount = 20;
-        DWORD retryCount = 1;
-        LARGE_INTEGER liDueTime;
-        INT64 millisecondsToWait = 15000LL;
-        liDueTime.QuadPart = -millisecondsToWait*10000LL; // wait time in 100 nanoseconds
-
-        m_readLogFilesFromStart = true;
-
-        SetEvent(m_dirMonitorStartedEvent);
-        dirMonitorStartedEventSignalled = true;
-
-        HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
-        if (!timerEvent)
-        {
-            status = GetLastError();
-            logWriter.TraceError(
-                Utility::FormatString(
-                    L"Failed to create timer object. Log directory %ws will not be monitored for log entries. Error=%d",
-                    m_logDirectory.c_str(),
-                    status
-                ).c_str()
-            );
-            return status;
-        }
-
-        HANDLE dirOpenEvents[eventsCount] = {m_stopEvent, timerEvent};
-
-        while (status == ERROR_FILE_NOT_FOUND &&
-                retryCount < maxRetryCount)
-        {
-            if (!SetWaitableTimer(timerEvent, &liDueTime, 0, NULL, NULL, 0))
-            {
-                status = GetLastError();
-                logWriter.TraceError(
-                    Utility::FormatString(
-                        L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
-                        m_logDirectory.c_str(),
-                        status
-                    ).c_str()
-                );
-                break;
-            }
-
-            DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
-            switch(wait)
-            {
-                case WAIT_OBJECT_0:
-                {
-                    //
-                    // The process is exiting. Stop the timer and return.
-                    //
-                    CancelWaitableTimer(timerEvent);
-                    CloseHandle(timerEvent);
-                    return status;
-                }
-
-                case WAIT_OBJECT_0 + 1:
-                {
-                    //
-                    // Timer event. Retry opening directory handle.
-                    //
-                    break;
-                }
-
-                default:
-                {
-                    //
-                    //Wait failed, return the failure.
-                    //
-                    status = GetLastError();
-
-                    CancelWaitableTimer(timerEvent);
-                    CloseHandle(timerEvent);
-
-                    return status;
-                }
-            }
-
-            m_logDirHandle = CreateFileW (m_logDirectory.c_str(),
-                                          FILE_LIST_DIRECTORY,
-                                          FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                          nullptr,
-                                          OPEN_EXISTING,
-                                          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-                                          nullptr);
-
-            if (m_logDirHandle == INVALID_HANDLE_VALUE)
-            {
-                status = GetLastError();
-                ++retryCount;
-            }
-            else
-            {
-                status = ERROR_SUCCESS;
-                break;
-            }
-        }
-
-        CancelWaitableTimer(timerEvent);
-        CloseHandle(timerEvent);
-    }
-
-    if (status != ERROR_SUCCESS)
-    {
         logWriter.TraceError(
             Utility::FormatString(
                 L"Failed to open log directory handle. Directory: %ws Error=%d",
@@ -419,14 +330,22 @@ LogFileMonitor::StartLogFileMonitor()
         );
         return status;
     }
-    else
+
+    // Handle cases where log file didn't exist during init and we need to read content added within 15 second wait
+    DWORD lastLogHandleError = GetLastError();
+    if (lastLogHandleError == ERROR_FILE_NOT_FOUND ||
+        lastLogHandleError == ERROR_PATH_NOT_FOUND)
     {
-        //
-        // Now that the directory was open, we can obtain its long and short path.
-        //
-        m_logDirectory = Utility::GetLongPath(m_logDirectory);
-        m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
+        m_readLogFilesFromStart = true;
     }
+
+    m_logDirHandle = logDirHandle;
+
+    //
+    // Now that the directory was open, we can obtain its long and short path.
+    //
+    m_logDirectory = Utility::GetLongPath(m_logDirectory);
+    m_shortLogDirectory = Utility::GetShortPath(m_logDirectory);
 
     status = InitializeDirectoryChangeEventsQueue();
     if (status != ERROR_SUCCESS)
@@ -458,7 +377,7 @@ LogFileMonitor::StartLogFileMonitor()
             m_logDirHandle,
             records.data(),
             static_cast<ULONG>(records.size()),
-            true,
+            m_includeSubfolders,
             LOG_DIR_NOTIFY_FILTERS,
             nullptr,
             &m_overlapped,
@@ -486,26 +405,7 @@ LogFileMonitor::StartLogFileMonitor()
                 changeEvent.Timestamp = GetTickCount64();
                 changeEvent.Action = EventAction::ReInit;
 
-                AcquireSRWLockExclusive(&m_eventQueueLock);
-
-                m_directoryChangeEvents.emplace(changeEvent);
-
-                if (m_directoryChangeEvents.size() == 1)
-                {
-                    //wprintf(L"Signalling worker thread to start processing the event queue\n");
-                    if(!SetEvent(m_workerThreadEvent))
-                    {
-                        logWriter.TraceError(
-                            Utility::FormatString(
-                                L"Failed to signal worker thread of log changes. This may cause lag in log file monitoring or lost log messages. Log directory: %ws, Error: %d",
-                                m_logDirectory.c_str(),
-                                GetLastError()
-                            ).c_str()
-                        );
-                    }
-                }
-
-                ReleaseSRWLockExclusive(&m_eventQueueLock);
+                EnqueueDirChangeEvents(changeEvent);
 
                 continue;
             }
@@ -713,20 +613,7 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
                 changeEvent.FileName = fileName;
                 changeEvent.Timestamp = GetTickCount64();
 
-                AcquireSRWLockExclusive(&m_eventQueueLock);
-
-                m_directoryChangeEvents.emplace(changeEvent);
-
-                if (m_directoryChangeEvents.size() == 1)
-                {
-                    if (!SetEvent(m_workerThreadEvent))
-                    {
-                        ReleaseSRWLockExclusive(&m_eventQueueLock);
-                        return GetLastError();
-                    }
-                }
-
-                ReleaseSRWLockExclusive(&m_eventQueueLock);
+                EnqueueDirChangeEvents(changeEvent);
             }
 
             dwNextEntryOffset = fileNotificationInfo->NextEntryOffset;
@@ -850,23 +737,7 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
             changeEvent.FileName = longPath;
             changeEvent.Timestamp = GetTickCount64();
 
-            m_directoryChangeEvents.emplace(changeEvent);
-
-            if (m_directoryChangeEvents.size() == 1)
-            {
-                if(!SetEvent(m_workerThreadEvent))
-                {
-                    ReleaseSRWLockExclusive(&m_eventQueueLock);
-
-                    logWriter.TraceError(
-                        Utility::FormatString(
-                            L"Error in log file monitor. Failed to signal worker thread to process log file changes. Error=%d\n",
-                            GetLastError()
-                        ).c_str()
-                    );
-                    return GetLastError();
-                }
-            }
+            EnqueueDirChangeEvents(changeEvent, FALSE);
         }
 
         ReleaseSRWLockExclusive(&m_eventQueueLock);
@@ -1021,42 +892,19 @@ LogFileMonitor::LogFilesChangeHandler()
                     {
                         case EventAction::Add:
                         {
-                            if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
-                            {
-                                status = LogFileAddEventHandler(event);
-                            }
-                            else
-                            {
-                                //
-                                // It could be because the name was short formatted. Make it long path and try again.
-                                //
-                                event.FileName = Utility::GetLongPath(m_logDirectory + L'\\' + event.FileName)
-                                                    .substr(m_logDirectory.size() + 1);
-
-                                if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
-                                {
-                                    status = LogFileAddEventHandler(event);
-                                }
-                            }
-
+                            status = LogFileAddEventHandler(event);
                             break;
                         }
 
                         case EventAction::Modify:
                         {
-                            if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
-                            {
-                                status = LogFileModifyEventHandler(event);
-                            }
+                            status = LogFileModifyEventHandler(event);
                             break;
                         }
 
                         case EventAction::Remove:
                         {
-                            if (FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
-                            {
-                                status = LogFileRemoveEventHandler(event);
-                            }
+                            status = LogFileRemoveEventHandler(event);
                             break;
                         }
 
