@@ -1248,7 +1248,7 @@ LogFileMonitor::LogFileRenameNewEventHandler(
 }
 
 ///
-/// This functions replace all the ocurrence of the OldName in the maps
+/// This functions replace all the occurrence of the OldName in the maps
 /// with the new name, based on a FileId. If it doesn't find the old
 /// elements in the maps, creates new ones.
 ///
@@ -1481,7 +1481,7 @@ LogFileMonitor::ReadLogFile(
     std::wstring currentLineBuffer;
 
     //
-    // It's important to catch a posible error inside the loop, to at least print
+    // It's important to catch a possible error inside the loop, to at least print
     // the content of currentLineBuffer, if it has any.
     //
     try
@@ -1635,7 +1635,7 @@ LogFileMonitor::ReadLogFile(
                         // newLineBuffer was empty, so only print the found line.
                         //
                         std::wstring foundLineBuffer = decodedString.substr(0, found);
-                        logWriter.WriteConsoleLog(Utility::ReplaceAll(foundLineBuffer, L"\n", L"\n" + fileName));
+                        logWriter.WriteConsoleLog(fileName + Utility::ReplaceAll(foundLineBuffer, L"\n", L"\n" + fileName));
                     }
                 }
                 //
