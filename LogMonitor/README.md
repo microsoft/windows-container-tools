@@ -10,7 +10,7 @@ Unlike Linux applications that log to STDOUT, Windows applications log to Window
 
 Supported log sources include:
 
-- [Event Logs]((./docs/README.md#event-log-monitoring)
+- [Event Logs](./docs/README.md#event-log-monitoring)
 - [ETW Providers](./docs/README.md#etw-monitoring)
 - [Custom App logs](./docs/README.md#log-file-monitoring)
 
