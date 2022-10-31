@@ -3,7 +3,7 @@
 **Contents:**
 
 - [ETW Monitoring](#etw-monitoring)
-- [Event Log](#event-log)
+- [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
 
