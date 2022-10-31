@@ -178,9 +178,9 @@ Currently, this one does not need any configuration, it basically streams the ou
 
 ### Example
 
-```docker
+```dockerfile
 SHELL ["C:\\LogMonitor\\LogMonitor.exe", "cmd", "/S", "/C"] 
-CMD c:\windows\system32\ping.exe -n 20 localhost 
+CMD "c:\\windows\\system32\\ping.exe -n 20 localhost" 
 ```
 
 The Process Monitor will stream the output for `c:\windows\system32\ping.exe -n 20 localhost`
