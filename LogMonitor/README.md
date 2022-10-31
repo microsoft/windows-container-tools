@@ -26,21 +26,21 @@ LogMonitor.exe and LogMonitorConfig.json should both be included in the same Log
 
 The Log Monitor tool can either be used in a SHELL usage pattern:
 
-```docker
+```dockerfile
 SHELL ["C:\\LogMonitor\\LogMonitor.exe", "cmd", "/S", "/C"]
-CMD c:\windows\system32\ping.exe -n 20 localhost
+CMD "C:\\windows\\system32\\ping.exe -n 20 localhost"
 ```
 
 Or an `ENTRYPOINT` usage pattern:
 
-```docker
-ENTRYPOINT C:\LogMonitor\LogMonitor.exe c:\windows\system32\ping.exe -n 20 localhost
+```dockerfile
+ENTRYPOINT "C:\\LogMonitor\\LogMonitor.exe c:\\windows\\system32\\ping.exe -n 20 localhost"
 ```
 
 Both example usages wrap the ping.exe application. Other applications (such as [IIS.ServiceMonitor]( https://github.com/microsoft/IIS.ServiceMonitor)) can be nested with Log Monitor in a similar fashion:
 
-```docker
-COPY LogMonitor.exe LogMonitorConfig.json C:\LogMonitor\
+```dockerfile
+COPY "LogMonitor.exe LogMonitorConfig.json C:\\LogMonitor"
 WORKDIR /LogMonitor
 SHELL ["C:\\LogMonitor\\LogMonitor.exe", "powershell.exe"]
  
