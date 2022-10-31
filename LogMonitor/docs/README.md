@@ -97,8 +97,8 @@ Event log is a record of events related to the system, security, and application
 - `startAtOldestRecord` (Required): This Boolean field indicates whether the Log Monitor tool should output event logs from the start of the container boot or from the start of the Log Monitor tool itself. If set `true`, the tool should output the event logs from the start of container boot, and if set false, the tool only outputs event logs from the start of log monitor.
 - `eventFormatMultiLine` (Optional): This is a Boolean field that is used to indicate whether the Log Monitor should format the logs to `STDOUT` as multi-line or single line. If the field is not set in the config file, by default the value is `true`. If the field is set `true`, the tool does not format the event messages to a single line (and thus event messages can span multiple lines). If set to false, the tool formats the event log messages to a single line and removes new line characters.
 - `channels` (Required): A channel is a named stream of events. It serves as a logical pathway for transporting events from the event publisher to a log file and possibly a subscriber. It is a sink that collects events. Each defined channel has the following properties:
-- `name` (Required): The name of the event channel
-- `level` (Optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, and `Information`. If the level is not specified, the tool displays all events in the named channel, spanning various levels.
+    - `name` (Required): The name of the event channel
+    - `level` (Optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, and `Information`. If the level is not specified, the tool displays all events in the named channel, spanning various levels.
 
  Example 1 (Application channel, verboseness: Error):
 
