@@ -2,27 +2,27 @@
 
 ## Introduction
 
-**Log Monitor** is a log tool for Windows Containers. It monitors configured log sources and pipes a formatted output to a configured output location. Supported log sources include:
+**Log Monitor** is a log tool for Windows Containers. It monitors configured log sources and pipes a formatted output to STDOUT. Supported log sources include:
 
-- Event Logs
-- ETW Providers
-- Custom App logs
+- [Event Logs]((./docs/README.md#event-log-monitoring)
+- [ETW Providers](./docs/README.md#etw-monitoring)
+- [Custom App logs](./docs/README.md#log-file-monitoring)
 
 Supported output locations include:
 
 - `STDOUT`
 
-Log Monitor is configured via the Log Monitor Config json file.
+Log Monitor is configured via the Log Monitor Config json file. The default location for the config file is: `C:/LogMonitor/LogMonitorConfig.json` or location passed to the `LogMonitor.exe` via `/CONFIG` switch.
 
 ## Build
 
 ## Releases
 
-Release versions of the binaries can be found on the Log Monitor Releases page.
+Release versions of the binaries can be found on the [Log Monitor Releases page](https://github.com/microsoft/windows-container-tools/releases/latest).
 
 ## Usage
 
-LogMonitor.exe and LogMonitorConfig.json should both be included in the same LogMonitor directory. 
+`LogMonitor.exe` and `LogMonitorConfig.json` should both be included in the same `LogMonitor` directory. 
 
 The Log Monitor tool can either be used in a SHELL usage pattern:
 
