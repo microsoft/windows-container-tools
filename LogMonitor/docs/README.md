@@ -100,7 +100,9 @@ Event log is a record of events related to the system, security, and application
     - `name` (Required): The name of the event channel
     - `level` (Optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, and `Information`. If the level is not specified, the tool displays all events in the named channel, spanning various levels.
 
- Example 1 (Application channel, verboseness: Error):
+### Examples
+
+Example 1 (Application channel, verboseness: Error):
 
  ```json
 {
@@ -176,7 +178,7 @@ This will monitor any changes in log files matching a specified filter, given th
 
 Currently, this one does not need any configuration, it basically streams the output of tthe process/command that is provided as the argument to `LogMonitor.exe`. For the given _entryproint_ command, a child process is created and links its STDIN and STDOUT to the `LogMonitor` process (through a _pipe_).
 
-### Example
+### Examples
 
 ```dockerfile
 SHELL ["C:\\LogMonitor\\LogMonitor.exe", "cmd", "/S", "/C"] 
