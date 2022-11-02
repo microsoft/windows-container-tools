@@ -48,7 +48,7 @@ ENTRYPOINT "C:\\LogMonitor\\LogMonitor.exe c:\\windows\\system32\\ping.exe -n 20
 Both example usages wrap the ping.exe application. Other applications (such as [IIS.ServiceMonitor]( https://github.com/microsoft/IIS.ServiceMonitor)) can be nested with Log Monitor in a similar fashion:
 
 ```dockerfile
-COPY "LogMonitor.exe LogMonitorConfig.json C:\\LogMonitor"
+COPY LogMonitor.exe LogMonitorConfig.json /LogMonitor
 WORKDIR /LogMonitor
 SHELL ["C:\\LogMonitor\\LogMonitor.exe", "powershell.exe"]
  
