@@ -28,7 +28,7 @@ logman query providers | findstr "<GUID or Provider Name>"
 ### Configuration
 
 - `type` (required): This indicates the type of log you want to monitor for. It should be `ETW`. 
-- `eventFormatMultiLine` (optional): This is Boolean to indicate whether you want the logs displayed with or without new lines. It is initially to True ad you can set it to False depending on how you want to view the logs on the console.
+- `eventFormatMultiLine` (optional): This is Boolean to indicate whether you want the logs displayed with or without new lines. It is initially set to True and you can set it to False depending on how you want to view the logs on the console.
 - `providers` (required): Providers are components that generate events. This field is a list that shows the event providers you are monitoring for.
     - `providerName` (optional): This represents the name of the provider. It is what shows up when you use logman.
     - `providerGuid` (required): This is a globally unique identifier that uniquely identifies the provider you specified in the ProviderName field.
