@@ -8,7 +8,7 @@
 
 #define LM_MAJORNUMBER          1
 #define LM_MINORNUMBER          2
-#define LM_BUILDNUMBER          0
+#define LM_BUILDNUMBER          1
 #ifndef LM_BUILDMINORVERSION
 #define LM_BUILDMINORVERSION    0
 #endif
