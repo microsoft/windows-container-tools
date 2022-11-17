@@ -1,11 +1,64 @@
 # Log Monitor Documentation
 
 **Contents:**
-
+- [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
+
+## Sample Config File
+
+A sample Log Monitor Config file would be structured as follows: 
+
+```
+{
+  "LogConfig": {
+    "sources": [
+      {
+        "type": "EventLog",
+        "startAtOldestRecord": true,
+        "eventFormatMultiLine": false,
+        "channels": [
+          {
+            "name": "system",
+            "level": "Information"
+          },
+          {
+            "name": "application",
+            "level": "Error"
+          }
+        ]
+      },
+      {
+        "type": "File",
+        "directory": "c:\\inetpub\\logs",
+        "filter": "*.log",
+        "includeSubdirectories": true,
+        "includeFileNames": false
+      },
+      {
+        "type": "ETW",
+        "eventFormatMultiLine": false,
+        "providers": [
+          {
+            "providerName": "IIS: WWW Server",
+            "providerGuid": "3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83",
+            "level": "Information"
+          },
+          {
+            "providerName": "Microsoft-Windows-IIS-Logging",
+            "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
+            "level": "Information"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+```
+Please see below for how to customize your Config file for Log Monitor to pull from.
 
 ## ETW Monitoring
 
