@@ -31,25 +31,6 @@ namespace LogMonitorTests
         }
 
         ///
-        /// Replaces all the occurrences in a wstring. 
-        ///
-        /// \param Str      The string to search substrings and replace them.
-        /// \param From     The substring to being replaced.
-        /// \param To       The substring to replace.
-        ///
-        /// \return A wstring.
-        ///
-        std::wstring ReplaceAll(std::wstring Str, const std::wstring& From, const std::wstring& To) {
-            size_t start_pos = 0;
-            
-            while ((start_pos = Str.find(From, start_pos)) != std::string::npos) {
-                Str.replace(start_pos, From.length(), To);
-                start_pos += To.length(); // Handles case where 'To' is a substring of 'From'
-            }
-            return Str;
-        }
-
-        ///
         /// Removes the braces at the start and end of a string. 
         ///
         /// \param Str      A wstring.
@@ -344,7 +325,7 @@ namespace LogMonitorTests
             {
                 std::wstring configFileStr = Utility::FormatString(
                     configFileStrFormat.c_str(),
-                    ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
                     includeSubdirectories ? L"true" : L"false",
                     includeFileNames ? L"true" : L"false"
@@ -389,7 +370,7 @@ namespace LogMonitorTests
             {
                 std::wstring configFileStr = Utility::FormatString(
                     configFileStrFormat.c_str(),
-                    ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
                     includeSubdirectories ? L"true" : L"false",
                     includeFileNames ? L"true" : L"false"
@@ -445,7 +426,7 @@ namespace LogMonitorTests
 
             std::wstring configFileStr = Utility::FormatString(
                 configFileStrFormat.c_str(),
-                ReplaceAll(directory, L"\\", L"\\\\").c_str()
+                Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str()
             );
 
             {

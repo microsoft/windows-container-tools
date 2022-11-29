@@ -102,7 +102,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
     //
     ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
     siStartInfo.cb = sizeof(STARTUPINFO);
-    siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);;
+    siStartInfo.hStdError = g_hChildStd_OUT_Wr; // redirect errors too to avoid log interleaving
     siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
     siStartInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
