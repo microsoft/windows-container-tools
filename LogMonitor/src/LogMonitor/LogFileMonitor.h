@@ -195,6 +195,11 @@ private:
         _Inout_ std::shared_ptr<LogFileInformation> LogFileInfo
         );
 
+    void WriteToConsole(
+        _In_ std::wstring Message,
+        _In_ std::wstring FileName
+    );
+
     LM_FILETYPE FileTypeFromBuffer(
         _In_reads_bytes_(ContentSize) LPBYTE FileContents,
         _In_ UINT ContentSize,
