@@ -1614,17 +1614,17 @@ LogFileMonitor::ReadLogFile(
                                 decodedString.begin(),
                                 decodedString.begin() + found
                             );
-                            logWriter.WriteConsoleLog(fileName + currentLineBuffer);
+                            LogFileMonitor::WriteToConsole(currentLineBuffer, LogFileInfo->FileName);
                         }
                         catch (...)
                         {
                             //
                             // If insert failed, print them now.
                             //
-                            logWriter.WriteConsoleLog(fileName + currentLineBuffer);
+                            LogFileMonitor::WriteToConsole(currentLineBuffer, LogFileInfo->FileName);
 
                             std::wstring remainingBuffer = decodedString.substr(0, found);
-                            logWriter.WriteConsoleLog(fileName + remainingBuffer);
+                            LogFileMonitor::WriteToConsole(remainingBuffer, LogFileInfo->FileName);
                         }
 
                         currentLineBuffer.clear();
@@ -1635,7 +1635,7 @@ LogFileMonitor::ReadLogFile(
                         // newLineBuffer was empty, so only print the found line.
                         //
                         std::wstring foundLineBuffer = decodedString.substr(0, found);
-                        logWriter.WriteConsoleLog(fileName + Utility::ReplaceAll(foundLineBuffer, L"\n", L"\n" + fileName));
+                        LogFileMonitor::WriteToConsole(foundLineBuffer, LogFileInfo->FileName);
                     }
                 }
                 //
@@ -1657,8 +1657,8 @@ LogFileMonitor::ReadLogFile(
                         //
                         std::wstring remainingBuffer(decodedString.begin() + remainingStringIndex, decodedString.end());
 
-                        logWriter.WriteConsoleLog(fileName + currentLineBuffer);
-                        logWriter.WriteConsoleLog(fileName + remainingBuffer);
+                        LogFileMonitor::WriteToConsole(currentLineBuffer, LogFileInfo->FileName);
+                        LogFileMonitor::WriteToConsole(remainingBuffer, LogFileInfo->FileName);
                         currentLineBuffer.clear();
                     }
                 }
@@ -1674,7 +1674,7 @@ LogFileMonitor::ReadLogFile(
         //
         // If we reach EOF, print the last line.
         //
-        logWriter.WriteConsoleLog(fileName + currentLineBuffer);
+        LogFileMonitor::WriteToConsole(currentLineBuffer, LogFileInfo->FileName);
     }
 
     CloseHandle(logFile);
@@ -1682,6 +1682,15 @@ LogFileMonitor::ReadLogFile(
     return status;
 }
 
+void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
+    wstring prefix;
+    if (m_includeFileNames)
+    {
+        prefix = Utility::FormatString(L"[Log File: %s] ", FileName.c_str());
+    }
+
+    logWriter.WriteConsoleLog(prefix + Utility::ReplaceAll(Message, L"\n", L"\n" + prefix));
+}
 
 DWORD
 LogFileMonitor::GetFilesInDirectory(
