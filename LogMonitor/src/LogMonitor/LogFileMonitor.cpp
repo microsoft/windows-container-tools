@@ -1615,7 +1615,6 @@ LogFileMonitor::ReadLogFile(
                                 decodedString.begin() + found
                             );
                             LogFileMonitor::WriteToConsole(currentLineBuffer, LogFileInfo->FileName);
-                            
                         }
                         catch (...)
                         {

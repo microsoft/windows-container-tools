@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <array>
 #include <memory>
+#include <variant>
 #include <cstdint>
 #include <string>
 #include <algorithm>
