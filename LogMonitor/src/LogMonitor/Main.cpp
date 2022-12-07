@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include "Version.h"
+#include "telemetry/tracer.hpp"
 
 using namespace std;
 
@@ -198,6 +199,10 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
+    /*Utility::PrintTelemetryConsent();
+    initTracer();
+    tracer("f1", "f2");*/
+
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
     int exitcode = 0;

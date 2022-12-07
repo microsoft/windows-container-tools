@@ -44,4 +44,7 @@ public:
         _In_ const std::wstring& From,
         _In_ const std::wstring& To
     );
+
+    static void PrintTelemetryConsent(
+    );
 };

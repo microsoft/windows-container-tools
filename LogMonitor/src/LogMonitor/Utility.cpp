@@ -245,3 +245,14 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
+
+void Utility::PrintTelemetryConsent()
+{
+    wprintf(L"\n");
+    wprintf(L"Telemetry\n");
+    wprintf(L"--------\n");
+    wprintf(L"LogMonitor collects usgae data in order to help us improve your experience.\n");
+    wprintf(L"The data is collected by Microsoft and is anonymous.\n");
+    wprintf(L"You can opt-out of telemetry by passing a disableMetrics flag in the configuration file\n");
+}
+
