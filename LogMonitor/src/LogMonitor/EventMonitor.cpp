@@ -552,8 +552,11 @@ EventMonitor::PrintEvent(
 
             if (status == ERROR_SUCCESS)
             {
+                // supporting JSON fmt by default
+                auto logFmt = L"{\"Source\": \"EventLog\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
+
                 std::wstring formattedEvent = Utility::FormatString(
-                    L"<Source>EventLog</Source><Time>%s</Time><LogEntry><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>",
+                    logFmt,
                     Utility::FileTimeToString(fileTimeCreated).c_str(),
                     channelName.c_str(),
                     c_LevelToString[static_cast<UINT8>(level)].c_str(),
