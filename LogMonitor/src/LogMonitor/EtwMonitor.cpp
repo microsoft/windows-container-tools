@@ -794,6 +794,7 @@ EtwMonitor::FormatMetadata(
 {
     std::wostringstream oss;
     FILETIME fileTime;
+    LPWSTR pName = NULL;
 
     //
     // Format the time of the event
@@ -802,6 +803,14 @@ EtwMonitor::FormatMetadata(
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
     oss << L"<Time>" << Utility::FileTimeToString(fileTime).c_str() << L"</Time>";
+
+    //
+    // Format provider Name
+    //
+    if (EventInfo->ProviderNameOffset > 0) {
+        pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
+    }
+    oss << L"<Provider Name=\"" << pName << "\"/>";
 
     //
     // Format provider Id
@@ -868,6 +877,8 @@ EtwMonitor::FormatMetadata(
     //
     if (DecodingSourceWbem == EventInfo->DecodingSource)  // MOF class
     {
+        oss << L"<Provider Name=\"" << pName << "\"/>";
+
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
 
