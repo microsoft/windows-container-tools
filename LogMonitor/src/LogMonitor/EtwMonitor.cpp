@@ -39,6 +39,12 @@ EtwMonitor::EtwMonitor(
     //
     m_stopFlag = false;
 
+    logWriter.WriteConsoleLog(
+        Utility::FormatString(
+            L"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+        )
+    );
+
     FilterValidProviders(Providers, m_providersConfig);
 
     if (m_providersConfig.empty())
@@ -748,7 +754,7 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent = Utility::FormatString(
-            L"<Source>EtwEvent</Source>%ls%ls",
+            L"<EventLog><Source>EtwEvent</Source>%ls%ls</EventLog>",
             metadataStr.c_str(),
             dataStr.c_str());
 
