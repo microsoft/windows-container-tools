@@ -754,7 +754,7 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent = Utility::FormatString(
-            L"<EventLog><Source>EtwEvent</Source>%ls%ls</EventLog>",
+            L"<Event xmlns=\"http://schemas.microsoft.com/win/2004/08/events/event\"><Source>EtwEvent</Source>%ls%ls</Event>",
             metadataStr.c_str(),
             dataStr.c_str());
 
