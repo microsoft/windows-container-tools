@@ -1683,13 +1683,28 @@ LogFileMonitor::ReadLogFile(
 }
 
 void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
-    wstring prefix;
-    if (m_includeFileNames)
-    {
-        prefix = Utility::FormatString(L"[Log File: %s] ", FileName.c_str());
-    }
+    auto logFmt = L"{\"Source\":\"File\",\"LogEntry\":{\"Logline\":\"%s\",\"FileName\":\"%s\"},\"SchemaVersion\":\"1.0.0\"}";
 
-    logWriter.WriteConsoleLog(prefix + Utility::ReplaceAll(Message, L"\n", L"\n" + prefix));
+    while (true) {
+        size_t start = 0;
+        size_t i = 0;
+
+        i = Message.find(L"\n", start);
+        if (i == std::string::npos) {
+            break;
+        }
+
+        // substr except ith (\n)
+        auto msg = Message.substr(start, i - start);
+        start = i + 1;
+        // remove \r if any, usually before \n
+        if (msg.substr(msg.size() - 1) == L"\r") {
+            msg.replace(msg.size() - 1, 1, L"");
+        }
+        auto log = Utility::FormatString(logFmt, msg.c_str(), FileName.c_str());
+
+        logWriter.WriteConsoleLog(log);
+    }
 }
 
 DWORD
