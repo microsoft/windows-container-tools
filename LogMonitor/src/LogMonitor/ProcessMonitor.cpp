@@ -12,6 +12,10 @@ using namespace std;
 HANDLE g_hChildStd_OUT_Rd = NULL;
 HANDLE g_hChildStd_OUT_Wr = NULL;
 
+DWORD g_processId = 0;
+wstring g_processName = L"";
+
+
 DWORD CreateChildProcess(std::wstring& Cmdline);
 DWORD ReadFromPipe(LPVOID Param);
 
@@ -121,6 +125,9 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
                              &siStartInfo,  // STARTUPINFO pointer
                              &piProcInfo);  // receives PROCESS_INFORMATION
 
+    g_processId = piProcInfo.dwProcessId;
+    g_processName = Cmdline;
+
 //
 // If an error occurs, exit the application.
 //
@@ -163,11 +170,18 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
     return exitcode;
 }
 
-// copy helper
-// returns the index after the last copied byte
-size_t bufferCopy(char* inBuf, char* outBuf, size_t start = 0, size_t end = 0, bool escapeNewline = true)
+///
+/// Helper function for making a copy of the buffer.
+/// returns the index after the last copied byte.
+/// 
+size_t bufferCopy(
+    char* dst,
+    char* src,
+    size_t start = 0,
+    size_t end = 0,
+    bool escapeNewline = true)
 {
-    char* ptr = inBuf;
+    char* ptr = src;
     size_t i = start;
     while (*ptr > 0 && i < BUFSIZE) {
         // leave out the '\0' for the const char*
@@ -176,12 +190,12 @@ size_t bufferCopy(char* inBuf, char* outBuf, size_t start = 0, size_t end = 0, b
         }
         // also escape \r\n coz of JSON formatting
         if (escapeNewline && (*ptr == '\r' || *ptr == '\n')) {
-            outBuf[i++] = '\\';
-            if (*ptr == '\r') outBuf[i++] = 'r';
-            if (*ptr == '\n') outBuf[i++] = 'n';
+            dst[i++] = '\\';
+            if (*ptr == '\r') dst[i++] = 'r';
+            if (*ptr == '\n') dst[i++] = 'n';
         }
         else {
-            outBuf[i++] = *ptr;
+            dst[i++] = *ptr;
         }
         ptr++;
     }
@@ -189,8 +203,11 @@ size_t bufferCopy(char* inBuf, char* outBuf, size_t start = 0, size_t end = 0, b
     return i;
 }
 
-// returns the number of bytes written
-// TBD(nandaa): support for wchar (?)
+///
+/// Helper function to formats the stdout buffer to include the other
+/// details from the JSON schema.
+/// Returns the number of bytes written to the buffer.
+///
 size_t formatProcessLog(char* chBuf)
 {
     // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
@@ -201,22 +218,25 @@ size_t formatProcessLog(char* chBuf)
     //
     // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
     //
-    size_t chBufLen = bufferCopy(chBuf, chBufCpy);
+    size_t chBufLen = bufferCopy(chBufCpy, chBuf);
     size_t prefixLen = strlen(prefix);
     size_t suffixLen = strlen(suffix);
-    size_t index = bufferCopy(const_cast<char*>(prefix), chBuf, 0, prefixLen);
+    size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
     //
     // TODO: truncate in case of buffer overflow (leave at least 32 slots to
     // close the JSON with `"},\"SchemaVersion\":\"1.0.0\"}`
     //
-    index = bufferCopy(chBufCpy, chBuf, index);
+    index = bufferCopy(chBuf, chBufCpy, index);
     // don't escape \n at the end coz of NDJSON
-    index = bufferCopy(const_cast<char*>(suffix), chBuf, index, index + suffixLen, false);
+    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen, false);
 
     return index; // same as the number of bytes read
 }
 
-// return number of bytes cleared
+/// 
+/// Helper function to clear the stdout buffer
+/// return number of bytes cleared
+/// 
 size_t clearBuffer(char* chBuf) {
     size_t count = 0;
     char* ptr = chBuf;
@@ -256,7 +276,8 @@ DWORD ReadFromPipe(LPVOID Param)
         }
 
         // modify buffer to add formatting
-        dwRead = static_cast<DWORD>(formatProcessLog(chBuf));
+        size_t sz = formatProcessLog(chBuf);
+        dwRead = static_cast<DWORD>(sz);
 
         bSuccess = logWriter.WriteLog(hParentStdOut,
                                       chBuf,
@@ -270,12 +291,6 @@ DWORD ReadFromPipe(LPVOID Param)
         }
         // add null terminator at the end, dwRead will always be < BUFSIZE
         chBuf[dwRead] = '\0';
-        // TBD: optimize the conversion: char[] -> string -> wstring
-        /*std::string out;
-        out.append(chBuf);
-        auto wOut = wstring(out.begin(), out.end());
-        logWriter.WriteConsoleLog(wOut);*/
-        // clear buffer to avoid overlapping chars when next log-line is shorter
         clearBuffer(chBuf);
     }
 
