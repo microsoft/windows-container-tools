@@ -22,6 +22,7 @@
 #define JSON_TAG_INCLUDE_SUBDIRECTORIES L"includeSubdirectories"
 #define JSON_TAG_INCLUDE_FILENAMES L"includeFileNames"
 #define JSON_TAG_PROVIDERS L"providers"
+#define JSON_TAG_INCLUDE_PREAMBLE_TAG L"includePreambleTag"
 
 ///
 /// Valid channel attributes
@@ -370,6 +371,7 @@ class SourceETW : LogSource
 public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
+    bool PreambleTag = false;
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -398,6 +400,15 @@ public:
             && Attributes[JSON_TAG_FORMAT_MULTILINE] != nullptr)
         {
             NewSource.EventFormatMultiLine = *(bool*)Attributes[JSON_TAG_FORMAT_MULTILINE];
+        }
+
+        //
+        // preambleTag is an optional value
+        //
+        if (Attributes.find(JSON_TAG_INCLUDE_PREAMBLE_TAG) != Attributes.end()
+            && Attributes[JSON_TAG_INCLUDE_PREAMBLE_TAG] != nullptr)
+        {
+            NewSource.PreambleTag = *(bool*)Attributes[JSON_TAG_INCLUDE_PREAMBLE_TAG];
         }
 
 

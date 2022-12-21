@@ -84,6 +84,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+    bool etwPreambleTag;
 
     for (auto source : settings.Sources)
     {
@@ -150,6 +151,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
                 }
 
                 etwMonMultiLine = sourceETW->EventFormatMultiLine;
+                etwPreambleTag = sourceETW->PreambleTag;
 
                 break;
             }
@@ -185,7 +187,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine, etwPreambleTag);
         }
         catch (...)
         {

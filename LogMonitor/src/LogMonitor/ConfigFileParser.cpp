@@ -334,7 +334,12 @@ ReadSourceAttributes(
                 || _wcsnicmp(
                     key.c_str(),
                     JSON_TAG_INCLUDE_FILENAMES,
-                    _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0)
+                    _countof(JSON_TAG_INCLUDE_FILENAMES)) == 0
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_INCLUDE_PREAMBLE_TAG,
+                    _countof(JSON_TAG_INCLUDE_PREAMBLE_TAG)) == 0
+                    )
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }
@@ -672,6 +677,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::shared_ptr<SourceETW> sourceETW = std::reinterpret_pointer_cast<SourceETW>(source);
 
             std::wprintf(L"\t\teventFormatMultiLine: %ls\n", sourceETW->EventFormatMultiLine ? L"true" : L"false");
+            std::wprintf(L"\t\tincludePreambleTag: %ls\n", sourceETW->PreambleTag ? L"true" : L"false");
 
             std::wprintf(L"\t\tProviders (%d):\n", (int)sourceETW->Providers.size());
             for (auto provider : sourceETW->Providers)

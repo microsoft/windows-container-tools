@@ -30,20 +30,25 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
-    _In_ bool EventFormatMultiLine
+    _In_ bool EventFormatMultiLine,
+    _In_ bool PreambleTag
     ) :
-    m_eventFormatMultiLine(EventFormatMultiLine)
+    m_eventFormatMultiLine(EventFormatMultiLine),
+    m_preambleTag(PreambleTag)
 {
     //
     // This is set as 'true' to stop processing events.
     //
     m_stopFlag = false;
 
-    logWriter.WriteConsoleLog(
+    if(m_preambleTag)
+    {
+        logWriter.WriteConsoleLog(
         Utility::FormatString(
             L"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-        )
-    );
+            )
+        );
+    }
 
     FilterValidProviders(Providers, m_providersConfig);
 

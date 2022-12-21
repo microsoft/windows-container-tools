@@ -17,7 +17,8 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ bool EventFormatMultiLine
+        _In_ bool EventFormatMultiLine,
+        _In_ bool PreambleTag
     );
 
     ~EtwMonitor();
@@ -27,6 +28,7 @@ private:
 
     std::vector<ETWProvider> m_providersConfig;
     bool m_eventFormatMultiLine;
+    bool m_preambleTag;
     TRACEHANDLE m_startTraceHandle;
 
     //
