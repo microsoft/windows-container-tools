@@ -176,6 +176,7 @@
     </ClCompile>
     <ClCompile Include="ConfigFileParserTests.cpp" />
     <ClCompile Include="Utility.cpp" />
+    <ClCompile Include="UtilityTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
