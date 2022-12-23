@@ -82,20 +82,36 @@ namespace LogMonitorTests
 
                 //
                 // The "Microsoft-Windows-User-Diagnostic" provider produces events
-                // like this:
+                // like this (without the space formatting / one-line):
                 //
-                //  <Source>EtwEvent</Source><Time>2019-11-04T18:04:33.000Z</Time>
-                //  <Provider idGuid="{305FC87B-002A-5E26-D297-60223012CA9C}"/>
-                //  <DecodingSource>DecodingSourceXMLFile</DecodingSource>
-                //  <Execution ProcessID="3968" ThreadID="2504" /><Level>Warning</Level>
-                //  <Keyword>0x0</Keyword><EventID Qualifiers="1">1</EventID>
-                //  <EventData><ErrorCode>0x3F0</ErrorCode></EventData>
+                /*
+                    {
+                        "Source": "ETW",
+                        "LogEntry" : {
+                            "Time": "2022-12-22T13:39:20.000Z",
+                            "ProviderName" : "Microsoft-Windows-User-Diagnostic",
+                            "ProviderId" : "{305FC87B-002A-5E26-D297-60223012CA9C}",
+                            "DecodingSource" : "DecodingSourceXMLFile",
+                            "Execution" : {
+                                "ProcessId": 35344,
+                                "ThreadId" : 36976
+                            },
+                            "Level" : "Warning",
+                            "Keyword" : "0x0",
+                            "EventId" : 1,
+                            "EventData" : {
+                                "ErrorCode": "0x102"
+                            }
+                        },
+                        "SchemaVersion": "1.0.0"
+                    }
+                */
                 //
 
                 //
                 // Verify time was printed.
                 //
-                std::wregex rgxTime(L"<Time>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z<\\/Time>");
+                std::wregex rgxTime(L"\"Time\":\"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z\",");
 
                 Assert::IsTrue(std::regex_search(output, rgxTime),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -103,7 +119,7 @@ namespace LogMonitorTests
                 //
                 // Verify provider GUID was printed.
                 //
-                std::wregex rgxProvider(L"<Provider[^>]*[\\da-fA-F]{8}-[\\da-fA-F]{4}-[\\da-fA-F]{4}-[\\da-fA-F]{4}-[\\da-fA-F]{12}");
+                std::wregex rgxProvider(L"\"ProviderId\":\".*[\\da-fA-F]{8}-[\\da-fA-F]{4}-[\\da-fA-F]{4}-[\\da-fA-F]{4}-[\\da-fA-F]{12}");
 
                 Assert::IsTrue(std::regex_search(output, rgxProvider),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -111,7 +127,7 @@ namespace LogMonitorTests
                 //
                 // Verify level was printed.
                 //
-                std::wregex rgxLevel(L"<Level>(None|Critical|Error|Warning|Information|Verbose)<\\/Level>");
+                std::wregex rgxLevel(L"\"Level\":\"(None|Critical|Error|Warning|Information|Verbose)\",");
 
                 Assert::IsTrue(std::regex_search(output, rgxLevel),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -119,7 +135,7 @@ namespace LogMonitorTests
                 //
                 // Verify keyword was printed.
                 //
-                std::wregex rgxKeyword(L"<Keyword>0x[\\da-fA-F]+<\\/Keyword>");
+                std::wregex rgxKeyword(L"\"Keyword\":\"0x[\\da-fA-F]+\",");
 
                 Assert::IsTrue(std::regex_search(output, rgxKeyword),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -127,7 +143,7 @@ namespace LogMonitorTests
                 //
                 // Verify event data was printed.
                 //
-                std::wregex rgxData(L"<EventData>.*<ErrorCode>0x[\\da-fA-F]+<\\/ErrorCode>.*<\\/EventData>");
+                std::wregex rgxData(L"\"EventData\":.*\"ErrorCode\":\"0x[\\da-fA-F]+\".*");
 
                 Assert::IsTrue(std::regex_search(output, rgxData),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());

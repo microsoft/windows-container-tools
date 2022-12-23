@@ -4,6 +4,7 @@
 //
 
 #include "pch.h"
+#include <regex>
 
 using namespace std;
 
@@ -245,3 +246,13 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
+
+/// 
+/// helper function for a basic check if a string is a Number (JSON)
+/// as per the JSON spec - https://www.json.org/json-en.html
+/// 
+bool Utility::isJsonNumber(_In_ PWSTR str)
+{
+    wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+)$");
+    return regex_search(str, isNumber);
+}
