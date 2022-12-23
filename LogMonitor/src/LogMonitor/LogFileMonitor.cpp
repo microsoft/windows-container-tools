@@ -39,13 +39,11 @@ using namespace std;
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
-                               _In_ bool IncludeSubfolders,
-                               _In_ bool IncludeFileNames
+                               _In_ bool IncludeSubfolders
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
-                               m_includeSubfolders(IncludeSubfolders),
-                               m_includeFileNames(IncludeFileNames)
+                               m_includeSubfolders(IncludeSubfolders)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1464,15 +1462,6 @@ LogFileMonitor::ReadLogFile(
         }
     }
 
-    //
-    //log the name of the source log file if includeFileNames field if true
-    //
-    wstring fileName;
-    if (m_includeFileNames)
-    {
-        fileName = Utility::FormatString(L"[Log File: %ws] ", LogFileInfo->FileName.c_str()).c_str();
-    }
-
     const DWORD bytesToRead = 4096;
     std::vector<BYTE> logFileContents(
         static_cast<size_t>(bytesToRead));
@@ -1691,6 +1680,9 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
 
         i = Message.find(L"\n", start);
         if (i == std::string::npos) {
+            // only one-line log
+            auto log = Utility::FormatString(logFmt, Message.c_str(), FileName.c_str());
+            logWriter.WriteConsoleLog(log);
             break;
         }
 
@@ -1702,7 +1694,6 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
             msg.replace(msg.size() - 1, 1, L"");
         }
         auto log = Utility::FormatString(logFmt, msg.c_str(), FileName.c_str());
-
         logWriter.WriteConsoleLog(log);
     }
 }
