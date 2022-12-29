@@ -1673,28 +1673,32 @@ LogFileMonitor::ReadLogFile(
 
 void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
     auto logFmt = L"{\"Source\":\"File\",\"LogEntry\":{\"Logline\":\"%s\",\"FileName\":\"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+    size_t start = 0;
+    size_t i = 0;
+    wstring msg;
 
     while (true) {
-        size_t start = 0;
-        size_t i = 0;
-
         i = Message.find(L"\n", start);
         if (i == std::string::npos) {
-            // only one-line log
-            auto log = Utility::FormatString(logFmt, Message.c_str(), FileName.c_str());
+            // only one-line log or remaining line without \n
+            msg = Message.substr(start, Message.size() - start);
+        }
+        else {
+            // substr except ith (\n)
+            msg = Message.substr(start, i - start);
+            start = i + 1;
+            // remove \r if any, usually before \n
+            if (msg.substr(msg.size() - 1) == L"\r") {
+                msg.replace(msg.size() - 1, 1, L"");
+            }
+        }
+        // ignore empty lines
+        if (msg.size() > 0) {
+            auto log = Utility::FormatString(logFmt, msg.c_str(), FileName.c_str());
             logWriter.WriteConsoleLog(log);
-            break;
         }
 
-        // substr except ith (\n)
-        auto msg = Message.substr(start, i - start);
-        start = i + 1;
-        // remove \r if any, usually before \n
-        if (msg.substr(msg.size() - 1) == L"\r") {
-            msg.replace(msg.size() - 1, 1, L"");
-        }
-        auto log = Utility::FormatString(logFmt, msg.c_str(), FileName.c_str());
-        logWriter.WriteConsoleLog(log);
+        if (i >= Message.size()) break;
     }
 }
 
