@@ -1694,7 +1694,9 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         }
         // ignore empty lines
         if (msg.size() > 0) {
-            auto log = Utility::FormatString(logFmt, msg.c_str(), FileName.c_str());
+            // escape backslashes in FileName
+            auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
+            auto log = Utility::FormatString(logFmt, msg.c_str(), fmtFileName.c_str());
             logWriter.WriteConsoleLog(log);
         }
 
