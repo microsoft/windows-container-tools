@@ -407,6 +407,8 @@ ReadLogChannel(
         return false;
     }
 
+    bool levelKeyExists {};
+
     do
     {
         const auto& key = Parser.GetKey();
@@ -420,6 +422,8 @@ ReadLogChannel(
         }
         else if (_wcsnicmp(key.c_str(), JSON_TAG_CHANNEL_LEVEL, _countof(JSON_TAG_CHANNEL_LEVEL)) == 0)
         {
+            levelKeyExists = true;
+
             //
             // Get the level as a string, and convert it to EventChannelLogLevel.
             //
@@ -447,6 +451,10 @@ ReadLogChannel(
         }
     } while (Parser.ParseNextObjectElement());
 
+    if (Result.Name.empty() == false && levelKeyExists == false)
+    {
+        Result.Level = EventChannelLogLevel::Verbose;
+    }
 
     return Result.IsValid();
 }

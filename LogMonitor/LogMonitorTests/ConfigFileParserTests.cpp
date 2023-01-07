@@ -286,7 +286,7 @@ namespace LogMonitorTests
 
                 Assert::AreEqual((size_t)1, sourceEventLog->Channels.size());
 
-                Assert::AreEqual((int)EventChannelLogLevel::Error, (int)sourceEventLog->Channels[0].Level);
+                Assert::AreEqual((int)EventChannelLogLevel::Verbose, (int)sourceEventLog->Channels[0].Level);
             }
         }
 
