@@ -564,7 +564,7 @@ JsonFileParser::AdvanceBufferPointer(
     size_t Offset
     )
 {
-    m_currentPos = min(m_currentPos + Offset, m_bufferLength);
+    m_currentPos = std::min(m_currentPos + Offset, m_bufferLength);
 
     for (; m_currentPos < m_bufferLength && IsWhiteSpace(m_buffer[m_currentPos]); m_currentPos++)
     {

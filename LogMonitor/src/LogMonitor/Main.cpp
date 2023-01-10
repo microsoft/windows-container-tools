@@ -5,9 +5,74 @@
 
 #include "pch.h"
 #include "Version.h"
-#include "telemetry/tracer.hpp"
 
-using namespace std;
+#include "opentelemetry/sdk/version/version.h"
+#include "opentelemetry/trace/provider.h"
+
+#include "opentelemetry/exporters/ostream/span_exporter_factory.h"
+#include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+
+namespace trace = opentelemetry::trace;
+namespace nostd = opentelemetry::nostd;
+
+namespace trace_sdk = opentelemetry::sdk::trace;
+namespace trace_exporter = opentelemetry::exporter::trace;
+
+
+namespace
+{
+    void InitTracer()
+    {
+        auto exporter = trace_exporter::OStreamSpanExporterFactory::Create();
+
+        auto processor = trace_sdk::SimpleSpanProcessorFactory::Create(std::move(exporter));
+
+        std::shared_ptr<opentelemetry::trace::TracerProvider> provider =
+            trace_sdk::TracerProviderFactory::Create(std::move(processor));
+
+        // Set the global trace provider
+        trace::Provider::SetTracerProvider(provider);
+    }
+
+    void CleanupTracer()
+    {
+        std::shared_ptr<opentelemetry::trace::TracerProvider> none;
+        trace_api::Provider::SetTracerProvider(none);
+    }
+}  // namespace
+
+namespace
+{
+    nostd::shared_ptr<trace::Tracer> get_tracer()
+    {
+        auto provider = trace::Provider::GetTracerProvider();
+        return provider->GetTracer("foo_library", OPENTELEMETRY_SDK_VERSION);
+    }
+
+    void f1()
+    {
+        auto scoped_span = trace::Scope(get_tracer()->StartSpan("f1"));
+        
+    }
+
+    void f2()
+    {
+        auto scoped_span = trace::Scope(get_tracer()->StartSpan("f2"));
+
+        f1();
+        f1();
+    }
+}  // namespace
+
+void foo_library()
+{
+    auto scoped_span = trace::Scope(get_tracer()->StartSpan("library"));
+
+    wprintf(L"This was executed");
+
+    f2();
+}
 
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
@@ -55,6 +120,16 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
     }
 
     return TRUE;
+}
+
+void PrintTelemetryConsent()
+{
+    wprintf(L"\n");
+    wprintf(L"Telemetry\n");
+    wprintf(L"--------\n");
+    wprintf(L"LogMonitor collects usage data in order to help us improve your experience.\n");
+    wprintf(L"The data is collected by Microsoft and is anonymous.\n");
+    wprintf(L"You can opt-out of telemetry by passing a disableMetrics flag in the configuration file\n\n");
 }
 
 void PrintUsage()
@@ -111,7 +186,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 try
                 {
-                    std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
+                    std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
@@ -161,7 +236,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+            g_eventMon = std::make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
         }
         catch (std::exception& ex)
         {
@@ -186,7 +261,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
+            g_etwMon = std::make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
         }
         catch (...)
         {
@@ -199,9 +274,11 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
-    /*Utility::PrintTelemetryConsent();
-    initTracer();
-    tracer("f1", "f2");*/
+    InitTracer();
+    foo_library();
+    CleanupTracer();
+
+    //PrintTelemetryConsent();
 
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;

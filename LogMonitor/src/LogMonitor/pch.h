@@ -5,6 +5,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define NOMINMAX
+
 // TODO(annandaa): reorder the header files as per convention.
 // currently there are some implicit dependencies, things break when
 // you try to reorder.

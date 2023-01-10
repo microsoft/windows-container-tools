@@ -14,6 +14,8 @@
 
 // add headers that you want to pre-compile here
 
+#define NOMINMAX
+
 #include "CppUnitTest.h"
 #include <functional>
 #include <conio.h>
