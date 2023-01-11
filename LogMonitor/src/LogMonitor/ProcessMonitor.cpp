@@ -174,25 +174,50 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 /// Helper function for making a copy of the buffer.
 /// returns the index after the last copied byte.
 /// 
-size_t bufferCopy(
-    char* dst,
-    char* src,
-    size_t start = 0,
-    size_t end = 0,
-    bool escapeNewline = true)
+size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
 {
     char* ptr = src;
     size_t i = start;
     while (*ptr > 0 && i < BUFSIZE) {
-        // leave out the '\0' for the const char*
-        if (end > 0 && i == end) {
+        // *ptr > 0: leave out the '\0' for the const char*
+        if (i == end) {
             break;
         }
-        // also escape \r\n coz of JSON formatting
-        if (escapeNewline && (*ptr == '\r' || *ptr == '\n')) {
+        dst[i++] = *ptr;
+        ptr++;
+    }
+
+    return i;
+}
+
+///
+/// Helper function for making a copy of the buffer.
+/// For optimization, the function also "sanitizes" the string for JSON.
+/// returns the index after the last copied byte.
+/// 
+size_t bufferCopyAndSanitize(char* dst, char* src)
+{
+    char* ptr = src;
+    size_t i = 0;
+    while (*ptr > 0 && i < BUFSIZE) {
+        // *ptr > 0: leave out the '\0' for the const char*
+
+        // clean, eg. replace \r\n with \\r\\n (displayed as "\r\n")
+        if (*ptr == '\r') {
             dst[i++] = '\\';
-            if (*ptr == '\r') dst[i++] = 'r';
-            if (*ptr == '\n') dst[i++] = 'n';
+            dst[i++] = 'r';
+        }
+        else if (*ptr == '\n') {
+            dst[i++] = '\\';
+            dst[i++] = 'n';
+        }
+        else if (*ptr == '\"') {
+            dst[i++] = '\\';
+            dst[i++] = '\"';
+        }
+        else if (*ptr == '\\' && i < BUFSIZE - 1 && *(ptr + 1) != '\\') {
+            dst[i++] = '\\';
+            dst[i++] = '\\';
         }
         else {
             dst[i++] = *ptr;
@@ -218,17 +243,23 @@ size_t formatProcessLog(char* chBuf)
     //
     // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
     //
-    size_t chBufLen = bufferCopy(chBufCpy, chBuf);
+    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
     size_t prefixLen = strlen(prefix);
     size_t suffixLen = strlen(suffix);
     size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
-    //
-    // TODO: truncate in case of buffer overflow (leave at least 32 slots to
-    // close the JSON with `"},\"SchemaVersion\":\"1.0.0\"}`
-    //
+
+    // copy over the logline after prefix
     index = bufferCopy(chBuf, chBufCpy, index);
-    // don't escape \n at the end coz of NDJSON
-    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen, false);
+
+    // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
+    // leave at least 36 slots to close the JSON with `..."},\"SchemaVersion\":\"1.0.0\"}\n`
+    // reset the start index
+    if ((index + suffixLen) > BUFSIZE - 5) {
+        index = BUFSIZE - 5 - suffixLen;
+        suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
+
+    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
 
     return index; // same as the number of bytes read
 }

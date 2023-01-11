@@ -555,30 +555,17 @@ EventMonitor::PrintEvent(
                 // supporting JSON fmt by default
                 auto logFmt = L"{\"Source\": \"EventLog\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
 
+                // sanitize message
+                std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
+                Utility::SanitizeJson(msg);
+
                 std::wstring formattedEvent = Utility::FormatString(
                     logFmt,
                     Utility::FileTimeToString(fileTimeCreated).c_str(),
                     channelName.c_str(),
                     c_LevelToString[static_cast<UINT8>(level)].c_str(),
                     eventId,
-                    (LPWSTR)(&m_eventMessageBuffer[0])
-                );
-
-                //
-                // If the multi-line option is disabled, remove all new lines from the output.
-                //
-                if (!this->m_eventFormatMultiLine)
-                {
-                    std::transform(formattedEvent.begin(), formattedEvent.end(), formattedEvent.begin(),
-                        [](WCHAR ch) {
-                            switch (ch) {
-                            case L'\r':
-                            case L'\n':
-                                return L' ';
-                            }
-                            return ch;
-                        });
-                }
+                    msg.c_str());
 
                 logWriter.WriteConsoleLog(formattedEvent);
             }

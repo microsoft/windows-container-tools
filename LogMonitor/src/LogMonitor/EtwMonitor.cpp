@@ -1120,12 +1120,16 @@ EtwMonitor::_FormatData(
             if (ERROR_SUCCESS == status)
             {
                 auto fd = (PWCHAR)formattedData.data();
-                auto sep = L"";
                 if (!Utility::isJsonNumber(fd)) {
-                    // enclose fd within double quotes.
-                    sep = L"\"";
+                    // clean the JSON string `fd`
+                    wstring fdStr(fd);
+                    Utility::SanitizeJson(fdStr);
+                    Result << L"\"" << fdStr << L"\"";
                 }
-                Result << sep << fd << sep;
+                else {
+                    Result << fd;
+                }
+                
 
                 UserData += userDataConsumed;
             }
