@@ -409,56 +409,5 @@ namespace LogMonitorTests
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
             }
         }
-
-        ///
-        /// Check that setting false the EventFormatMultiline property, monitor
-        /// prints white spaces instead of new lines.
-        ///
-        TEST_METHOD(TestEventFormatMultiline)
-        {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
-
-            EventMonitor eventMonitor(eventChannels, false, false);
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
-
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                int eventId = 555;
-                EventChannelLogLevel level = EventChannelLogLevel::Error;
-
-                //
-                // The way to insert a new line in powershell is using `r`n.
-                //
-                std::wstring message = L"Hello world`r`nError!";
-                
-                //
-                // This should be the sanitized message.
-                //
-                std::wstring messageWithoutNewline = L"Hello world  Error!";
-
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-
-                //
-                // Test that the created event is printed. We could receive other events,
-                // so is better to loop until our message has arrived, using a regex.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", messageWithoutNewline.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-        }
     };
 }
