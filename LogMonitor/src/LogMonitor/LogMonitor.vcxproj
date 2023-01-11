@@ -199,6 +199,7 @@
     <Import Project="..\..\packages\boost_thread-vc143.1.81.0\build\boost_thread-vc143.targets" Condition="Exists('..\..\packages\boost_thread-vc143.1.81.0\build\boost_thread-vc143.targets')" />
     <Import Project="..\..\packages\boost_log_setup-vc143.1.81.0\build\boost_log_setup-vc143.targets" Condition="Exists('..\..\packages\boost_log_setup-vc143.1.81.0\build\boost_log_setup-vc143.targets')" />
     <Import Project="..\..\packages\boost_atomic-vc143.1.81.0\build\boost_atomic-vc143.targets" Condition="Exists('..\..\packages\boost_atomic-vc143.1.81.0\build\boost_atomic-vc143.targets')" />
+    <Import Project="..\..\packages\boost_chrono-vc143.1.81.0\build\boost_chrono-vc143.targets" Condition="Exists('..\..\packages\boost_chrono-vc143.1.81.0\build\boost_chrono-vc143.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -212,5 +213,6 @@
     <Error Condition="!Exists('..\..\packages\boost_thread-vc143.1.81.0\build\boost_thread-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\boost_thread-vc143.1.81.0\build\boost_thread-vc143.targets'))" />
     <Error Condition="!Exists('..\..\packages\boost_log_setup-vc143.1.81.0\build\boost_log_setup-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\boost_log_setup-vc143.1.81.0\build\boost_log_setup-vc143.targets'))" />
     <Error Condition="!Exists('..\..\packages\boost_atomic-vc143.1.81.0\build\boost_atomic-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\boost_atomic-vc143.1.81.0\build\boost_atomic-vc143.targets'))" />
+    <Error Condition="!Exists('..\..\packages\boost_chrono-vc143.1.81.0\build\boost_chrono-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\boost_chrono-vc143.1.81.0\build\boost_chrono-vc143.targets'))" />
   </Target>
 </Project>

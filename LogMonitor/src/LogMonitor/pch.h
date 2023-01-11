@@ -45,6 +45,11 @@
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 #include "Utility.h"
 #include "Parser/ConfigFileParser.h"
 #include "Parser/LoggerSettings.h"
