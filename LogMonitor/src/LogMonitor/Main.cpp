@@ -85,6 +85,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
 
+    std::wstring logFormat = settings.LogFormat;
+
     for (auto source : settings.Sources)
     {
         switch (source->Type)

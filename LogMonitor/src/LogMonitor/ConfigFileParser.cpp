@@ -139,10 +139,10 @@ ReadLogConfigObject(
     bool sourcesTagFound = false;
     if (Parser.BeginParseObject())
     {
+        std::wstring key;
         do
         {
-            const std::wstring key(Parser.GetKey());
-
+            key = Parser.GetKey();
             if (_wcsnicmp(key.c_str(), JSON_TAG_SOURCES, _countof(JSON_TAG_SOURCES)) == 0)
             {
                 if (Parser.GetNextDataType() != JsonFileParser::DataType::Array)
@@ -185,13 +185,21 @@ ReadLogConfigObject(
                             delete attributePair.second;
                         }
                     }
+
                 } while (Parser.ParseNextArrayElement());
+
+            } 
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_LOG_FORMAT, _countof(JSON_TAG_LOG_FORMAT)) == 0)
+            {
+                Config.LogFormat = std::wstring(Parser.ParseStringValue());
             }
             else
             {
                 logWriter.TraceWarning(Utility::FormatString(L"Error parsing configuration file. 'Unknow key %ws in the configuration file.", key.c_str()).c_str());
                 Parser.SkipValue();
             }
+
+
         } while (Parser.ParseNextObjectElement());
     }
 
