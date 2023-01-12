@@ -1,29 +1,26 @@
 #pragma once
-#ifndef _SystemInfo_h
-#define _SystemInfo_h
 
 #include "pch.h"
 
 class SystemInfo
 {
 public:
-	LPCWSTR Platform;
+    LPCWSTR Platform;
+    LPCWSTR NetBIOS;
+    LPCWSTR DnsHostname;
+    LPCWSTR DnsDomain;
+    LPCWSTR DnsFullyQualified;
+    LPCWSTR PhysicalNetBIOS;
+    LPCWSTR PhysicalDnsHostname;
+    LPCWSTR PhysicalDnsDomain;
+    LPCWSTR PhysicalDnsFullyQualified;
 
-	LPCWSTR NetBIOS;
-	LPCWSTR DnsHostname;
-	LPCWSTR DnsDomain;
-	LPCWSTR DnsFullyQualified;
-	LPCWSTR PhysicalNetBIOS;
-	LPCWSTR PhysicalDnsHostname;
-	LPCWSTR PhysicalDnsDomain;
-	LPCWSTR PhysicalDnsFullyQualified;
+    std::string SystemVersion;
 
-	std::string SystemVersion;
-
-	bool ISWindowsServer;
+    bool ISWindowsServer;
 
 public:
-	SystemInfo() 
+    SystemInfo() 
 	{
 		SYSTEM_INFO systemInfo;
 		GetSystemInfo(&systemInfo);
@@ -153,7 +150,5 @@ public:
 		
 	}
 
-	~SystemInfo(){}
+    ~SystemInfo(){}
 };
-
-#endif _SystemInfo_h

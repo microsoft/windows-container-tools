@@ -6,13 +6,6 @@
 #include "pch.h"
 #include "Version.h"
 
-#include "opentelemetry/sdk/version/version.h"
-#include "opentelemetry/trace/provider.h"
-
-#include "opentelemetry/exporters/ostream/span_exporter_factory.h"
-#include "opentelemetry/sdk/trace/simple_processor_factory.h"
-#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
-
 namespace trace = opentelemetry::trace;
 namespace nostd = opentelemetry::nostd;
 
@@ -40,7 +33,7 @@ namespace
         std::shared_ptr<opentelemetry::trace::TracerProvider> none;
         trace_api::Provider::SetTracerProvider(none);
     }
-}
+}  // namespace 
 
 namespace
 {
@@ -56,7 +49,7 @@ void test_logmonitor_library()
 {
     auto scoped_span = trace::Scope(get_tracer()->StartSpan("logmonitor_library"));
 
-}
+}  // namespace
 
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
