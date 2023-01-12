@@ -47,6 +47,7 @@
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
+#include <VersionHelpers.h>
 #include "Utility.h"
 #include "Parser/ConfigFileParser.h"
 #include "Parser/LoggerSettings.h"

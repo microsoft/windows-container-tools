@@ -51,6 +51,9 @@
     <ClInclude Include="FileMonitor\*.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SystemInfo.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

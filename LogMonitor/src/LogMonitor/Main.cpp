@@ -40,38 +40,22 @@ namespace
         std::shared_ptr<opentelemetry::trace::TracerProvider> none;
         trace_api::Provider::SetTracerProvider(none);
     }
-}  // namespace
+}
 
 namespace
 {
     nostd::shared_ptr<trace::Tracer> get_tracer()
     {
         auto provider = trace::Provider::GetTracerProvider();
-        return provider->GetTracer("foo_library", OPENTELEMETRY_SDK_VERSION);
-    }
-
-    void f1()
-    {
-        auto scoped_span = trace::Scope(get_tracer()->StartSpan("f1"));
         
+        return provider->GetTracer("test_logmonitor_library", OPENTELEMETRY_SDK_VERSION);
     }
+}
 
-    void f2()
-    {
-        auto scoped_span = trace::Scope(get_tracer()->StartSpan("f2"));
-
-        f1();
-        f1();
-    }
-}  // namespace
-
-void foo_library()
+void test_logmonitor_library()
 {
-    auto scoped_span = trace::Scope(get_tracer()->StartSpan("library"));
+    auto scoped_span = trace::Scope(get_tracer()->StartSpan("logmonitor_library"));
 
-    wprintf(L"This was executed");
-
-    f2();
 }
 
 #pragma comment(lib, "wevtapi.lib")
@@ -275,10 +259,10 @@ void StartMonitors(_In_ LoggerSettings& settings)
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
     InitTracer();
-    foo_library();
+    test_logmonitor_library();
     CleanupTracer();
 
-    //PrintTelemetryConsent();
+    PrintTelemetryConsent();
 
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;

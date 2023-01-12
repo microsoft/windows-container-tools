@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <VcpkgTriplet Condition="'$(Platform)'=='Win32'">x86-windows-static</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)'=='x64'">x64-windows-static</VcpkgTriplet>
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{87A330AC-84A1-40B3-A596-1BAED16B828F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -163,6 +165,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="ProcessMonitor.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
