@@ -58,10 +58,7 @@
 #include "FileMonitor/Utilities.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
-#include "opentelemetry/sdk/version/version.h"
-#include "opentelemetry/trace/provider.h"
-#include "opentelemetry/exporters/ostream/span_exporter_factory.h"
-#include "opentelemetry/sdk/trace/simple_processor_factory.h"
-#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+#include "SystemInfo.h"
+#include "Tracer.h"
 
 #endif //PCH_H

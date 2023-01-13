@@ -6,50 +6,12 @@
 #include "pch.h"
 #include "Version.h"
 
-namespace trace = opentelemetry::trace;
-namespace nostd = opentelemetry::nostd;
-
-namespace trace_sdk = opentelemetry::sdk::trace;
-namespace trace_exporter = opentelemetry::exporter::trace;
-
-
-namespace
-{
-    void InitTracer()
-    {
-        auto exporter = trace_exporter::OStreamSpanExporterFactory::Create();
-
-        auto processor = trace_sdk::SimpleSpanProcessorFactory::Create(std::move(exporter));
-
-        std::shared_ptr<opentelemetry::trace::TracerProvider> provider =
-            trace_sdk::TracerProviderFactory::Create(std::move(processor));
-
-        // Set the global trace provider
-        trace::Provider::SetTracerProvider(provider);
-    }
-
-    void CleanupTracer()
-    {
-        std::shared_ptr<opentelemetry::trace::TracerProvider> none;
-        trace_api::Provider::SetTracerProvider(none);
-    }
-}  // namespace 
-
-namespace
-{
-    nostd::shared_ptr<trace::Tracer> get_tracer()
-    {
-        auto provider = trace::Provider::GetTracerProvider();
-        
-        return provider->GetTracer("test_logmonitor_library", OPENTELEMETRY_SDK_VERSION);
-    }
-}
-
 void test_logmonitor_library()
 {
-    auto scoped_span = trace::Scope(get_tracer()->StartSpan("logmonitor_library"));
+    SystemInfo sysInfo;
+    auto scoped_span = trace::Scope(get_tracer("test_library")->StartSpan("hello"));
 
-}  // namespace
+}
 
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
