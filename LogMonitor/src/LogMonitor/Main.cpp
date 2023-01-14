@@ -213,11 +213,13 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
-    InitTracer();
-    test_logmonitor_library();
-    CleanupTracer();
-
-    PrintTelemetryConsent();
+    SystemInfo sysInfo;
+    if (sysInfo.GetTelemetryFlag()) {
+        PrintTelemetryConsent();
+        InitTracer();
+        test_logmonitor_library();
+        CleanupTracer();
+    }
 
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;

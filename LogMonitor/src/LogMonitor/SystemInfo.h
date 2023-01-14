@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include "pch.h"
+struct EnvVariable
+{
+  LPTSTR LOGMONITOR_TELEMETRY;
+  // TODO(bosira) WE CAN ADD MORE ENVIRONMENT VARIABLE VALUES THAT WE WANT TO REPORT
+};
 
-
-class SystemInfo {
-private:
-    SYSTEM_INFO systemInfo;
- public:
-
+struct ComputerName
+{
     LPCWSTR Platform;
     LPCWSTR NetBIOS;
     LPCWSTR DnsHostname;
@@ -22,58 +22,39 @@ private:
     LPCWSTR PhysicalDnsHostname;
     LPCWSTR PhysicalDnsDomain;
     LPCWSTR PhysicalDnsFullyQualified;
+};
 
-    bool IsAmd64();
-    bool IsX86();
-    bool isARM();
-    bool ARM64();
-  
-    bool IsWinXPOrAbove();
-    bool IsWin7OrAbove();
-    bool IsWinVistaOrAbove();
-    bool IsWin8OrAbove();
-    bool IsWin10OrAbove();
-    bool ISWindowsServer();
-	
-    SystemInfo() {
+struct HardwareInformation
+{
+  DWORD dwOemId;
+  WORD wProcessorArchitecture;
+  DWORD dwNumberOfProcessors;
+  DWORD dwPageSize;
+  DWORD dwProcessorType;
+  LPVOID lpMinimumApplicationAddress;
+  LPVOID lpMaximumApplicationAddress;
+};
 
-    GetSystemInfo(&this->systemInfo);
 
-    TCHAR buffer[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD dwSize = _countof(buffer);
-    int cnf = 0;
+class SystemInfo {
 
-    for (cnf = 0; cnf < ComputerNameMax; cnf++) {
-    if (!GetComputerNameEx((COMPUTER_NAME_FORMAT)cnf, buffer, &dwSize)) {
-        // log/handle the error here as well
-        return;
-    } else {
-        switch (cnf) {
-            case 0: this->NetBIOS = buffer;
-              break;
-            case 1: this->DnsHostname = buffer;
-              break;
-            case 2: this->DnsDomain = buffer;
-               break;
-            case 3: this->DnsFullyQualified = buffer;
-              break;
-            case 4: this->PhysicalNetBIOS = buffer;
-              break;
-            case 5: this->PhysicalDnsHostname = buffer;
-              break;
-            case 6: this->PhysicalDnsDomain = buffer;
-              break;
-            case 7: this->PhysicalDnsFullyQualified = buffer;
-              break;
-            default:
-              break;
-        }
-    }
+ private:
+    EnvVariable mEnvironmentVariable;
+    ComputerName mCompName;
+    HardwareInformation mHardwareInfo;
+    bool mEnableTelemetryReporting = true;
 
-    dwSize = _countof(buffer);
-    ZeroMemory(buffer, dwSize);
-    }
-    }
-
-    ~SystemInfo() {}
+ public:
+  SystemInfo();
+  EnvVariable GetEnvVars();
+  ComputerName GetCompName();
+  HardwareInformation GetHardInfo();
+  bool GetTelemetryFlag();
+  bool IsWinXPOrAbove();
+  bool IsWin7OrAbove();
+  bool IsWinVistaOrAbove();
+  bool IsWin8OrAbove();
+  bool IsWin10OrAbove();
+  bool ISWindowsServer();
+  ~SystemInfo();
 };
