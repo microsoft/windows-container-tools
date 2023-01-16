@@ -185,10 +185,8 @@ ReadLogConfigObject(
                             delete attributePair.second;
                         }
                     }
-
                 } while (Parser.ParseNextArrayElement());
-
-            } 
+            }
             else if (_wcsnicmp(key.c_str(), JSON_TAG_LOG_FORMAT, _countof(JSON_TAG_LOG_FORMAT)) == 0)
             {
                 Config.LogFormat = std::wstring(Parser.ParseStringValue());
