@@ -70,7 +70,7 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        //BOOST_LOG_TRIVIAL(info) << LogMessage.data();
+        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
         FlushStdOut();
 
@@ -83,7 +83,7 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        //BOOST_LOG_TRIVIAL(info) << LogMessage.data();
+        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
         FlushStdOut();
 
@@ -96,7 +96,7 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        //BOOST_LOG_TRIVIAL(severity) << LogMessage.data();
+        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
         FlushStdOut();
 

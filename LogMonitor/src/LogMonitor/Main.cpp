@@ -106,8 +106,6 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
     Init_logging(logFormat);
 
-    //BOOST_LOG_TRIVIAL(error) << "The server could not bind to the transport";
-
     for (auto source : settings.Sources)
     {
         switch (source->Type)
