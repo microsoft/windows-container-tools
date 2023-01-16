@@ -197,7 +197,6 @@ ReadLogConfigObject(
                 Parser.SkipValue();
             }
 
-
         } while (Parser.ParseNextObjectElement());
     }
 

@@ -245,10 +245,10 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
-std::string Utility::WStringToStringConversion(_In_ const wstring& wstr)
+std::string Utility::WStringToStringConversion(_In_ const std::wstring& wstr)
 {
-    string str;
-    size_t size;
+    std::string str;
+    std::size_t size;
     str.resize(wstr.length());
 
     wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
