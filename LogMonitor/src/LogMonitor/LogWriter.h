@@ -72,9 +72,7 @@ public :
 
         BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
-        FlushStdOut();
-
-        ReleaseSRWLockExclusive(&m_stdoutLock);
+        clear();
     }
 
     void WriteConsoleLog(
@@ -85,43 +83,52 @@ public :
 
         BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
-        FlushStdOut();
-
-        ReleaseSRWLockExclusive(&m_stdoutLock);
-    }
-
-    void WriteConsoleLog(
-        _In_ const std::wstring& LogMessage, _In_ const std::wstring& severity
-    )
-    {
-        AcquireSRWLockExclusive(&m_stdoutLock);
-
-        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
-
-        FlushStdOut();
-
-        ReleaseSRWLockExclusive(&m_stdoutLock);
+        clear();
     }
 
     void TraceError(
         _In_ LPCWSTR Message
     )
     {
-        WriteConsoleLog(Message, L"error");
+        AcquireSRWLockExclusive(&m_stdoutLock);
+
+        const std::wstring& LogMessage = Message;
+
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
     }
 
     void TraceWarning(
         _In_ LPCWSTR Message
     )
     {
-        WriteConsoleLog(Message, L"warning");
+        AcquireSRWLockExclusive(&m_stdoutLock);
+
+        const std::wstring& LogMessage = Message;
+
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
     }
 
     void TraceInfo(
         _In_ LPCWSTR Message
     )
     {
-        WriteConsoleLog(Message, L"info");
+        AcquireSRWLockExclusive(&m_stdoutLock);
+
+        const std::wstring& LogMessage = Message;
+
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
+    }
+
+    void clear() {
+        FlushStdOut();
+
+        ReleaseSRWLockExclusive(&m_stdoutLock);
     }
 };
 

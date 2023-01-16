@@ -85,7 +85,7 @@ void Init_logging(std::wstring logFormat)
     logging::register_simple_formatter_factory<logging::trivial::severity_level, char>("Severity");
 
     //get this format from config json file
-    logging::add_console_log(std::clog, keywords::format = "[%TimeStamp%] [%Severity%] %Message%");
+    logging::add_console_log(std::clog, keywords::format = Utility::WStringToStringConversion(logFormat));
     logging::core::get()->set_filter
     (
         logging::trivial::severity >= logging::trivial::info

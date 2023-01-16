@@ -44,4 +44,8 @@ public:
         _In_ const std::wstring& From,
         _In_ const std::wstring& To
     );
+
+    static std::string WStringToStringConversion(
+        _In_ const std::wstring& wstr
+    );
 };
