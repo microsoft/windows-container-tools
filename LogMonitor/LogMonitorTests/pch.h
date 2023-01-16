@@ -11,6 +11,7 @@
 
 #ifndef PCH_H
 #define PCH_H
+#define BOOST_USE_WINAPI_VERSION BOOST_WINAPI_VERSION_WIN7
 
 // add headers that you want to pre-compile here
 
