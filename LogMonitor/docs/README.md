@@ -85,7 +85,7 @@ logman query providers | findstr "<GUID or Provider Name>"
 - `providers` (required): Providers are components that generate events. This field is a list that shows the event providers you are monitoring for.
     - `providerName` (optional): This represents the name of the provider. It is what shows up when you use logman.
     - `providerGuid` (required): This is a globally unique identifier that uniquely identifies the provider you specified in the ProviderName field.
-    - `level` (optional): This string field specifies the verboseness of the events collected. These include Critical, Error, and Warning, and Information. If the level is not specified, the tool displays all events in the named channel, spanning various levels.
+    - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
     - `keywords` (optional): This string field is a bitmask that specifies what events to collect. Only events with keywords matching the bitmask are collected This is an optional parameter. Default is 0 and all the events will be collected.
 
 ### Examples
