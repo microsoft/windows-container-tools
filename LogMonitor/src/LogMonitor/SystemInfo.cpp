@@ -6,7 +6,7 @@
 #include "pch.h"
 
 SystemInfo::SystemInfo() {
-    TCHAR buffer[MAX_COMPUTERNAME_LENGTH + 1];
+    TCHAR buffer[256] = TEXT("");
     DWORD dwSize = _countof(buffer);
     int cnf = 0;
     for (cnf = 0; cnf < ComputerNameMax; cnf++) {
