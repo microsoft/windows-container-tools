@@ -44,6 +44,9 @@ namespace
     }
 
     void ReportSystemInfoTelemetry(SystemInfo& systemInfo) {
+        int CurrentMinorVersionNumber = systemInfo.GetRegCurVersion().CurrentMinorVersionNumber;
+        int CurrentMajorVersionNumber = systemInfo.GetRegCurVersion().CurrentMajorVersionNumber;
+
         auto span = get_tracer("SYSTEM_INFO")
         ->StartSpan("REG_KEY_SPAN", {
             {
@@ -62,14 +65,14 @@ namespace
                 Utility::W_STR_TO_STR(INSTALLATION_TYPE_STR_VALUE_NAME),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().InstallationType)
             },
-            // {
-            //     Utility::W_STR_TO_STR(CURR_MINOR_VER_NUM_STR_VALUE_NAME),
-            //     systemInfo.GetRegCurVersion().CurrentMinorVersionNumber
-            // },
-            // {
-            //     Utility::W_STR_TO_STR(CUR_MAJOR_VER_NUM_STR_VALUE_NAME),
-            //     systemInfo.GetRegCurVersion().CurrentMajorVersionNumber
-            // },
+             {
+                 Utility::W_STR_TO_STR(CURR_MINOR_VER_NUM_STR_VALUE_NAME),
+                 CurrentMinorVersionNumber
+             },
+             {
+                 Utility::W_STR_TO_STR(CUR_MAJOR_VER_NUM_STR_VALUE_NAME),
+                 CurrentMajorVersionNumber
+             },
             {
                 Utility::W_STR_TO_STR(PRODUCT_NAME_STR_VALUE_NAME),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().ProductName)
