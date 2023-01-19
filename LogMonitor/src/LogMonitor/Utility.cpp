@@ -245,3 +245,18 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
+/// <summary>
+/// Convert wstring to string
+/// </summary>
+/// <param name="wstr">wstring to be converted to string</param>
+std::string Utility::WStringToStringConversion(_In_ const std::wstring& wstr)
+{
+    std::string str;
+    std::size_t size;
+    str.resize(wstr.length());
+
+    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
+
+    return str;
+}
+

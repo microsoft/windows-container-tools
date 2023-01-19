@@ -5,6 +5,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define BOOST_USE_WINAPI_VERSION BOOST_WINAPI_VERSION_WIN7
+
 // TODO(annandaa): reorder the header files as per convention.
 // currently there are some implicit dependencies, things break when
 // you try to reorder.

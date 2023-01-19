@@ -25,6 +25,9 @@ std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
+namespace logging = boost::log;
+namespace keywords = boost::log::keywords;
+
 BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
@@ -56,6 +59,19 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
     return TRUE;
 }
 
+void Init_logging(std::wstring logFormat)
+{
+    logging::register_simple_formatter_factory<logging::trivial::severity_level, char>("Severity");
+
+    //get this format from config json file
+    logging::add_console_log(std::clog, keywords::format = Utility::WStringToStringConversion(logFormat));
+    logging::core::get()->set_filter
+    (
+        logging::trivial::severity >= logging::trivial::info
+    );
+    logging::add_common_attributes();
+}
+
 void PrintUsage()
 {
     wprintf(
@@ -84,6 +100,11 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+
+    //get this format from config json file
+    std::wstring logFormat = settings.LogFormat;
+
+    Init_logging(logFormat);
 
     for (auto source : settings.Sources)
     {

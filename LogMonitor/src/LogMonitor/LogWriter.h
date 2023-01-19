@@ -3,6 +3,8 @@
 // Licensed under the MIT license.
 //
 
+#include "pch.h"
+
 #pragma once
 
 class LogWriter final
@@ -64,10 +66,9 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        wprintf(L"%s\n", LogMessage.c_str());
-        FlushStdOut();
+        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
-        ReleaseSRWLockExclusive(&m_stdoutLock);
+        clear();
     }
 
     void WriteConsoleLog(
@@ -76,52 +77,54 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        wprintf(L"%s\n", LogMessage.c_str());
-        FlushStdOut();
+        BOOST_LOG_TRIVIAL(info) << LogMessage.data();
 
-        ReleaseSRWLockExclusive(&m_stdoutLock);
+        clear();
     }
 
     void TraceError(
         _In_ LPCWSTR Message
     )
     {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
+        AcquireSRWLockExclusive(&m_stdoutLock);
 
-        std::wstring formattedMessage = Utility::FormatString(L"[%s][LOGMONITOR] ERROR: %s",
-            Utility::SystemTimeToString(st).c_str(),
-            Message);
+        const std::wstring& LogMessage = Message;
 
-        WriteConsoleLog(formattedMessage);
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
     }
 
     void TraceWarning(
         _In_ LPCWSTR Message
     )
     {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
+        AcquireSRWLockExclusive(&m_stdoutLock);
 
-        std::wstring formattedMessage = Utility::FormatString(L"[%s][LOGMONITOR] WARNING: %s",
-            Utility::SystemTimeToString(st).c_str(),
-            Message);
+        const std::wstring& LogMessage = Message;
 
-        WriteConsoleLog(formattedMessage);
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
     }
 
     void TraceInfo(
         _In_ LPCWSTR Message
     )
     {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
+        AcquireSRWLockExclusive(&m_stdoutLock);
 
-        std::wstring formattedMessage = Utility::FormatString(L"[%s][LOGMONITOR] INFO: %s",
-            Utility::SystemTimeToString(st).c_str(),
-            Message);
+        const std::wstring& LogMessage = Message;
 
-        WriteConsoleLog(formattedMessage);
+        BOOST_LOG_TRIVIAL(error) << LogMessage.data();
+
+        clear();
+    }
+
+    void clear() {
+        FlushStdOut();
+
+        ReleaseSRWLockExclusive(&m_stdoutLock);
     }
 };
 
