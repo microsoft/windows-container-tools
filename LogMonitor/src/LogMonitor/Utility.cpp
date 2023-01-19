@@ -245,3 +245,68 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
+std::wstring Utility::STR_TO_W_STR(_In_ const std::string& str) {
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.from_bytes(str);
+}
+
+std::string Utility::W_STR_TO_STR(_In_ const std::wstring& wstr) {
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.to_bytes(wstr);
+}
+
+LONG Utility::GetDWORDRegKey(
+    _In_ HKEY hKey,
+    _Inout_ const std::wstring& strValueName,
+    _In_ DWORD& nValue,
+    _In_ DWORD nDefaultValue) {
+        nValue = nDefaultValue;
+        DWORD dwBufferSize(sizeof(DWORD));
+        DWORD nResult(0);
+        LONG nError = ::RegQueryValueExW(
+            hKey,
+            strValueName.c_str(),
+            0,
+            NULL,
+            reinterpret_cast<LPBYTE>(&nResult),
+            &dwBufferSize);
+        if (ERROR_SUCCESS == nError) {
+            nValue = nResult;
+    }
+    return nError;
+}
+
+LONG Utility::GetBoolRegKey(
+    _In_ HKEY hKey,
+    _Inout_ const std::wstring& strValueName,
+    _In_ bool& bValue,
+    _In_ bool bDefaultValue) {
+        DWORD nDefValue((bDefaultValue) ? 1 : 0);
+        DWORD nResult(nDefValue);
+        LONG nError = Utility::GetDWORDRegKey(hKey, strValueName.c_str(), nResult, nDefValue);
+    if (ERROR_SUCCESS == nError) {
+        bValue = (nResult != 0) ? true : false;
+    }
+    return nError;
+}
+
+LONG Utility::GetStringRegKey(
+    _In_ HKEY hKey,
+    _Inout_ const std::wstring& strValueName,
+    _In_ std::wstring& strValue,
+    _In_ const std::wstring& strDefaultValue) {
+        strValue = strDefaultValue;
+        WCHAR szBuffer[512];
+        DWORD dwBufferSize = sizeof(szBuffer);
+        ULONG nError;
+        nError = RegQueryValueExW(hKey, strValueName.c_str(), 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+        if (ERROR_SUCCESS == nError) {
+        strValue = szBuffer;
+    }
+    return nError;
+}
+

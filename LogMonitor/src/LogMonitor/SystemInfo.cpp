@@ -6,6 +6,60 @@
 #include "pch.h"
 
 SystemInfo::SystemInfo() {
+    HKEY hKey;
+    std::wstring strValueOfBinDir;
+
+
+    LONG lRes = RegOpenKeyExW(
+        HKEY_LOCAL_MACHINE, REG_KEY_CUR_VER_STR, 0, KEY_READ, &hKey);
+    switch (lRes) {
+        case ERROR_SUCCESS:
+         Utility::GetStringRegKey(
+            hKey,
+            BUILD_BRANCH_STR_VALUE_NAME,
+            mRegistryCurrentVersion.BuildBranch,
+            REG_KEY_STR_DEFAULT_VALUE);
+         Utility::GetStringRegKey(
+            hKey,
+            BUILD_LAB_STR_VALUE_NAME,
+            mRegistryCurrentVersion.BuildLab,
+            REG_KEY_STR_DEFAULT_VALUE);
+         Utility::GetStringRegKey(
+            hKey,
+            CURRENT_BUILD_NUMBER_STR_VALUE_NAME,
+            mRegistryCurrentVersion.CurrentBuildNumber,
+            REG_KEY_STR_DEFAULT_VALUE);
+        Utility::GetStringRegKey(
+            hKey,
+            INSTALLATION_TYPE_STR_VALUE_NAME,
+            mRegistryCurrentVersion.InstallationType,
+            REG_KEY_STR_DEFAULT_VALUE);
+        Utility::GetDWORDRegKey(
+            hKey,
+            CURR_MINOR_VER_NUM_STR_VALUE_NAME,
+            mRegistryCurrentVersion.CurrentMinorVersionNumber,
+            REG_KEY_DW_DEFAULT_VALUE);
+        Utility::GetDWORDRegKey(
+            hKey,
+            CUR_MAJOR_VER_NUM_STR_VALUE_NAME,
+            mRegistryCurrentVersion.CurrentMajorVersionNumber,
+            REG_KEY_DW_DEFAULT_VALUE);
+        Utility::GetStringRegKey(
+            hKey,
+            PRODUCT_NAME_STR_VALUE_NAME,
+            mRegistryCurrentVersion.ProductName,
+            REG_KEY_STR_DEFAULT_VALUE);
+        break;
+    case ERROR_FILE_NOT_FOUND:
+        logWriter.TraceError(
+            Utility::FormatString(L"Key not found").c_str());
+        break;
+    default:
+        logWriter.TraceError(
+            Utility::FormatString(L"Error opening key").c_str());
+        break;
+    }
+
     TCHAR buffer[256] = TEXT("");
     DWORD dwSize = _countof(buffer);
     int cnf = 0;
@@ -81,6 +135,10 @@ ComputerName SystemInfo::GetCompName() {
 
 HardwareInformation SystemInfo::GetHardInfo() {
     return mHardwareInfo;
+}
+
+RegistryCurrentVersion SystemInfo::GetRegCurVersion() {
+    return mRegistryCurrentVersion;
 }
 
 bool SystemInfo::GetTelemetryFlag() {

@@ -6,17 +6,12 @@
 #include "pch.h"
 #include "Version.h"
 
-void test_logmonitor_library()
-{
-    SystemInfo sysInfo;
-    auto scoped_span = trace::Scope(get_tracer("test_library")->StartSpan("hello"));
-
-}
-
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
 #pragma comment(lib, "ws2_32.lib")  // For ntohs function
 #pragma comment(lib, "shlwapi.lib")
+
+#pragma comment(lib, "advapi32.lib")
 
 #define ARGV_OPTION_CONFIG_FILE L"/Config"
 #define ARGV_OPTION_HELP1 L"/?"
@@ -217,7 +212,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     if (sysInfo.GetTelemetryFlag()) {
         PrintTelemetryConsent();
         InitTracer();
-        test_logmonitor_library();
+        ReportSystemInfoTelemetry(sysInfo);
         CleanupTracer();
     }
 
