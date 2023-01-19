@@ -577,6 +577,9 @@ EventMonitor::PrintEvent(
                         });
                 }
 
+                //add custom attributes
+                boost::log::core::get()->add_global_attribute("Source", boost::log::attributes::constant<string>("EventLog"));
+
                 logWriter.WriteConsoleLog(formattedEvent);
             }
         }

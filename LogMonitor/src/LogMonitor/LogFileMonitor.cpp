@@ -1435,6 +1435,9 @@ LogFileMonitor::ReadLogFile(
         );
     }
 
+    //add custom attributes
+    boost::log::core::get()->add_global_attribute("Source", boost::log::attributes::constant<string>("File"));
+
     //
     // If the beginning of the file hasn't been read yet, don't get the BOM.
     // Also, if EncodingType is already known, skip this.

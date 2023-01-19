@@ -768,6 +768,9 @@ EtwMonitor::PrintEvent(
                 });
         }
 
+        //add custom attributes
+        boost::log::core::get()->add_global_attribute("Source", boost::log::attributes::constant<string>("ETW"));
+
         logWriter.WriteConsoleLog(formattedEvent);
     }
     catch(std::bad_alloc&)
