@@ -316,13 +316,12 @@ DWORD ReadFromPipe(LPVOID Param)
                                       &dwWritten,
                                       NULL);
 
+        clearBuffer(chBuf);
+
         if (!bSuccess)
         {
             break;
         }
-        // add null terminator at the end, dwRead will always be < BUFSIZE
-        chBuf[dwRead] = '\0';
-        clearBuffer(chBuf);
     }
 
     return ERROR_SUCCESS;
