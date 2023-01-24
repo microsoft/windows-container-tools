@@ -292,6 +292,7 @@ DWORD ReadFromPipe(LPVOID Param)
 {
     DWORD dwRead, dwWritten;
     char chBuf[BUFSIZE];
+    char chBufOut[BUFSIZE];
     bool bSuccess = false;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -299,6 +300,8 @@ DWORD ReadFromPipe(LPVOID Param)
 
     for (;;)
     {
+        // clear buffer ready for read
+        clearBuffer(chBuf);
         bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
 
         if (!bSuccess || dwRead == 0)
@@ -306,22 +309,39 @@ DWORD ReadFromPipe(LPVOID Param)
             break;
         }
 
-        // modify buffer to add formatting
-        size_t sz = formatProcessLog(chBuf);
-        dwRead = static_cast<DWORD>(sz);
+        // write out a line at a time
+        char* ptr = chBuf;
+        size_t outSz = 0;
+        size_t count = 0;
+        while (*ptr > 0 && count < BUFSIZE) {
+            // copy over to chBufOut till \r\n or end
+            if (*ptr == '\r' || *ptr == '\n' || *(ptr+1) < 1) {
+                if (outSz > 0) {
+                    // print out and reset chBufOut and outSz
+                    size_t sz = formatProcessLog(chBufOut);
+                    DWORD dwRead = static_cast<DWORD>(sz);
 
-        bSuccess = logWriter.WriteLog(hParentStdOut,
-                                      chBuf,
-                                      dwRead,
-                                      &dwWritten,
-                                      NULL);
+                    bSuccess = logWriter.WriteLog(
+                        hParentStdOut,
+                        chBufOut,
+                        dwRead,
+                        &dwWritten,
+                        NULL);
+                    // reset
+                    outSz = 0;
+                    clearBuffer(chBufOut);
 
-        clearBuffer(chBuf);
-
-        if (!bSuccess)
-        {
-            break;
+                    if (!bSuccess) break;
+                }
+            }
+            else {
+                chBufOut[outSz] = *ptr;
+                outSz++;
+            }
+            ptr++;
+            count++;
         }
+
     }
 
     return ERROR_SUCCESS;
