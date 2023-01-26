@@ -180,7 +180,7 @@ size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
     size_t i = start;
     while (*ptr > 0 && i < BUFSIZE) {
         // *ptr > 0: leave out the '\0' for the const char*
-        if (i == end) {
+        if (i == end && end > 0) {
             break;
         }
         dst[i++] = *ptr;
@@ -249,6 +249,7 @@ size_t formatProcessLog(char* chBuf)
     size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
 
     // copy over the logline after prefix
+    // index increments from the previous index within bufferCopy
     index = bufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
@@ -313,9 +314,10 @@ DWORD ReadFromPipe(LPVOID Param)
         char* ptr = chBuf;
         size_t outSz = 0;
         size_t count = 0;
+        clearBuffer(chBufOut);
         while (*ptr > 0 && count < BUFSIZE) {
             // copy over to chBufOut till \r\n or end
-            if (*ptr == '\r' || *ptr == '\n' || *(ptr+1) < 1) {
+            if (*ptr == '\r' || *ptr == '\n' || *(ptr+1) <= 0) {
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
                     size_t sz = formatProcessLog(chBufOut);
@@ -330,8 +332,6 @@ DWORD ReadFromPipe(LPVOID Param)
                     // reset
                     outSz = 0;
                     clearBuffer(chBufOut);
-
-                    if (!bSuccess) break;
                 }
             }
             else {
