@@ -190,5 +190,47 @@ namespace LogMonitorTests
             std::function<void(void)> f1 = [&etwProviders] { EtwMonitor etwMonitor(etwProviders, true); };
             Assert::ExpectException<std::invalid_argument>(f1);
         }
+
+        ///
+        /// Check that EtwMonitor level defaults to Error when level is not given
+        ///
+        TEST_METHOD(TestEtwMonitorNoLevelProvided)
+        {
+            //provider whose level is specified as error
+            ETWProvider providerWithLevel;
+            providerWithLevel.ProviderName = L"Microsoft-Windows-User-Diagnostic";
+            providerWithLevel.Level = 2; // Error
+            providerWithLevel.Keywords = 0;
+
+            ETWProvider providerWithoutLevel;
+            providerWithoutLevel.ProviderName = L"Microsoft-Windows-User-Diagnostic";
+            providerWithoutLevel.Keywords = 0;
+
+            std::vector<ETWProvider> etwProviders = { providerWithLevel, providerWithoutLevel };
+            EtwMonitor etwMonitor(etwProviders, true);
+
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring output1, output2;
+            int count1 = 0, count2 = 0;
+            do {
+                Sleep(WAIT_TIME_ETWMONITOR_START);
+                output1 = RecoverOuput();
+            } while (output1.empty() && ++count1 < READ_OUTPUT_RETRIES);
+
+            
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            do {
+                Sleep(WAIT_TIME_ETWMONITOR_START);
+                output2 = RecoverOuput();
+            } while (output2.empty() && ++count2 < READ_OUTPUT_RETRIES);
+
+
+            //assert that both outputs are the equal.
+            Assert::AreEqual(output1.c_str(), output2.c_str());
+        }
     };
 }
