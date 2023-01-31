@@ -238,7 +238,7 @@ size_t formatProcessLog(char* chBuf)
     // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
     const char* prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
     const char* suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
-    char chBufCpy[BUFSIZE];
+    char chBufCpy[BUFSIZE] = "";
 
     //
     // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
@@ -273,7 +273,7 @@ size_t clearBuffer(char* chBuf) {
     size_t count = 0;
     char* ptr = chBuf;
 
-    while (*ptr > 0 && count < BUFSIZE) {
+    while (count < BUFSIZE) {
         *ptr = 0; // null char
         ptr++;
         count++;
@@ -292,8 +292,9 @@ size_t clearBuffer(char* chBuf) {
 DWORD ReadFromPipe(LPVOID Param)
 {
     DWORD dwRead, dwWritten;
-    char chBuf[BUFSIZE];
-    char chBufOut[BUFSIZE];
+    char chBuf[BUFSIZE] = "";
+    char chBufOut[BUFSIZE] = "";
+    char chBufRem[BUFSIZE] = ""; // for remaining characters
     bool bSuccess = false;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -303,7 +304,18 @@ DWORD ReadFromPipe(LPVOID Param)
     {
         // clear buffer ready for read
         clearBuffer(chBuf);
-        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+        // move valid chars from remainder buffer to chBuf
+        // then ReadFile starts from the end position (chBuf + cnt)
+        char* ptrRem = chBufRem;
+        size_t cnt = 0;
+        while (*ptrRem > 0 && cnt < BUFSIZE) {
+            chBuf[cnt++] = *ptrRem;
+            ptrRem++;
+        }
+
+        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf + cnt, BUFSIZE - cnt, &dwRead, NULL);
+        // clear remainder buffer for the next read
+        clearBuffer(chBufRem);
 
         if (!bSuccess || dwRead == 0)
         {
@@ -314,10 +326,13 @@ DWORD ReadFromPipe(LPVOID Param)
         char* ptr = chBuf;
         size_t outSz = 0;
         size_t count = 0;
+        size_t lastNewline = 0;
         clearBuffer(chBufOut);
         while (*ptr > 0 && count < BUFSIZE) {
-            // copy over to chBufOut till \r\n or end
-            if (*ptr == '\r' || *ptr == '\n' || *(ptr+1) <= 0) {
+            // copy over to chBufOut till \r\n
+            // the remaining will be reserved to be completed
+            // by the next read.
+            if (*ptr == '\r' || *ptr == '\n') {
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
                     size_t sz = formatProcessLog(chBufOut);
@@ -332,16 +347,24 @@ DWORD ReadFromPipe(LPVOID Param)
                     // reset
                     outSz = 0;
                     clearBuffer(chBufOut);
+                    lastNewline = count;
                 }
             }
             else {
-                chBufOut[outSz] = *ptr;
-                outSz++;
+                chBufOut[outSz++] = *ptr;
             }
             ptr++;
             count++;
         }
 
+        // move remaining characters to chBufRem
+        ptrRem = chBuf;
+        ptrRem += lastNewline;
+        count = 0;
+        while (*ptrRem > 0 && count < BUFSIZE) {
+            chBufRem[count++] = *ptrRem;
+            ptrRem++;
+        }
     }
 
     return ERROR_SUCCESS;
