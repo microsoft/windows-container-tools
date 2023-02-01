@@ -63,7 +63,7 @@ void PrintTelemetryConsent()
     wprintf(L"--------\n");
     wprintf(L"LogMonitor collects usage data in order to help us improve your experience.\n");
     wprintf(L"The data is collected by Microsoft and is anonymous.\n");
-    wprintf(L"You can opt-out of telemetry by passing a disableMetrics flag in the configuration file\n\n");
+    wprintf(L"You can opt-out of telemetry by setting LOGMONITOR_TELEMETRY=0 flag in the environment variable\n\n");
 }
 
 void PrintUsage()

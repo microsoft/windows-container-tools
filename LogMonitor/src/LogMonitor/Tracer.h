@@ -47,8 +47,13 @@ namespace
         int CurrentMinorVersionNumber = systemInfo.GetRegCurVersion().CurrentMinorVersionNumber;
         int CurrentMajorVersionNumber = systemInfo.GetRegCurVersion().CurrentMajorVersionNumber;
 
+        int dwOemId = systemInfo.GetHardInfo().dwOemId;
+        int dwNumberOfProcessors = systemInfo.GetHardInfo().dwNumberOfProcessors;
+        int dwPageSize = systemInfo.GetRegCurVersion().CurrentMinorVersionNumber;
+        int dwProcessorType = systemInfo.GetRegCurVersion().CurrentMajorVersionNumber;
+
         auto span = get_tracer("SYSTEM_INFO")
-        ->StartSpan("REG_KEY_SPAN", {
+        ->StartSpan("SYS_INFO_SPAN", {
             {
                 Utility::W_STR_TO_STR(BUILD_BRANCH_STR_VALUE_NAME),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().BuildBranch)
@@ -76,6 +81,70 @@ namespace
             {
                 Utility::W_STR_TO_STR(PRODUCT_NAME_STR_VALUE_NAME),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().ProductName)
+            },
+            {
+                "dwOemId",
+                 dwOemId
+            },
+            {
+                "wProcessorArchitecture",
+                std::to_string(systemInfo.GetHardInfo().wProcessorArchitecture)
+            },
+            {
+                "dwNumberOfProcessors",
+                dwNumberOfProcessors
+            },
+            {
+                "dwPageSize",
+                dwPageSize
+            },
+            {
+                 "dwProcessorType",
+                 dwProcessorType
+             },
+            {
+                 "lpMinimumApplicationAddress",
+                 "systemInfo.GetHardInfo().lpMinimumApplicationAddress"
+             },
+            {
+                "lpMaximumApplicationAddress",
+                "systemInfo.GetHardInfo().lpMaximumApplicationAddress"
+            },
+            {
+                "Platform",
+                "systemInfo.GetCompName().Platform"
+            },
+            {
+                "NetBIOS",
+                 "systemInfo.GetCompName().NetBIOS"
+            },
+            {
+                "DnsHostname",
+                "systemInfo.GetCompName().DnsHostname"
+            },
+            {
+                "DnsDomain",
+                "systemInfo.GetCompName().DnsDomain"
+            },
+            {
+                "DnsFullyQualified",
+                "systemInfo.GetCompName().DnsFullyQualified"
+            },
+            {
+                 "PhysicalNetBIOS",
+                 "systemInfo.GetCompName().PhysicalNetBIOS"
+             },
+            {
+                 "PhysicalDnsHostname",
+                 "systemInfo.GetCompName().PhysicalDnsHostname"
+             },
+            {
+                "PhysicalDnsDomain",
+                "systemInfo.GetCompName().PhysicalDnsDomain"
+            },
+            {
+                "PhysicalDnsFullyQualified",
+                "systemInfo.GetCompName().PhysicalDnsFullyQualified"
             }
         });
 
