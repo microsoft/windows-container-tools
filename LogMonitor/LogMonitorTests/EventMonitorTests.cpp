@@ -122,7 +122,7 @@ namespace LogMonitorTests
                 std::wstring output;
                 int count = 0;
                 
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 do
                 {
@@ -136,12 +136,12 @@ namespace LogMonitorTests
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxId(Utility::FormatString(L"<EventId>%d<\\/EventId>", eventId));
+                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
 
                 Assert::IsTrue(std::regex_search(output, rgxId),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxLevel(Utility::FormatString(L"<Level>%s<\\/Level>", c_LevelToString[(int)level]));
+                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
 
                 Assert::IsTrue(std::regex_search(output, rgxLevel),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -168,7 +168,7 @@ namespace LogMonitorTests
                 //
                 // Monitor should have ignored this event.
                 //
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 Assert::IsFalse(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -195,7 +195,7 @@ namespace LogMonitorTests
                 //
                 // Monitor should have ignored this event.
                 //
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 Assert::IsFalse(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -228,7 +228,7 @@ namespace LogMonitorTests
                 std::wstring output;
                 int count = 0;
                 
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 do
                 {
@@ -239,12 +239,12 @@ namespace LogMonitorTests
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxId(Utility::FormatString(L"<EventId>%d<\\/EventId>", eventId));
+                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
 
                 Assert::IsTrue(std::regex_search(output, rgxId),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxLevel(Utility::FormatString(L"<Level>%s<\\/Level>", c_LevelToString[(int)level]));
+                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
 
                 Assert::IsTrue(std::regex_search(output, rgxLevel),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -270,7 +270,7 @@ namespace LogMonitorTests
                 // Test that the created event is printed. We could receive other events,
                 // so is better to loop until our message has arrived, using a regex.
                 //
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 do
                 {
@@ -281,12 +281,12 @@ namespace LogMonitorTests
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxId(Utility::FormatString(L"<EventId>%d<\\/EventId>", eventId));
+                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
 
                 Assert::IsTrue(std::regex_search(output, rgxId),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxLevel(Utility::FormatString(L"<Level>%s<\\/Level>", c_LevelToString[(int)level]));
+                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
 
                 Assert::IsTrue(std::regex_search(output, rgxLevel),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -312,7 +312,7 @@ namespace LogMonitorTests
                 // Test that the created event is printed. We could receive other events,
                 // so is better to loop until our message has arrived, using a regex.
                 //
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", message.c_str()));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
                 do
                 {
@@ -323,12 +323,12 @@ namespace LogMonitorTests
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxId(Utility::FormatString(L"<EventId>%d<\\/EventId>", eventId));
+                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
 
                 Assert::IsTrue(std::regex_search(output, rgxId),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                std::wregex rgxLevel(Utility::FormatString(L"<Level>%s<\\/Level>", c_LevelToString[(int)level]));
+                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
 
                 Assert::IsTrue(std::regex_search(output, rgxLevel),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -368,7 +368,7 @@ namespace LogMonitorTests
                     output = RecoverOuput();
                 } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
 
-                std::wregex rgxMessage(Utility::FormatString(L"<Channel>Application<\\/Channel>"));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
 
                 Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
@@ -398,7 +398,7 @@ namespace LogMonitorTests
                 Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
                 std::wstring output = RecoverOuput();
 
-                std::wregex rgxMessage(Utility::FormatString(L"<Channel>Application<\\/Channel>"));
+                std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
 
                 //
                 // We can not ensure that a System event isn't received right
@@ -406,57 +406,6 @@ namespace LogMonitorTests
                 // an appplication event.
                 //
                 Assert::IsTrue(!std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-        }
-
-        ///
-        /// Check that setting false the EventFormatMultiline property, monitor
-        /// prints white spaces instead of new lines.
-        ///
-        TEST_METHOD(TestEventFormatMultiline)
-        {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
-
-            EventMonitor eventMonitor(eventChannels, false, false);
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
-
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                int eventId = 555;
-                EventChannelLogLevel level = EventChannelLogLevel::Error;
-
-                //
-                // The way to insert a new line in powershell is using `r`n.
-                //
-                std::wstring message = L"Hello world`r`nError!";
-                
-                //
-                // This should be the sanitized message.
-                //
-                std::wstring messageWithoutNewline = L"Hello world  Error!";
-
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-
-                //
-                // Test that the created event is printed. We could receive other events,
-                // so is better to loop until our message has arrived, using a regex.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"<Message>%s<\\/Message>", messageWithoutNewline.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
                     Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
             }
         }

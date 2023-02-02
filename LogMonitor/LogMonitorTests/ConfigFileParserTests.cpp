@@ -307,8 +307,7 @@ namespace LogMonitorTests
                                 \"type\": \"File\",\
                                 \"directory\": \"%s\",\
                                 \"filter\": \"%s\",\
-                                \"includeSubdirectories\": %s,\
-                                \"includeFileNames\" : %s\
+                                \"includeSubdirectories\": %s\
                             }\
                         ]\
                     }\
@@ -318,7 +317,6 @@ namespace LogMonitorTests
             // First, try with this values.
             //
             bool includeSubdirectories = true;
-            bool includeFileNames = true;
 
             std::wstring directory = L"C:\\LogMonitor\\logs";
             std::wstring filter = L"*.*";
@@ -327,8 +325,7 @@ namespace LogMonitorTests
                     configFileStrFormat.c_str(),
                     Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
-                    includeSubdirectories ? L"true" : L"false",
-                    includeFileNames ? L"true" : L"false"
+                    includeSubdirectories ? L"true" : L"false"
                 );
 
                 JsonFileParser jsonParser(configFileStr);
@@ -355,14 +352,12 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
                 Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
-                Assert::AreEqual(includeFileNames, sourceFile->IncludeFileNames);
             }
 
             //
             // Try with different values
             //
             includeSubdirectories = false;
-            includeFileNames = false;
 
             directory = L"c:\\\\inetpub\\\\logs";
             filter = L"*.log";
@@ -372,8 +367,7 @@ namespace LogMonitorTests
                     configFileStrFormat.c_str(),
                     Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     filter.c_str(),
-                    includeSubdirectories ? L"true" : L"false",
-                    includeFileNames ? L"true" : L"false"
+                    includeSubdirectories ? L"true" : L"false"
                 );
 
                 JsonFileParser jsonParser(configFileStr);
@@ -400,7 +394,6 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(filter.c_str(), sourceFile->Filter.c_str());
                 Assert::AreEqual(includeSubdirectories, sourceFile->IncludeSubdirectories);
-                Assert::AreEqual(includeFileNames, sourceFile->IncludeFileNames);
             }
         }
 
@@ -454,7 +447,6 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(L"", sourceFile->Filter.c_str());
                 Assert::AreEqual(false, sourceFile->IncludeSubdirectories);
-                Assert::AreEqual(false, sourceFile->IncludeFileNames);
             }
         }
 

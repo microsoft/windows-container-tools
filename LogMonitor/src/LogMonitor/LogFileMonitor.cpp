@@ -39,13 +39,11 @@ using namespace std;
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
-                               _In_ bool IncludeSubfolders,
-                               _In_ bool IncludeFileNames
+                               _In_ bool IncludeSubfolders
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
-                               m_includeSubfolders(IncludeSubfolders),
-                               m_includeFileNames(IncludeFileNames)
+                               m_includeSubfolders(IncludeSubfolders)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1464,15 +1462,6 @@ LogFileMonitor::ReadLogFile(
         }
     }
 
-    //
-    //log the name of the source log file if includeFileNames field if true
-    //
-    wstring fileName;
-    if (m_includeFileNames)
-    {
-        fileName = Utility::FormatString(L"[Log File: %ws] ", LogFileInfo->FileName.c_str()).c_str();
-    }
-
     const DWORD bytesToRead = 4096;
     std::vector<BYTE> logFileContents(
         static_cast<size_t>(bytesToRead));
@@ -1683,13 +1672,38 @@ LogFileMonitor::ReadLogFile(
 }
 
 void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
-    wstring prefix;
-    if (m_includeFileNames)
-    {
-        prefix = Utility::FormatString(L"[Log File: %s] ", FileName.c_str());
-    }
+    auto logFmt = L"{\"Source\":\"File\",\"LogEntry\":{\"Logline\":\"%s\",\"FileName\":\"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+    size_t start = 0;
+    size_t i = 0;
+    wstring msg;
 
-    logWriter.WriteConsoleLog(prefix + Utility::ReplaceAll(Message, L"\n", L"\n" + prefix));
+    while (true) {
+        i = Message.find(L"\n", start);
+        if (i == std::string::npos) {
+            // only one-line log or remaining line without \n
+            msg = Message.substr(start, Message.size() - start);
+        }
+        else {
+            // substr except ith (\n)
+            msg = Message.substr(start, i - start);
+            start = i + 1;
+            // remove \r if any, usually before \n
+            if (msg.substr(msg.size() - 1) == L"\r") {
+                msg.replace(msg.size() - 1, 1, L"");
+            }
+        }
+        // ignore empty lines
+        if (msg.size() > 0) {
+            // escape backslashes in FileName
+            auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
+            // sanitize msg
+            Utility::SanitizeJson(msg);
+            auto log = Utility::FormatString(logFmt, msg.c_str(), fmtFileName.c_str());
+            logWriter.WriteConsoleLog(log);
+        }
+
+        if (i >= Message.size()) break;
+    }
 }
 
 DWORD
