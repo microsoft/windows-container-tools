@@ -813,14 +813,6 @@ EtwMonitor::FormatMetadata(
     oss << L"\"ProviderName\":\"" << pName << L"\",";
 
     //
-    // Format provider Name
-    //
-    if (EventInfo->ProviderNameOffset > 0) {
-        pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
-    }
-    oss << L"<Provider Name=\"" << pName << "\"/>";
-
-    //
     // Format provider Id
     //
     LPWSTR pwsProviderId = NULL;
