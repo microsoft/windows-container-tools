@@ -18,37 +18,40 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EtwMonitor.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EventMonitor.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LogWriter.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProcessMonitor.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Parser\ConfigFileParser.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Parser\LoggerSettings.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Parser\JsonFileParser.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="FileMonitor\*.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogFileMonitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EtwMonitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EventMonitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser\ConfigFileParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser\JsonFileParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser\LoggerSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessMonitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

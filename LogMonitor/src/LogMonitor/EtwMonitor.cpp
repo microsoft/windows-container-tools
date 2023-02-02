@@ -748,7 +748,7 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent = Utility::FormatString(
-            L"<Source>EtwEvent</Source>%ls%ls",
+            L"{\"Source\":\"ETW\",\"LogEntry\":{%ls%ls},\"SchemaVersion\":\"1.0.0\"}",
             metadataStr.c_str(),
             dataStr.c_str());
 
@@ -802,7 +802,15 @@ EtwMonitor::FormatMetadata(
     fileTime.dwHighDateTime = EventRecord->EventHeader.TimeStamp.HighPart;
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
-    oss << L"<Time>" << Utility::FileTimeToString(fileTime).c_str() << L"</Time>";
+    oss << L"\"Time\":\"" << Utility::FileTimeToString(fileTime).c_str() << L"\",";
+
+    //
+    // Format provider Name
+    //
+    if (EventInfo->ProviderNameOffset > 0) {
+        pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
+    }
+    oss << L"\"ProviderName\":\"" << pName << L"\",";
 
     //
     // Format provider Name
@@ -826,7 +834,7 @@ EtwMonitor::FormatMetadata(
         return hr;
     }
 
-    oss << L"<Provider idGuid=\"" << pwsProviderId << "\"/>";
+    oss << L"\"ProviderId\":\"" << pwsProviderId << "\",";
     CoTaskMemFree(pwsProviderId);
     pwsProviderId = NULL;
 
@@ -842,13 +850,13 @@ EtwMonitor::FormatMetadata(
         L"DecodingSourceMax",
     };
 
-    oss << L"<DecodingSource>"
+    oss << L"\"DecodingSource\":\""
         << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
-        << L"</DecodingSource>";
+        << L"\",";
 
-    oss << L"<Execution ProcessID=\""
-        << EventRecord->EventHeader.ProcessId << "\" ThreadID=\""
-        << EventRecord->EventHeader.ThreadId << "\" />";
+    oss << L"\"Execution\":{\"ProcessId\":"
+        << EventRecord->EventHeader.ProcessId << ",\"ThreadId\":"
+        << EventRecord->EventHeader.ThreadId << "},";
 
     //
     // Print Level and Keyword
@@ -863,13 +871,13 @@ EtwMonitor::FormatMetadata(
         L"Verbose",
     };
 
-    oss << L"<Level>"
+    oss << L"\"Level\":\""
         << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
-        << L"</Level>";
+        << L"\",";
 
-    oss << L"<Keyword>"
+    oss << L"\"Keyword\":\""
         << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
-        << L"</Keyword>";
+        << L"\",";
 
 
     //
@@ -881,7 +889,6 @@ EtwMonitor::FormatMetadata(
 
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
-
         if (FAILED(hr))
         {
             logWriter.TraceError(
@@ -890,17 +897,13 @@ EtwMonitor::FormatMetadata(
             return hr;
         }
 
-        oss << L"<EventID idGuid=\"" << pwsEventGuid << "\" />";;
+        oss << L"\"EventId\":\"" << pwsEventGuid << "\",";;
         CoTaskMemFree(pwsEventGuid);
         pwsEventGuid = NULL;
-
-        oss << L"<Version>" << EventRecord->EventHeader.EventDescriptor.Version << L"</Version>";
-        oss << L"<Opcode>" << EventRecord->EventHeader.EventDescriptor.Opcode << L"</Opcode>";
     }
     else if (DecodingSourceXMLFile == EventInfo->DecodingSource) // Instrumentation manifest
     {
-        oss << L"<EventID Qualifiers=\"" << (int)EventInfo->EventDescriptor.Id << "\">"
-            << (int)EventInfo->EventDescriptor.Id << "</EventID>";
+        oss << L"\"EventId\":" << (int)EventInfo->EventDescriptor.Id << ",";
     }
 
     //
@@ -946,7 +949,7 @@ EtwMonitor::FormatData(
     // property information array. If the EVENT_HEADER_FLAG_STRING_ONLY flag is set,
     // the event data is a null-terminated string, so just print it.
     //
-    oss << L"<EventData>";
+    oss << L"\"EventData\":{";
     if (EVENT_HEADER_FLAG_STRING_ONLY == (EventRecord->EventHeader.Flags & EVENT_HEADER_FLAG_STRING_ONLY))
     {
         oss << (LPWSTR)EventRecord->UserData;
@@ -967,9 +970,12 @@ EtwMonitor::FormatData(
             }
         }
     }
-    oss << L"</EventData>";
+    oss << L"}";
 
     Result = oss.str();
+
+    // tream off the trailing comma (,) for the last key/value pair
+    Result.replace(Result.size() - 2, 1, L"");
 
     return ERROR_SUCCESS;
 }
@@ -1024,7 +1030,7 @@ EtwMonitor::_FormatData(
 
     for (USHORT k = 0; k < arraySize; k++)
     {
-        Result << "<" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
+        Result << "\"" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << "\":";
 
         //
         // If the property is a structure, print the members of the structure.
@@ -1123,7 +1129,17 @@ EtwMonitor::_FormatData(
 
             if (ERROR_SUCCESS == status)
             {
-                Result << (PWCHAR)formattedData.data();
+                auto fd = (PWCHAR)formattedData.data();
+                if (!Utility::isJsonNumber(fd)) {
+                    // clean the JSON string `fd`
+                    wstring fdStr(fd);
+                    Utility::SanitizeJson(fdStr);
+                    Result << L"\"" << fdStr << L"\"";
+                }
+                else {
+                    Result << fd;
+                }
+                
 
                 UserData += userDataConsumed;
             }
@@ -1139,8 +1155,7 @@ EtwMonitor::_FormatData(
                 break;
             }
         }
-
-        Result << "</" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << ">";
+        Result << ",";
     }
 
     return status;

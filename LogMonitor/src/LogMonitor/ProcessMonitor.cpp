@@ -12,6 +12,10 @@ using namespace std;
 HANDLE g_hChildStd_OUT_Rd = NULL;
 HANDLE g_hChildStd_OUT_Wr = NULL;
 
+DWORD g_processId = 0;
+wstring g_processName = L"";
+
+
 DWORD CreateChildProcess(std::wstring& Cmdline);
 DWORD ReadFromPipe(LPVOID Param);
 
@@ -121,6 +125,9 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
                              &siStartInfo,  // STARTUPINFO pointer
                              &piProcInfo);  // receives PROCESS_INFORMATION
 
+    g_processId = piProcInfo.dwProcessId;
+    g_processName = Cmdline;
+
 //
 // If an error occurs, exit the application.
 //
@@ -164,6 +171,118 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 }
 
 ///
+/// Helper function for making a copy of the buffer.
+/// returns the index after the last copied byte.
+/// 
+size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
+{
+    char* ptr = src;
+    size_t i = start;
+    while (*ptr > 0 && i < BUFSIZE) {
+        // *ptr > 0: leave out the '\0' for the const char*
+        if (i == end && end > 0) {
+            break;
+        }
+        dst[i++] = *ptr;
+        ptr++;
+    }
+
+    return i;
+}
+
+///
+/// Helper function for making a copy of the buffer.
+/// For optimization, the function also "sanitizes" the string for JSON.
+/// returns the index after the last copied byte.
+/// 
+size_t bufferCopyAndSanitize(char* dst, char* src)
+{
+    char* ptr = src;
+    size_t i = 0;
+    while (*ptr > 0 && i < BUFSIZE) {
+        // *ptr > 0: leave out the '\0' for the const char*
+
+        // clean, eg. replace \r\n with \\r\\n (displayed as "\r\n")
+        if (*ptr == '\r') {
+            dst[i++] = '\\';
+            dst[i++] = 'r';
+        }
+        else if (*ptr == '\n') {
+            dst[i++] = '\\';
+            dst[i++] = 'n';
+        }
+        else if (*ptr == '\"') {
+            dst[i++] = '\\';
+            dst[i++] = '\"';
+        }
+        else if (*ptr == '\\' && i < BUFSIZE - 1 && *(ptr + 1) != '\\') {
+            dst[i++] = '\\';
+            dst[i++] = '\\';
+        }
+        else {
+            dst[i++] = *ptr;
+        }
+        ptr++;
+    }
+
+    return i;
+}
+
+///
+/// Helper function to formats the stdout buffer to include the other
+/// details from the JSON schema.
+/// Returns the number of bytes written to the buffer.
+///
+size_t formatProcessLog(char* chBuf)
+{
+    // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
+    const char* prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
+    const char* suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    char chBufCpy[BUFSIZE] = "";
+
+    //
+    // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
+    //
+    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
+    size_t prefixLen = strlen(prefix);
+    size_t suffixLen = strlen(suffix);
+    size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
+
+    // copy over the logline after prefix
+    // index increments from the previous index within bufferCopy
+    index = bufferCopy(chBuf, chBufCpy, index);
+
+    // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
+    // leave at least 36 slots to close the JSON with `..."},\"SchemaVersion\":\"1.0.0\"}\n`
+    // reset the start index
+    if ((index + suffixLen) > BUFSIZE - 5) {
+        index = BUFSIZE - 5 - suffixLen;
+        suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
+
+    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
+
+    return index; // same as the number of bytes read
+}
+
+/// 
+/// Helper function to clear the stdout buffer
+/// return number of bytes cleared
+/// 
+size_t clearBuffer(char* chBuf) {
+    size_t count = 0;
+    char* ptr = chBuf;
+
+    while (count < BUFSIZE) {
+        *ptr = 0; // null char
+        ptr++;
+        count++;
+    }
+
+    return count;
+}
+
+///
 /// Read output from the child process's pipe for STDOUT
 /// and write to the parent process's pipe for STDOUT.
 /// Stop when there is no more data.
@@ -173,7 +292,9 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 DWORD ReadFromPipe(LPVOID Param)
 {
     DWORD dwRead, dwWritten;
-    char chBuf[BUFSIZE];
+    char chBuf[BUFSIZE] = "";
+    char chBufOut[BUFSIZE] = "";
+    char chBufRem[BUFSIZE] = ""; // for remaining characters
     bool bSuccess = false;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -181,22 +302,68 @@ DWORD ReadFromPipe(LPVOID Param)
 
     for (;;)
     {
-        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+        // clear buffer ready for read
+        clearBuffer(chBuf);
+        // move valid chars from remainder buffer to chBuf
+        // then ReadFile starts from the end position (chBuf + cnt)
+        char* ptrRem = chBufRem;
+        size_t cnt = 0;
+        while (*ptrRem > 0 && cnt < BUFSIZE) {
+            chBuf[cnt++] = *ptrRem;
+            ptrRem++;
+        }
+
+        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf + cnt, BUFSIZE - cnt, &dwRead, NULL);
+        // clear remainder buffer for the next read
+        clearBuffer(chBufRem);
 
         if (!bSuccess || dwRead == 0)
         {
             break;
         }
 
-        bSuccess = logWriter.WriteLog(hParentStdOut,
-                                      chBuf,
-                                      dwRead,
-                                      &dwWritten,
-                                      NULL);
+        // write out a line at a time
+        char* ptr = chBuf;
+        size_t outSz = 0;
+        size_t count = 0;
+        size_t lastNewline = 0;
+        clearBuffer(chBufOut);
+        while (*ptr > 0 && count < BUFSIZE) {
+            // copy over to chBufOut till \r\n
+            // the remaining will be reserved to be completed
+            // by the next read.
+            if (*ptr == '\r' || *ptr == '\n') {
+                if (outSz > 0) {
+                    // print out and reset chBufOut and outSz
+                    size_t sz = formatProcessLog(chBufOut);
+                    DWORD dwRead = static_cast<DWORD>(sz);
 
-        if (!bSuccess)
-        {
-            break;
+                    bSuccess = logWriter.WriteLog(
+                        hParentStdOut,
+                        chBufOut,
+                        dwRead,
+                        &dwWritten,
+                        NULL);
+                    // reset
+                    outSz = 0;
+                    clearBuffer(chBufOut);
+                    lastNewline = count;
+                }
+            }
+            else {
+                chBufOut[outSz++] = *ptr;
+            }
+            ptr++;
+            count++;
+        }
+
+        // move remaining characters to chBufRem
+        ptrRem = chBuf;
+        ptrRem += lastNewline;
+        count = 0;
+        while (*ptrRem > 0 && count < BUFSIZE) {
+            chBufRem[count++] = *ptrRem;
+            ptrRem++;
         }
     }
 
