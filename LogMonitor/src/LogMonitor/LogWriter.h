@@ -21,7 +21,7 @@ public:
 
         m_isConsole = true;
 
-        _setmode(_fileno(stdout), _O_U8TEXT);
+       // _setmode(_fileno(stdout), _O_U8TEXT);
     };
 
     ~LogWriter() {}

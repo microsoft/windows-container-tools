@@ -5,6 +5,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define NOMINMAX
+
 // TODO(annandaa): reorder the header files as per convention.
 // currently there are some implicit dependencies, things break when
 // you try to reorder.
@@ -45,6 +47,7 @@
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
+#include <VersionHelpers.h>
 #include "Utility.h"
 #include "Parser/ConfigFileParser.h"
 #include "Parser/LoggerSettings.h"
@@ -55,5 +58,7 @@
 #include "FileMonitor/Utilities.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
+#include "SystemInfo.h"
+#include "Tracer.h"
 
 #endif //PCH_H

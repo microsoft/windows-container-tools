@@ -44,4 +44,29 @@ public:
         _In_ const std::wstring& From,
         _In_ const std::wstring& To
     );
+
+    static std::wstring STR_TO_W_STR(
+        _In_ const std::string& str);
+
+    static std::string W_STR_TO_STR(
+        _In_ const std::wstring& wstr);
+
+    static LONG GetDWORDRegKey(
+        HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ DWORD& Value,
+        _In_ DWORD DefaultValue);
+
+    static LONG GetBoolRegKey(
+        _In_ HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ bool& Value,
+        _In_ bool DefaultValue);
+
+    static LONG GetStringRegKey(
+        _In_ HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ std::wstring& Value,
+        _In_ const std::wstring& DefaultValue);
+
 };

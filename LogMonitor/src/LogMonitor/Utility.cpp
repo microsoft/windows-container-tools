@@ -245,3 +245,74 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
     return Str;
 }
 
+std::wstring Utility::STR_TO_W_STR(_In_ const std::string& str) {
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.from_bytes(str);
+}
+
+std::string Utility::W_STR_TO_STR(_In_ const std::wstring& wstr) {
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.to_bytes(wstr);
+}
+
+LONG Utility::GetDWORDRegKey(
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ DWORD& Value,
+    _In_ DWORD DefaultValue
+    )
+{
+    Value = DefaultValue;
+    DWORD wBufferSize(sizeof(DWORD));
+    DWORD Result(0);
+    LONG Error = ::RegQueryValueExW(
+        Key,
+        ValueName.c_str(),
+        0,
+        NULL,
+        reinterpret_cast<LPBYTE>(&Result),
+        &wBufferSize);
+        if (ERROR_SUCCESS == Error) {
+            Value = Result;
+    }
+    return Error;
+}
+
+LONG Utility::GetBoolRegKey(
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ bool& Value,
+    _In_ bool DefaultValue
+    )
+{
+    DWORD DefValue((DefaultValue) ? 1 : 0);
+    DWORD Result(DefValue);
+    LONG Error = Utility::GetDWORDRegKey(Key, ValueName.c_str(), Result, DefValue);
+    if (ERROR_SUCCESS == Error) {
+        Value = (Result != 0) ? true : false;
+    }
+    return Error;
+}
+
+LONG Utility::GetStringRegKey(
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ std::wstring& Value,
+    _In_ const std::wstring& DefaultValue
+    )
+{
+    Value = DefaultValue;
+    WCHAR Buffer[512];
+    DWORD BufferSize = sizeof(Buffer);
+    ULONG Error;
+    Error = RegQueryValueExW(Key, ValueName.c_str(), 0, NULL, (LPBYTE)Buffer, &BufferSize);
+    if (ERROR_SUCCESS == Error) {
+        Value = Buffer;
+    }
+    return Error;
+}
+

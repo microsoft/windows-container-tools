@@ -6,12 +6,11 @@
 #include "pch.h"
 #include "Version.h"
 
-using namespace std;
-
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
 #pragma comment(lib, "ws2_32.lib")  // For ntohs function
 #pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "advapi32.lib")
 
 #define ARGV_OPTION_CONFIG_FILE L"/Config"
 #define ARGV_OPTION_HELP1 L"/?"
@@ -54,6 +53,16 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
     }
 
     return TRUE;
+}
+
+void PrintTelemetryConsent()
+{
+    wprintf(L"\n");
+    wprintf(L"Telemetry\n");
+    wprintf(L"--------\n");
+    wprintf(L"LogMonitor collects usage data in order to help us improve your experience.\n");
+    wprintf(L"The data is collected by Microsoft and is anonymous.\n");
+    wprintf(L"You can opt-out of telemetry by setting LOGMONITOR_TELEMETRY=0 flag in the environment variable\n\n");
 }
 
 void PrintUsage()
@@ -110,7 +119,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 try
                 {
-                    std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
+                    std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
@@ -160,7 +169,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+            g_eventMon = std::make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
         }
         catch (std::exception& ex)
         {
@@ -185,7 +194,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
+            g_etwMon = std::make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
         }
         catch (...)
         {
@@ -198,6 +207,14 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
+    SystemInfo sysInfo;
+    if (sysInfo.GetTelemetryFlag()) {
+        PrintTelemetryConsent();
+        InitTracer();
+        ReportSystemInfoTelemetry(sysInfo);
+        CleanupTracer();
+    }
+
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
     int exitcode = 0;
@@ -207,8 +224,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
                                FALSE,              // initial state is nonsignaled
                                nullptr);           // object name
 
-    if (g_hStopEvent == NULL)
-    {
+    if (g_hStopEvent == NULL) {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to create event. Error: %d", GetLastError()).c_str()
         );

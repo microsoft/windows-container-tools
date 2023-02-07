@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <VcpkgTriplet Condition="'$(Platform)'=='Win32'">x86-windows-static</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)'=='x64'">x64-windows-static</VcpkgTriplet>
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{87A330AC-84A1-40B3-A596-1BAED16B828F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -156,6 +158,7 @@
     <ClInclude Include="EtwMonitor.h" />
     <ClInclude Include="EventMonitor.h" />
     <ClInclude Include="FileMonitor\*.h" />
+    <ClInclude Include="LogFileMonitor.h" />
     <ClInclude Include="LogWriter.h" />
     <ClInclude Include="Parser\ConfigFileParser.h" />
     <ClInclude Include="Parser\JsonFileParser.h" />
@@ -163,6 +166,8 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="ProcessMonitor.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SystemInfo.h" />
+    <ClInclude Include="Tracer.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
@@ -181,6 +186,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ProcessMonitor.cpp" />
+    <ClCompile Include="SystemInfo.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
