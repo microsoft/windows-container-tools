@@ -15,42 +15,47 @@ SystemInfo::SystemInfo() {
     HKEY hKey;
 
     LONG lRes = RegOpenKeyExW(
-        HKEY_LOCAL_MACHINE, REG_KEY_CUR_VER_STR, 0, KEY_READ, &hKey);
+        HKEY_LOCAL_MACHINE, REG_KEY_CUR_VER, 0, KEY_READ, &hKey);
     switch (lRes) {
         case ERROR_SUCCESS:
          Utility::GetStringRegKey(
             hKey,
-            BUILD_BRANCH_STR_VALUE_NAME,
-            mRegistryCurrentVersion.BuildBranch,
-            REG_KEY_STR_DEFAULT_VALUE);
-         Utility::GetStringRegKey(
-            hKey,
-            BUILD_LAB_STR_VALUE_NAME,
+            BUILD_LAB,
             mRegistryCurrentVersion.BuildLab,
             REG_KEY_STR_DEFAULT_VALUE);
          Utility::GetStringRegKey(
             hKey,
-            CURRENT_BUILD_NUMBER_STR_VALUE_NAME,
+            BUILD_LAB_EX,
+            mRegistryCurrentVersion.BuildLabEx,
+            REG_KEY_STR_DEFAULT_VALUE);
+         Utility::GetStringRegKey(
+            hKey,
+            CURRENT_BUILD_NUMBER,
             mRegistryCurrentVersion.CurrentBuildNumber,
             REG_KEY_STR_DEFAULT_VALUE);
         Utility::GetStringRegKey(
             hKey,
-            INSTALLATION_TYPE_STR_VALUE_NAME,
+            INSTALLATION_TYPE,
             mRegistryCurrentVersion.InstallationType,
+            REG_KEY_STR_DEFAULT_VALUE);
+        Utility::GetStringRegKey(
+            hKey,
+            DISPLAY_VERSION,
+            mRegistryCurrentVersion.DisplayVersion,
             REG_KEY_STR_DEFAULT_VALUE);
         Utility::GetDWORDRegKey(
             hKey,
-            CURR_MINOR_VER_NUM_STR_VALUE_NAME,
+            CURR_MINOR_VER_NUM,
             mRegistryCurrentVersion.CurrentMinorVersionNumber,
             REG_KEY_DW_DEFAULT_VALUE);
         Utility::GetDWORDRegKey(
             hKey,
-            CUR_MAJOR_VER_NUM_STR_VALUE_NAME,
+            CUR_MAJOR_VER_NUM,
             mRegistryCurrentVersion.CurrentMajorVersionNumber,
             REG_KEY_DW_DEFAULT_VALUE);
         Utility::GetStringRegKey(
             hKey,
-            PRODUCT_NAME_STR_VALUE_NAME,
+            PRODUCT_NAME,
             mRegistryCurrentVersion.ProductName,
             REG_KEY_STR_DEFAULT_VALUE);
         break;
@@ -132,10 +137,6 @@ RegistryCurrentVersion SystemInfo::GetRegCurVersion() {
 
 bool SystemInfo::GetTelemetryFlag() {
     return mEnableTelemetryReporting;
-}
-
-bool SystemInfo::ISWindowsServer() {
-    return IsWindowsServer();
 }
 
 SystemInfo::~SystemInfo() { }

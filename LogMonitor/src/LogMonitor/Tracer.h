@@ -50,36 +50,36 @@ namespace
         auto span = get_tracer("SYSTEM_INFO")
         ->StartSpan("SYS_INFO_SPAN", {
             {
-                Utility::W_STR_TO_STR(BUILD_BRANCH_STR_VALUE_NAME),
-                Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().BuildBranch)
-            },
-            {
-                Utility::W_STR_TO_STR(BUILD_LAB_STR_VALUE_NAME),
+                Utility::W_STR_TO_STR(BUILD_LAB),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().BuildLab)
             },
             {
-                Utility::W_STR_TO_STR(CURRENT_BUILD_NUMBER_STR_VALUE_NAME),
+                Utility::W_STR_TO_STR(BUILD_LAB_EX),
+                Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().BuildLabEx)
+            },
+            {
+                Utility::W_STR_TO_STR(CURRENT_BUILD_NUMBER),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().CurrentBuildNumber)
             },
             {
-                Utility::W_STR_TO_STR(INSTALLATION_TYPE_STR_VALUE_NAME),
+                Utility::W_STR_TO_STR(INSTALLATION_TYPE),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().InstallationType)
             },
+            {
+                Utility::W_STR_TO_STR(DISPLAY_VERSION),
+                Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().DisplayVersion)
+            },
              {
-                 Utility::W_STR_TO_STR(CURR_MINOR_VER_NUM_STR_VALUE_NAME),
+                 Utility::W_STR_TO_STR(CURR_MINOR_VER_NUM),
                  CurrentMinorVersionNumber
              },
              {
-                 Utility::W_STR_TO_STR(CUR_MAJOR_VER_NUM_STR_VALUE_NAME),
+                 Utility::W_STR_TO_STR(CUR_MAJOR_VER_NUM),
                  CurrentMajorVersionNumber
              },
             {
-                Utility::W_STR_TO_STR(PRODUCT_NAME_STR_VALUE_NAME),
+                Utility::W_STR_TO_STR(PRODUCT_NAME),
                 Utility::W_STR_TO_STR(systemInfo.GetRegCurVersion().ProductName)
-            },
-            {
-                "isWindowsServer",
-                 systemInfo.ISWindowsServer()
             }
         });
 

@@ -5,15 +5,16 @@
 
 #pragma once
 
-const LPCWSTR REG_KEY_CUR_VER_STR = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+const LPCWSTR REG_KEY_CUR_VER = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
-const std::wstring BUILD_BRANCH_STR_VALUE_NAME = L"BuildBranch";
-const std::wstring BUILD_LAB_STR_VALUE_NAME = L"BuildLab";
-const std::wstring CURRENT_BUILD_NUMBER_STR_VALUE_NAME = L"CurrentBuildNumber";
-const std::wstring INSTALLATION_TYPE_STR_VALUE_NAME = L"InstallationType";
-const std::wstring CURR_MINOR_VER_NUM_STR_VALUE_NAME = L"CurrentMinorVersionNumber";
-const std::wstring CUR_MAJOR_VER_NUM_STR_VALUE_NAME = L"CurrentMajorVersionNumber";
-const std::wstring PRODUCT_NAME_STR_VALUE_NAME = L"ProductName";
+const std::wstring BUILD_LAB = L"BuildLab";
+const std::wstring BUILD_LAB_EX = L"BuildLabEx";
+const std::wstring CURRENT_BUILD_NUMBER = L"CurrentBuildNumber";
+const std::wstring INSTALLATION_TYPE = L"InstallationType";
+const std::wstring DISPLAY_VERSION = L"DisplayVersion";
+const std::wstring CURR_MINOR_VER_NUM = L"CurrentMinorVersionNumber";
+const std::wstring CUR_MAJOR_VER_NUM = L"CurrentMajorVersionNumber";
+const std::wstring PRODUCT_NAME = L"ProductName";
 
 const std::wstring REG_KEY_STR_DEFAULT_VALUE;
 const DWORD REG_KEY_DW_DEFAULT_VALUE = 0;
@@ -36,10 +37,11 @@ struct HardwareInformation
 
 struct RegistryCurrentVersion
 {
-  std::wstring BuildBranch;
   std::wstring BuildLab;
+  std::wstring BuildLabEx;
   std::wstring CurrentBuildNumber;
   std::wstring InstallationType;
+  std::wstring DisplayVersion;
   DWORD CurrentMinorVersionNumber;
   DWORD CurrentMajorVersionNumber;
   std::wstring ProductName;
@@ -61,6 +63,5 @@ class SystemInfo {
   HardwareInformation GetHardInfo();
   RegistryCurrentVersion GetRegCurVersion();
   bool GetTelemetryFlag();
-  bool ISWindowsServer();
   ~SystemInfo();
 };
