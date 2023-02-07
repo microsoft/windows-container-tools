@@ -260,53 +260,59 @@ std::string Utility::W_STR_TO_STR(_In_ const std::wstring& wstr) {
 }
 
 LONG Utility::GetDWORDRegKey(
-    _In_ HKEY hKey,
-    _Inout_ const std::wstring& strValueName,
-    _In_ DWORD& nValue,
-    _In_ DWORD nDefaultValue) {
-        nValue = nDefaultValue;
-        DWORD dwBufferSize(sizeof(DWORD));
-        DWORD nResult(0);
-        LONG nError = ::RegQueryValueExW(
-            hKey,
-            strValueName.c_str(),
-            0,
-            NULL,
-            reinterpret_cast<LPBYTE>(&nResult),
-            &dwBufferSize);
-        if (ERROR_SUCCESS == nError) {
-            nValue = nResult;
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ DWORD& Value,
+    _In_ DWORD DefaultValue
+    )
+{
+    Value = DefaultValue;
+    DWORD wBufferSize(sizeof(DWORD));
+    DWORD Result(0);
+    LONG Error = ::RegQueryValueExW(
+        Key,
+        ValueName.c_str(),
+        0,
+        NULL,
+        reinterpret_cast<LPBYTE>(&Result),
+        &wBufferSize);
+        if (ERROR_SUCCESS == Error) {
+            Value = Result;
     }
-    return nError;
+    return Error;
 }
 
 LONG Utility::GetBoolRegKey(
-    _In_ HKEY hKey,
-    _Inout_ const std::wstring& strValueName,
-    _In_ bool& bValue,
-    _In_ bool bDefaultValue) {
-        DWORD nDefValue((bDefaultValue) ? 1 : 0);
-        DWORD nResult(nDefValue);
-        LONG nError = Utility::GetDWORDRegKey(hKey, strValueName.c_str(), nResult, nDefValue);
-    if (ERROR_SUCCESS == nError) {
-        bValue = (nResult != 0) ? true : false;
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ bool& Value,
+    _In_ bool DefaultValue
+    )
+{
+    DWORD DefValue((DefaultValue) ? 1 : 0);
+    DWORD Result(DefValue);
+    LONG Error = Utility::GetDWORDRegKey(Key, ValueName.c_str(), Result, DefValue);
+    if (ERROR_SUCCESS == Error) {
+        Value = (Result != 0) ? true : false;
     }
-    return nError;
+    return Error;
 }
 
 LONG Utility::GetStringRegKey(
-    _In_ HKEY hKey,
-    _Inout_ const std::wstring& strValueName,
-    _In_ std::wstring& strValue,
-    _In_ const std::wstring& strDefaultValue) {
-        strValue = strDefaultValue;
-        WCHAR szBuffer[512];
-        DWORD dwBufferSize = sizeof(szBuffer);
-        ULONG nError;
-        nError = RegQueryValueExW(hKey, strValueName.c_str(), 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
-        if (ERROR_SUCCESS == nError) {
-        strValue = szBuffer;
+    _In_ HKEY Key,
+    _Inout_ const std::wstring& ValueName,
+    _In_ std::wstring& Value,
+    _In_ const std::wstring& DefaultValue
+    )
+{
+    Value = DefaultValue;
+    WCHAR Buffer[512];
+    DWORD BufferSize = sizeof(Buffer);
+    ULONG Error;
+    Error = RegQueryValueExW(Key, ValueName.c_str(), 0, NULL, (LPBYTE)Buffer, &BufferSize);
+    if (ERROR_SUCCESS == Error) {
+        Value = Buffer;
     }
-    return nError;
+    return Error;
 }
 

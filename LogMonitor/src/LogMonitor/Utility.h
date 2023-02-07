@@ -52,21 +52,21 @@ public:
         _In_ const std::wstring& wstr);
 
     static LONG GetDWORDRegKey(
-        HKEY hKey,
-        _Inout_ const std::wstring& strValueName,
-        _In_ DWORD& nValue,
-        _In_ DWORD nDefaultValue);
+        HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ DWORD& Value,
+        _In_ DWORD DefaultValue);
 
     static LONG GetBoolRegKey(
-        _In_ HKEY hKey,
-        _Inout_ const std::wstring& strValueName,
-        _In_ bool& bValue,
-        _In_ bool bDefaultValue);
+        _In_ HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ bool& Value,
+        _In_ bool DefaultValue);
 
     static LONG GetStringRegKey(
-        _In_ HKEY hKey,
-        _Inout_ const std::wstring& strValueName,
-        _In_ std::wstring& strValue,
-        _In_ const std::wstring& strDefaultValue);
+        _In_ HKEY Key,
+        _Inout_ const std::wstring& ValueName,
+        _In_ std::wstring& Value,
+        _In_ const std::wstring& DefaultValue);
 
 };

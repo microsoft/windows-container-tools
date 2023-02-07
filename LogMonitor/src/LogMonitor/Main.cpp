@@ -10,7 +10,6 @@
 #pragma comment(lib, "tdh.lib")
 #pragma comment(lib, "ws2_32.lib")  // For ntohs function
 #pragma comment(lib, "shlwapi.lib")
-
 #pragma comment(lib, "advapi32.lib")
 
 #define ARGV_OPTION_CONFIG_FILE L"/Config"
@@ -225,8 +224,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
                                FALSE,              // initial state is nonsignaled
                                nullptr);           // object name
 
-    if (g_hStopEvent == NULL)
-    {
+    if (g_hStopEvent == NULL) {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to create event. Error: %d", GetLastError()).c_str()
         );

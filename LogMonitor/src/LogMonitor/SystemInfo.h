@@ -21,20 +21,6 @@ const bool REG_KEY_BOOL_DEFAULT_VALUE = false;
 struct EnvVariable
 {
   LPTSTR LOGMONITOR_TELEMETRY;
-  // TODO(bosira) WE CAN ADD MORE ENVIRONMENT VARIABLE VALUES THAT WE WANT TO REPORT
-};
-
-struct ComputerName
-{
-    LPCWSTR Platform;
-    LPCWSTR NetBIOS;
-    LPCWSTR DnsHostname;
-    LPCWSTR DnsDomain;
-    LPCWSTR DnsFullyQualified;
-    LPCWSTR PhysicalNetBIOS;
-    LPCWSTR PhysicalDnsHostname;
-    LPCWSTR PhysicalDnsDomain;
-    LPCWSTR PhysicalDnsFullyQualified;
 };
 
 struct HardwareInformation
@@ -65,7 +51,6 @@ class SystemInfo {
 
  private:
     EnvVariable mEnvironmentVariable;
-    ComputerName mCompName;
     HardwareInformation mHardwareInfo;
     RegistryCurrentVersion mRegistryCurrentVersion;
     bool mEnableTelemetryReporting = true;
@@ -73,15 +58,9 @@ class SystemInfo {
  public:
   SystemInfo();
   EnvVariable GetEnvVars();
-  ComputerName GetCompName();
   HardwareInformation GetHardInfo();
   RegistryCurrentVersion GetRegCurVersion();
   bool GetTelemetryFlag();
-  bool IsWinXPOrAbove();
-  bool IsWin7OrAbove();
-  bool IsWinVistaOrAbove();
-  bool IsWin8OrAbove();
-  bool IsWin10OrAbove();
   bool ISWindowsServer();
   ~SystemInfo();
 };

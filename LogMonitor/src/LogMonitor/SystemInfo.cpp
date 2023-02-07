@@ -5,10 +5,14 @@
 
 #include "pch.h"
 
-SystemInfo::SystemInfo() {
-    HKEY hKey;
-    std::wstring strValueOfBinDir;
+#define BUFSIZE 4096
+#define VARNAME TEXT("LOGMONITOR_TELEMETRY")
 
+SystemInfo::SystemInfo() {
+    DWORD dwRet, dwErr;
+    LPTSTR pszOldVal;
+    BOOL fExist;
+    HKEY hKey;
 
     LONG lRes = RegOpenKeyExW(
         HKEY_LOCAL_MACHINE, REG_KEY_CUR_VER_STR, 0, KEY_READ, &hKey);
@@ -60,40 +64,6 @@ SystemInfo::SystemInfo() {
         break;
     }
 
-    TCHAR buffer[256] = TEXT("");
-    DWORD dwSize = _countof(buffer);
-    int cnf = 0;
-    for (cnf = 0; cnf < ComputerNameMax; cnf++) {
-        if (!GetComputerNameEx((COMPUTER_NAME_FORMAT)cnf, buffer, &dwSize)) {
-            logWriter.TraceError(
-                Utility::FormatString(L"GetComputerNameEx failed %lu", GetLastError()).c_str());
-            return;
-        } else {
-            switch (cnf) {
-            case 0: mCompName.NetBIOS = buffer;
-                break;
-            case 1: mCompName.DnsHostname = buffer;
-                 break;
-            case 2: mCompName.DnsDomain = buffer;
-                 break;
-            case 3: mCompName.DnsFullyQualified = buffer;
-                 break;
-            case 4: mCompName.PhysicalNetBIOS = buffer;
-                 break;
-            case 5: mCompName.PhysicalDnsHostname = buffer;
-                 break;
-            case 6: mCompName.PhysicalDnsDomain = buffer;
-                 break;
-            case 7: mCompName.PhysicalDnsFullyQualified = buffer;
-                 break;
-            default:
-                break;
-            }
-        }
-        dwSize = _countof(buffer);
-        ZeroMemory(buffer, dwSize);
-    }
-
     SYSTEM_INFO siSysInfo;
     GetSystemInfo(&siSysInfo);
     mHardwareInfo.dwOemId = siSysInfo.dwOemId;
@@ -105,33 +75,52 @@ SystemInfo::SystemInfo() {
     mHardwareInfo.wProcessorArchitecture = siSysInfo.wProcessorArchitecture;
 
 
-    LPTSTR lpszVariable;
-    LPTCH lpvEnv;
-    lpvEnv = GetEnvironmentStrings();
+    pszOldVal = (LPTSTR)malloc(BUFSIZE * sizeof(TCHAR));
 
-    if (lpvEnv == NULL) {
+    if (NULL == pszOldVal) {
         logWriter.TraceError(
-            Utility::FormatString(L"GetEnvironmentStrings failed %lu", GetLastError()).c_str());
+            Utility::FormatString(L"Out of memory. %lu", GetLastError()).c_str());
     }
 
-    lpszVariable = (LPTSTR) lpvEnv;
+    dwRet = GetEnvironmentVariable(VARNAME, pszOldVal, BUFSIZE);
 
-    while (*lpszVariable) {
-        lpszVariable += lstrlen(lpszVariable) + 1;
-        if (wcscmp(lpszVariable, L"LOGMONITOR_TELEMETRY=0") == 0) {
-            mEnableTelemetryReporting = false;
+    if (0 == dwRet) {
+        dwErr = GetLastError();
+        if (ERROR_ENVVAR_NOT_FOUND == dwErr) {
+            logWriter.TraceError(
+            Utility::FormatString(L"Environment variable does not exist. %lu", GetLastError()).c_str());
+            fExist = FALSE;
         }
+    } else if (BUFSIZE < dwRet) {
+        pszOldVal = (LPTSTR)realloc(pszOldVal, dwRet * sizeof(TCHAR));
+        if (NULL == pszOldVal) {
+            logWriter.TraceError(
+            Utility::FormatString(L"Out of memory. %lu", GetLastError()).c_str());
+        }
+        dwRet = GetEnvironmentVariable(VARNAME, pszOldVal, dwRet);
+        if (!dwRet) {
+            logWriter.TraceError(
+            Utility::FormatString(L"GetEnvironmentVariable failed %lu", GetLastError()).c_str());
+        } else {
+            fExist = TRUE;
+        }
+    } else {
+        fExist = TRUE;
     }
-    FreeEnvironmentStrings(lpvEnv);
+
+    bool match = wcscmp(pszOldVal, L"0") == 0;
+    if (fExist && match) {
+        mEnableTelemetryReporting = false;
+    }
+
+    free(pszOldVal);
 }
 
 EnvVariable SystemInfo::GetEnvVars() {
     return mEnvironmentVariable;
 }
 
-ComputerName SystemInfo::GetCompName() {
-    return mCompName;
-}
+
 
 HardwareInformation SystemInfo::GetHardInfo() {
     return mHardwareInfo;
@@ -143,26 +132,6 @@ RegistryCurrentVersion SystemInfo::GetRegCurVersion() {
 
 bool SystemInfo::GetTelemetryFlag() {
     return mEnableTelemetryReporting;
-}
-
-bool SystemInfo::IsWinXPOrAbove() {
-    return IsWindowsXPOrGreater();
-}
-
-bool SystemInfo::IsWin7OrAbove() {
-    return IsWindows7OrGreater();
-}
-
-bool SystemInfo::IsWinVistaOrAbove() {
-    return IsWindowsVistaOrGreater();
-}
-
-bool SystemInfo::IsWin8OrAbove() {
-    return IsWindows8OrGreater();
-}
-
-bool SystemInfo::IsWin10OrAbove() {
-    return IsWindows10OrGreater();
 }
 
 bool SystemInfo::ISWindowsServer() {
