@@ -48,4 +48,9 @@ public:
     static bool isJsonNumber(_In_ PWSTR str);
 
     static void SanitizeJson(_Inout_ std::wstring& str);
+
+    static bool CompareWStrings(
+        _In_ std::wstring stringA,
+        _In_ std::wstring stringB
+    );
 };
