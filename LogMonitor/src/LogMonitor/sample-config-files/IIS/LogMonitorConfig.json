@@ -1,5 +1,6 @@
 {
   "LogConfig": {
+	"logFormat": "json",
     "sources": [
       {
         "type": "EventLog",

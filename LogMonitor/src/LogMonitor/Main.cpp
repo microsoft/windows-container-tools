@@ -84,6 +84,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+    std::wstring logFormat = settings.LogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -159,7 +160,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat);
         }
         catch (std::exception& ex)
         {
