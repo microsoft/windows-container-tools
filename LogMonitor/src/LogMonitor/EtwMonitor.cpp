@@ -811,21 +811,6 @@ EtwMonitor::FormatMetadata(
     if (EventInfo->ProviderNameOffset > 0) {
         pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
     }
-
-    //
-    // Format provider Id
-    //
-    LPWSTR pwsProviderId = NULL;
-    HRESULT hr = StringFromCLSID(EventRecord->EventHeader.ProviderId, &pwsProviderId);
-
-    if (FAILED(hr))
-    {
-        logWriter.TraceError(
-            Utility::FormatString(L"Failed to convert ETW provider GUID to string. Error: 0x%x\n", hr).c_str()
-        );
-        return hr;
-    }
-
     //
     // Names of the DecodingSource enum values
     //
@@ -850,6 +835,20 @@ EtwMonitor::FormatMetadata(
         L"Information",
         L"Verbose",
     };
+
+    //
+    // Format provider Id
+    //
+    LPWSTR pwsProviderId = NULL;
+    HRESULT hr = StringFromCLSID(EventRecord->EventHeader.ProviderId, &pwsProviderId);
+
+    if (FAILED(hr))
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to convert ETW provider GUID to string. Error: 0x%x\n", hr).c_str()
+        );
+        return hr;
+    }
 
     if (Utility::CompareWStrings(m_logFormat, L"JSON"))
     {
@@ -922,13 +921,10 @@ EtwMonitor::FormatMetadata(
 
         if (Utility::CompareWStrings(m_logFormat, L"JSON"))
         {
-            oss << L"<Provider Name=\"" << pName << "\"/>";
             oss << L"\"EventId\":\"" << pwsEventGuid << "\",";;
         } else {
-            oss << L"<Provider Name=\"" << pName << "\"/>";
             oss << L"<EventID idGuid=\"" << pwsEventGuid << "\" />";;
         }
-
         CoTaskMemFree(pwsEventGuid);
         pwsEventGuid = NULL;
     }
@@ -937,8 +933,7 @@ EtwMonitor::FormatMetadata(
         if (Utility::CompareWStrings(m_logFormat, L"JSON"))
         {
             oss << L"\"EventId\":" << (int)EventInfo->EventDescriptor.Id << ",";
-        }
-        else {
+        } else {
             oss << L"<EventID Qualifiers=\"" << (int)EventInfo->EventDescriptor.Id << "\">"
                 << (int)EventInfo->EventDescriptor.Id << "</EventID>";
         }
@@ -990,8 +985,7 @@ EtwMonitor::FormatData(
     if (Utility::CompareWStrings(m_logFormat, L"JSON"))
     {
         oss << L"\"EventData\":{";
-    }
-    else {
+    } else {
         oss << L"<EventData>";
     }
     if (EVENT_HEADER_FLAG_STRING_ONLY == (EventRecord->EventHeader.Flags & EVENT_HEADER_FLAG_STRING_ONLY))
@@ -1017,8 +1011,7 @@ EtwMonitor::FormatData(
     if (Utility::CompareWStrings(m_logFormat, L"JSON"))
     {
         oss << L"}";
-    }
-    else {
+    } else {
         oss << L"</EventData>";
     }
 
