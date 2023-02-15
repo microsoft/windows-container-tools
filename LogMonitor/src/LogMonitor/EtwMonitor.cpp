@@ -30,9 +30,11 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
-    _In_ bool EventFormatMultiLine
+    _In_ bool EventFormatMultiLine,
+    _In_ std::wstring LogFormat
     ) :
-    m_eventFormatMultiLine(EventFormatMultiLine)
+    m_eventFormatMultiLine(EventFormatMultiLine),
+    m_logFormat(LogFormat)
 {
     //
     // This is set as 'true' to stop processing events.
@@ -725,7 +727,6 @@ EtwMonitor::PrintEvent(
 
     try
     {
-        std::wstring metadataStr;
         status = FormatMetadata(EventRecord, EventInfo, metadataStr);
 
         if (status != ERROR_SUCCESS)
@@ -736,7 +737,6 @@ EtwMonitor::PrintEvent(
             return status;
         }
 
-        std::wstring dataStr;
         status = FormatData(EventRecord, EventInfo, dataStr);
 
         if (status != ERROR_SUCCESS)
@@ -747,10 +747,13 @@ EtwMonitor::PrintEvent(
             return status;
         }
 
-        std::wstring formattedEvent = Utility::FormatString(
-            L"{\"Source\":\"ETW\",\"LogEntry\":{%ls%ls},\"SchemaVersion\":\"1.0.0\"}",
-            metadataStr.c_str(),
-            dataStr.c_str());
+        std::wstring formattedEvent;
+        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+        {
+            formattedEvent = JSONFormattedETW();
+        } else {
+            formattedEvent = XMLFormattedETW();
+        }
 
         //
         // If the multi-line option is disabled, remove all new lines from the output.
@@ -802,15 +805,12 @@ EtwMonitor::FormatMetadata(
     fileTime.dwHighDateTime = EventRecord->EventHeader.TimeStamp.HighPart;
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
-    oss << L"\"Time\":\"" << Utility::FileTimeToString(fileTime).c_str() << L"\",";
-
     //
     // Format provider Name
     //
     if (EventInfo->ProviderNameOffset > 0) {
         pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
     }
-    oss << L"\"ProviderName\":\"" << pName << L"\",";
 
     //
     // Format provider Id
@@ -826,10 +826,6 @@ EtwMonitor::FormatMetadata(
         return hr;
     }
 
-    oss << L"\"ProviderId\":\"" << pwsProviderId << "\",";
-    CoTaskMemFree(pwsProviderId);
-    pwsProviderId = NULL;
-
     //
     // Names of the DecodingSource enum values
     //
@@ -841,14 +837,6 @@ EtwMonitor::FormatMetadata(
         L"DecodingSourceTlg",
         L"DecodingSourceMax",
     };
-
-    oss << L"\"DecodingSource\":\""
-        << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
-        << L"\",";
-
-    oss << L"\"Execution\":{\"ProcessId\":"
-        << EventRecord->EventHeader.ProcessId << ",\"ThreadId\":"
-        << EventRecord->EventHeader.ThreadId << "},";
 
     //
     // Print Level and Keyword
@@ -863,22 +851,65 @@ EtwMonitor::FormatMetadata(
         L"Verbose",
     };
 
-    oss << L"\"Level\":\""
-        << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
-        << L"\",";
+    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+    {
 
-    oss << L"\"Keyword\":\""
-        << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
-        << L"\",";
+        oss << L"\"Time\":\"" << Utility::FileTimeToString(fileTime).c_str() << L"\",";
 
+        oss << L"\"ProviderName\":\"" << pName << L"\",";
+
+        oss << L"\"ProviderId\":\"" << pwsProviderId << "\",";
+        CoTaskMemFree(pwsProviderId);
+        pwsProviderId = NULL;
+
+        oss << L"\"DecodingSource\":\""
+            << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
+            << L"\",";
+
+        oss << L"\"Execution\":{\"ProcessId\":"
+            << EventRecord->EventHeader.ProcessId << ",\"ThreadId\":"
+            << EventRecord->EventHeader.ThreadId << "},";
+
+
+        oss << L"\"Level\":\""
+            << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
+            << L"\",";
+
+        oss << L"\"Keyword\":\""
+            << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
+            << L"\",";
+    } else {
+        oss << L"<Time>" << Utility::FileTimeToString(fileTime).c_str() << L"</Time>";
+
+        oss << L"<Provider Name=\"" << pName << "\"/>";
+
+        oss << L"<Provider idGuid=\"" << pwsProviderId << "\"/>";
+        CoTaskMemFree(pwsProviderId);
+        pwsProviderId = NULL;
+
+        oss << L"<DecodingSource>"
+            << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
+            << L"</DecodingSource>";
+
+        oss << L"<Execution ProcessID=\""
+            << EventRecord->EventHeader.ProcessId << "\" ThreadID=\""
+            << EventRecord->EventHeader.ThreadId << "\" />";
+
+        oss << L"<Level>"
+            << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
+            << L"</Level>";
+
+        oss << L"<Keyword>"
+            << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
+            << L"</Keyword>";
+
+    }
 
     //
     // Format specific metadata by type
     //
     if (DecodingSourceWbem == EventInfo->DecodingSource)  // MOF class
     {
-        oss << L"<Provider Name=\"" << pName << "\"/>";
-
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
         if (FAILED(hr))
@@ -889,13 +920,28 @@ EtwMonitor::FormatMetadata(
             return hr;
         }
 
-        oss << L"\"EventId\":\"" << pwsEventGuid << "\",";;
+        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+        {
+            oss << L"<Provider Name=\"" << pName << "\"/>";
+            oss << L"\"EventId\":\"" << pwsEventGuid << "\",";;
+        } else {
+            oss << L"<Provider Name=\"" << pName << "\"/>";
+            oss << L"<EventID idGuid=\"" << pwsEventGuid << "\" />";;
+        }
+
         CoTaskMemFree(pwsEventGuid);
         pwsEventGuid = NULL;
     }
     else if (DecodingSourceXMLFile == EventInfo->DecodingSource) // Instrumentation manifest
     {
-        oss << L"\"EventId\":" << (int)EventInfo->EventDescriptor.Id << ",";
+        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+        {
+            oss << L"\"EventId\":" << (int)EventInfo->EventDescriptor.Id << ",";
+        }
+        else {
+            oss << L"<EventID Qualifiers=\"" << (int)EventInfo->EventDescriptor.Id << "\">"
+                << (int)EventInfo->EventDescriptor.Id << "</EventID>";
+        }
     }
 
     //
@@ -941,7 +987,13 @@ EtwMonitor::FormatData(
     // property information array. If the EVENT_HEADER_FLAG_STRING_ONLY flag is set,
     // the event data is a null-terminated string, so just print it.
     //
-    oss << L"\"EventData\":{";
+    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+    {
+        oss << L"\"EventData\":{";
+    }
+    else {
+        oss << L"<EventData>";
+    }
     if (EVENT_HEADER_FLAG_STRING_ONLY == (EventRecord->EventHeader.Flags & EVENT_HEADER_FLAG_STRING_ONLY))
     {
         oss << (LPWSTR)EventRecord->UserData;
@@ -962,7 +1014,13 @@ EtwMonitor::FormatData(
             }
         }
     }
-    oss << L"}";
+    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+    {
+        oss << L"}";
+    }
+    else {
+        oss << L"</EventData>";
+    }
 
     Result = oss.str();
 
@@ -1377,4 +1435,32 @@ EtwMonitor::RemoveTrailingSpace(
         byteLength = (wcslen((LPWSTR)((PBYTE)MapName + MapName->MapEntryArray[i].OutputOffset)) - 1) * 2;
         *((LPWSTR)((PBYTE)MapName + (MapName->MapEntryArray[i].OutputOffset + byteLength))) = L'\0';
     }
+}
+
+/// <summary>
+/// XML Formatted ETW
+/// </summary>
+std::wstring EtwMonitor::XMLFormattedETW()
+{
+    auto logFmt = L"<Source>EtwEvent</Source>%ls%ls";
+    std::wstring formattedEvent = Utility::FormatString(
+        logFmt,
+        metadataStr.c_str(),
+        dataStr.c_str());
+
+    return formattedEvent;
+}
+
+/// <summary>
+/// JSON Formatted ETW
+/// </summary>
+std::wstring EtwMonitor::JSONFormattedETW()
+{
+    auto logFmt = L"{\"Source\":\"ETW\",\"LogEntry\":{%ls%ls},\"SchemaVersion\":\"1.0.0\"}";
+    std::wstring formattedEvent = Utility::FormatString(
+        logFmt,
+        metadataStr.c_str(),
+        dataStr.c_str());
+
+    return formattedEvent;
 }
