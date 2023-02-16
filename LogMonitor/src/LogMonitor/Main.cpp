@@ -185,7 +185,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine, logFormat);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat);
         }
         catch (...)
         {
