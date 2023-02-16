@@ -17,7 +17,6 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ bool EventFormatMultiLine,
         _In_ std::wstring LogFormat
     );
 
