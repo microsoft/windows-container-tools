@@ -39,11 +39,13 @@ using namespace std;
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
-                               _In_ bool IncludeSubfolders
+                               _In_ bool IncludeSubfolders,
+                               _In_ std::wstring LogFormat
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
-                               m_includeSubfolders(IncludeSubfolders)
+                               m_includeSubfolders(IncludeSubfolders),
+                               m_logFormat(LogFormat)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1696,12 +1698,20 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            // sanitize msg
-            Utility::SanitizeJson(msg);
-            auto log = Utility::FormatString(logFmt, msg.c_str(), fmtFileName.c_str());
-            logWriter.WriteConsoleLog(log);
-        }
+            fileName = fmtFileName.c_str();
+            fileMessage = msg.c_str();
 
+            std::wstring formattedlog;
+            if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+            {
+                formattedlog = JSONFormattedLog();
+            }
+            else {
+                formattedlog = XMLFormattedLog();
+            }
+
+            logWriter.WriteConsoleLog(formattedlog);
+        }
         if (i >= Message.size()) break;
     }
 }
@@ -2036,4 +2046,36 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
+}
+
+/// <summary>
+/// XML Formatted Log
+/// </summary>
+std::wstring LogFileMonitor::XMLFormattedLog()
+{
+    auto logFmt = L"<LogEntry><Source>File</Source><Logline>%s</Logline><FileName>%s</FileName></LogEntry>";
+    std::wstring formattedEvent = Utility::FormatString(
+        logFmt,
+        fileMessage.c_str(),
+        fileName.c_str());
+
+    return formattedEvent;
+}
+
+/// <summary>
+/// JSON Formatted Log
+/// </summary>
+std::wstring LogFileMonitor::JSONFormattedLog()
+{
+    auto logFmt = L"{\"LogEntry\": {\"Source\": \"File\",\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+
+    // sanitize message
+    Utility::SanitizeJson(fileMessage);
+
+    std::wstring formattedEvent = Utility::FormatString(
+        logFmt,
+        fileMessage.c_str(),
+        fileName.c_str());
+
+    return formattedEvent;
 }

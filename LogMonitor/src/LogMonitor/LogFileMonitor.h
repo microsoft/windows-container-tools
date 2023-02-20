@@ -60,7 +60,8 @@ public:
     LogFileMonitor(
         _In_ const std::wstring& LogDirectory,
         _In_ const std::wstring& Filter,
-        _In_ bool IncludeSubfolders
+        _In_ bool IncludeSubfolders,
+        _In_ std::wstring LogFormat
         );
 
     ~LogFileMonitor();
@@ -73,6 +74,9 @@ private:
     std::wstring m_shortLogDirectory;
     std::wstring m_filter;
     bool m_includeSubfolders;
+    std::wstring m_logFormat;
+    std::wstring fileMessage;
+    std::wstring fileName;
 
     //
     // Signaled by destructor to request the spawned thread to stop.
@@ -222,4 +226,8 @@ private:
         _Out_ FILE_ID_INFO& FileId,
         _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE
         );
+
+    std::wstring XMLFormattedLog();
+
+    std::wstring JSONFormattedLog();
 };

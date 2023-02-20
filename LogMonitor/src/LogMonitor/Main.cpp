@@ -114,7 +114,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
                     std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
                         sourceFile->Directory,
                         sourceFile->Filter,
-                        sourceFile->IncludeSubdirectories
+                        sourceFile->IncludeSubdirectories,
+                        logFormat
                     );
                     g_logfileMonitors.push_back(std::move(logfileMon));
                 }
