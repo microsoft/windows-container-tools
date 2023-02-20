@@ -45,7 +45,7 @@ public:
         _In_ const std::wstring& To
     );
 
-    static bool isJsonNumber(_In_ PWSTR str);
+    static bool isJsonNumber(_In_ std::wstring& str);
 
     static void SanitizeJson(_Inout_ std::wstring& str);
 };
