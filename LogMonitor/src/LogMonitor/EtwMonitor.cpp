@@ -31,7 +31,7 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
     _In_ std::wstring LogFormat
-) :
+    ) :
     m_logFormat(LogFormat)
 {
     //
@@ -100,7 +100,7 @@ EtwMonitor::~EtwMonitor()
             break;
         }
     }
-
+    
 
     CloseTrace(m_startTraceHandle);
 
@@ -688,7 +688,7 @@ EtwMonitor::OnRecordEvent(
         // Process all the event types, but WPP kind.
         //
         if (status == ERROR_SUCCESS &&
-                (pInfo->DecodingSource == DecodingSourceXMLFile ||
+               (pInfo->DecodingSource == DecodingSourceXMLFile ||
                 pInfo->DecodingSource == DecodingSourceWbem ||
                 pInfo->DecodingSource == DecodingSourceTlg))
         {
@@ -816,7 +816,7 @@ DWORD
 EtwMonitor::PrintEvent(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
 
@@ -877,7 +877,7 @@ EtwMonitor::FormatMetadata(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _Inout_ EtwLogEntry* pLogEntry
-)
+    )
 {
     FILETIME fileTime;
     LPWSTR pName = NULL;
@@ -993,7 +993,7 @@ EtwMonitor::FormatData(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _Inout_ EtwLogEntry* pLogEntry
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     std::wostringstream oss;
@@ -1060,7 +1060,7 @@ EtwMonitor::_FormatData(
     _Inout_ PBYTE& UserData,
     _In_ PBYTE EndOfUserData,
     _Inout_ EtwLogEntry* pLogEntry
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     DWORD lastMember = 0;  // Last member of a structure
@@ -1255,7 +1255,7 @@ EtwMonitor::GetPropertyLength(
         DWORD length = 0;  // Expects the length to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].lengthPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)&length);
@@ -1321,7 +1321,7 @@ EtwMonitor::GetArraySize(
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _In_ const USHORT Index,
     _Out_ USHORT& ArraySize
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     PROPERTY_DATA_DESCRIPTOR dataDescriptor;
@@ -1332,7 +1332,7 @@ EtwMonitor::GetArraySize(
         DWORD count = 0;  // Expects the count to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].countPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         if (status != ERROR_SUCCESS)
@@ -1340,7 +1340,7 @@ EtwMonitor::GetArraySize(
             ArraySize = 0;
             return ERROR_SUCCESS;
         }
-        status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)&count);
+        status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)& count);
         ArraySize = (USHORT)count;
     }
     else
