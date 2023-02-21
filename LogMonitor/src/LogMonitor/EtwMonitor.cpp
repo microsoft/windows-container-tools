@@ -914,8 +914,6 @@ EtwMonitor::FormatMetadata(
     //
     if (DecodingSourceWbem == EventInfo->DecodingSource)  // MOF class
     {
-        oss << L"<Provider Name=\"" << pName << "\"/>";
-
         LPWSTR pwsEventGuid = NULL;
         hr = StringFromCLSID(EventInfo->EventGuid, &pwsEventGuid);
         if (FAILED(hr))
