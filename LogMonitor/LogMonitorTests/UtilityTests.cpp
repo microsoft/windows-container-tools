@@ -20,7 +20,7 @@ namespace UtilityTests
     public:
         TEST_METHOD(TestisJsonNumberTrue)
         {
-            PWSTR str = L"-0.12";
+            std::wstring str = L"-0.12";
             Assert::IsTrue(Utility::isJsonNumber(str), L"should return true -0.12");
 
             str = L"-1.1234";
@@ -44,7 +44,7 @@ namespace UtilityTests
 
         TEST_METHOD(TestisJsonNumberFalse)
         {
-            PWSTR str = L"false";
+            std::wstring str = L"false";
             Assert::IsFalse(Utility::isJsonNumber(str), L"should return false for \"false\"");
 
             str = L"12.12.89.12";
