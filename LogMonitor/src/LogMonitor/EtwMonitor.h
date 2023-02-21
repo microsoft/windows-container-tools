@@ -17,7 +17,8 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ bool EventFormatMultiLine
+        _In_ bool EventFormatMultiLine,
+        _In_ std::wstring LogFormat
     );
 
     ~EtwMonitor();
@@ -28,6 +29,7 @@ private:
     std::vector<ETWProvider> m_providersConfig;
     bool m_eventFormatMultiLine;
     TRACEHANDLE m_startTraceHandle;
+    std::wstring m_logFormat;
 
     //
     // Vectors used to store an EVENT_TRACE_PROPERTIES object.
@@ -39,6 +41,9 @@ private:
     // Signaled by destructor to request ProcessTrace to stop.
     //
     bool m_stopFlag;
+
+    std::wstring metadataStr;
+    std::wstring dataStr;
 
     //
     // Handle to an event subscriber thread.
@@ -131,4 +136,8 @@ private:
     inline void RemoveTrailingSpace(
         _In_ PEVENT_MAP_INFO MapInfo
     );
+
+    std::wstring XMLFormattedETW();
+
+    std::wstring JSONFormattedETW();
 };

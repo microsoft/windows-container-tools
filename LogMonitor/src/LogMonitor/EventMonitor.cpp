@@ -501,7 +501,7 @@ EventMonitor::PrintEvent(
             //
             std::wstring providerName = (EvtVarTypeString != variants[0].Type) ? L"" : variants[0].StringVal;
             std::wstring channelName = (EvtVarTypeString != variants[1].Type) ? L"" : variants[1].StringVal;
-            UINT16 eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
+            eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
             UINT8 level = (EvtVarTypeByte != variants[3].Type) ? 0 : variants[3].ByteVal;
             ULARGE_INTEGER fileTimeAsInt{};
             fileTimeAsInt.QuadPart = (EvtVarTypeFileTime != variants[4].Type) ? 0 : variants[4].FileTimeVal;
@@ -558,7 +558,6 @@ EventMonitor::PrintEvent(
                 eventTime = Utility::FileTimeToString(fileTimeCreated);
                 eventChannel = channelName;
                 eventLevel = c_LevelToString[static_cast<UINT8>(level)];
-                eventId = eventId;
                 eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
                 std::wstring formattedEvent;
