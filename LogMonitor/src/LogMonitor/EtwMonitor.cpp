@@ -386,7 +386,7 @@ EtwMonitor::StaticBufferEventCallback(
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
-)
+    )
 {
     if (this->m_stopFlag)
     {
