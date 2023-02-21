@@ -143,7 +143,7 @@ DWORD
 EtwMonitor::FilterValidProviders(
     _In_ const std::vector<ETWProvider>& Providers,
     _Out_ std::vector<ETWProvider>& ValidProviders
-)
+    )
 {
     std::map<wstring, ETWProvider> providersWithoutGuid;
     DWORD status = ERROR_SUCCESS;
@@ -224,7 +224,7 @@ EtwMonitor::FilterValidProviders(
         //
         for (DWORD i = 0; i < penum->NumberOfProviders; i++)
         {
-            wstring providerName((LPWSTR)((PBYTE)(penum)+penum->TraceProviderInfoArray[i].ProviderNameOffset));
+            wstring providerName((LPWSTR)((PBYTE)(penum) + penum->TraceProviderInfoArray[i].ProviderNameOffset));
             transform(
                 providerName.begin(), providerName.end(),
                 providerName.begin(),
@@ -282,7 +282,7 @@ EtwMonitor::FilterValidProviders(
 DWORD
 EtwMonitor::StartEtwMonitorStatic(
     _In_ LPVOID Context
-)
+    )
 {
     auto pThis = reinterpret_cast<EtwMonitor*>(Context);
     try
@@ -319,7 +319,7 @@ EtwMonitor::StartEtwMonitorStatic(
 ///
 void WINAPI EtwMonitor::OnEventRecordTramp(
     _In_ PEVENT_RECORD EventRecord
-)
+    )
 {
     EtwMonitor* etwMon = static_cast<EtwMonitor*>(EventRecord->UserContext);
     try
@@ -356,7 +356,7 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
 BOOL WINAPI
 EtwMonitor::StaticBufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
-)
+    )
 {
     try
     {
@@ -481,7 +481,7 @@ EtwMonitor::StartEtwMonitor()
 DWORD
 EtwMonitor::StartTraceSession(
     _Out_ TRACEHANDLE& TraceSessionHandle
-)
+    )
 {
     const std::wstring mySessionName = g_sessionName;
 
@@ -491,7 +491,7 @@ EtwMonitor::StartTraceSession(
     this->m_vecEventTracePropsBuffer.resize(
         sizeof(EVENT_TRACE_PROPERTIES) + (mySessionName.length() + 1) * sizeof(mySessionName[0]));
 
-    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)&this->m_vecEventTracePropsBuffer[0];
+    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES) &this->m_vecEventTracePropsBuffer[0];
     petp->Wnode.BufferSize = (ULONG)this->m_vecEventTracePropsBuffer.size();
 
     petp->Wnode.ClientContext = 1;  //use QPC for timestamp resolution
@@ -508,7 +508,7 @@ EtwMonitor::StartTraceSession(
     this->m_vecStopTracePropsBuffer.resize(
         sizeof(EVENT_TRACE_PROPERTIES) + 1024 * sizeof(WCHAR) + 1024 * sizeof(WCHAR));
 
-    PEVENT_TRACE_PROPERTIES petpStop = (PEVENT_TRACE_PROPERTIES)&this->m_vecStopTracePropsBuffer[0];
+    PEVENT_TRACE_PROPERTIES petpStop = (PEVENT_TRACE_PROPERTIES)& this->m_vecStopTracePropsBuffer[0];
     petpStop->Wnode.BufferSize = (ULONG)this->m_vecStopTracePropsBuffer.size();
 
     petpStop->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
@@ -626,7 +626,7 @@ EtwMonitor::StartTraceSession(
 DWORD
 EtwMonitor::OnRecordEvent(
     _In_ const PEVENT_RECORD EventRecord
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     PTRACE_EVENT_INFO pInfo = NULL;
@@ -688,7 +688,7 @@ EtwMonitor::OnRecordEvent(
         // Process all the event types, but WPP kind.
         //
         if (status == ERROR_SUCCESS &&
-            (pInfo->DecodingSource == DecodingSourceXMLFile ||
+                (pInfo->DecodingSource == DecodingSourceXMLFile ||
                 pInfo->DecodingSource == DecodingSourceWbem ||
                 pInfo->DecodingSource == DecodingSourceTlg))
         {
@@ -857,11 +857,11 @@ EtwMonitor::PrintEvent(
 
         logWriter.WriteConsoleLog(formattedEvent);
     }
-    catch (std::bad_alloc&)
+    catch(std::bad_alloc&)
     {
         status = ERROR_NOT_ENOUGH_MEMORY;
     }
-    catch (...)
+    catch(...)
     {
         status = ERROR_BAD_FORMAT;
     }
@@ -1109,7 +1109,7 @@ EtwMonitor::_FormatData(
                 }
             }
         }
-        else if (propertyLength > 0 || (EndOfUserData - UserData) > 0)
+        else if(propertyLength > 0 || (EndOfUserData - UserData) > 0)
         {
             PEVENT_MAP_INFO pMapInfo = NULL;
 
@@ -1120,7 +1120,7 @@ EtwMonitor::_FormatData(
                 EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset != 0)
             {
                 status = GetMapInfo(EventRecord,
-                    (PWCHAR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
+                    (PWCHAR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
                     EventInfo->DecodingSource,
                     pMapInfo);
 
@@ -1234,7 +1234,7 @@ EtwMonitor::GetPropertyLength(
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _In_ const USHORT Index,
     _Out_ USHORT& PropertyLength
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     PROPERTY_DATA_DESCRIPTOR dataDescriptor;
@@ -1368,7 +1368,7 @@ EtwMonitor::GetMapInfo(
     _In_ LPWSTR MapName,
     _In_ DWORD DecodingSource,
     _Out_ PEVENT_MAP_INFO& MapInfo
-)
+    )
 {
     DWORD status = ERROR_SUCCESS;
     DWORD mapSize = 0;
@@ -1427,7 +1427,7 @@ inline
 void
 EtwMonitor::RemoveTrailingSpace(
     _In_ PEVENT_MAP_INFO MapName
-)
+    )
 {
     size_t byteLength = 0;
 

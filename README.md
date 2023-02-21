@@ -4,6 +4,8 @@
 # Overview
 Windows Container Tools is a collection of tools to augment the Windows Container experience.
 
+For general discussions and issues surrounding Windows Containers please visit https://github.com/microsoft/Windows-Containers.
+
 ## Tool List
 
 * [`LogMonitor`](./LogMonitor/)
