@@ -10,6 +10,23 @@ typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
     LPTSTR S
     );
 
+//
+// struct to hold the ETW logEntry data
+//
+struct EtwLogEntry {
+    std::wstring Time;
+    std::wstring ProviderId;
+    std::wstring ProviderName;
+    std::wstring DecodingSource;
+    int ExecProcessId;
+    int ExecThreadId;
+    std::wstring Level;
+    std::wstring Keyword;
+    std::wstring EventId;
+    std::vector<std::pair<std::wstring, std::wstring>> EventData{};
+};
+
+
 class EtwMonitor final
 {
 public:
@@ -26,9 +43,8 @@ private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;
-    bool m_eventFormatMultiLine;
-    TRACEHANDLE m_startTraceHandle;
     std::wstring m_logFormat;
+    TRACEHANDLE m_startTraceHandle;
 
     //
     // Vectors used to store an EVENT_TRACE_PROPERTIES object.
@@ -40,9 +56,6 @@ private:
     // Signaled by destructor to request ProcessTrace to stop.
     //
     bool m_stopFlag;
-
-    std::wstring metadataStr;
-    std::wstring dataStr;
 
     //
     // Handle to an event subscriber thread.
@@ -90,7 +103,7 @@ private:
     DWORD FormatMetadata(
         _In_ const PEVENT_RECORD EventRecord,
         _In_ const PTRACE_EVENT_INFO EventInfo,
-        _Inout_ std::wstring& Result
+        _Inout_ EtwLogEntry* pLogEntry
     );
 
     //
@@ -99,7 +112,7 @@ private:
     DWORD FormatData(
         _In_ const PEVENT_RECORD EventRecord,
         _In_ const PTRACE_EVENT_INFO EventInfo,
-        _Inout_ std::wstring& Result
+        _Inout_ EtwLogEntry* pLogEntry
     );
 
     DWORD _FormatData(
@@ -108,7 +121,7 @@ private:
         _In_ USHORT Index,
         _Inout_ PBYTE& UserData,
         _In_ PBYTE EndOfUserData,
-        _Inout_ std::wostringstream& Result
+        _Inout_ EtwLogEntry* pLogEntry
     );
 
     DWORD GetPropertyLength(
@@ -135,8 +148,4 @@ private:
     inline void RemoveTrailingSpace(
         _In_ PEVENT_MAP_INFO MapInfo
     );
-
-    std::wstring XMLFormattedETW();
-
-    std::wstring JSONFormattedETW();
 };

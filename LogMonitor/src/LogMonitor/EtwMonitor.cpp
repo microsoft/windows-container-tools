@@ -31,7 +31,7 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
     _In_ std::wstring LogFormat
-    ) :
+) :
     m_logFormat(LogFormat)
 {
     //
@@ -100,7 +100,7 @@ EtwMonitor::~EtwMonitor()
             break;
         }
     }
-    
+
 
     CloseTrace(m_startTraceHandle);
 
@@ -143,7 +143,7 @@ DWORD
 EtwMonitor::FilterValidProviders(
     _In_ const std::vector<ETWProvider>& Providers,
     _Out_ std::vector<ETWProvider>& ValidProviders
-    )
+)
 {
     std::map<wstring, ETWProvider> providersWithoutGuid;
     DWORD status = ERROR_SUCCESS;
@@ -224,7 +224,7 @@ EtwMonitor::FilterValidProviders(
         //
         for (DWORD i = 0; i < penum->NumberOfProviders; i++)
         {
-            wstring providerName((LPWSTR)((PBYTE)(penum) + penum->TraceProviderInfoArray[i].ProviderNameOffset));
+            wstring providerName((LPWSTR)((PBYTE)(penum)+penum->TraceProviderInfoArray[i].ProviderNameOffset));
             transform(
                 providerName.begin(), providerName.end(),
                 providerName.begin(),
@@ -282,7 +282,7 @@ EtwMonitor::FilterValidProviders(
 DWORD
 EtwMonitor::StartEtwMonitorStatic(
     _In_ LPVOID Context
-    )
+)
 {
     auto pThis = reinterpret_cast<EtwMonitor*>(Context);
     try
@@ -319,7 +319,7 @@ EtwMonitor::StartEtwMonitorStatic(
 ///
 void WINAPI EtwMonitor::OnEventRecordTramp(
     _In_ PEVENT_RECORD EventRecord
-    )
+)
 {
     EtwMonitor* etwMon = static_cast<EtwMonitor*>(EventRecord->UserContext);
     try
@@ -356,7 +356,7 @@ void WINAPI EtwMonitor::OnEventRecordTramp(
 BOOL WINAPI
 EtwMonitor::StaticBufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
-    )
+)
 {
     try
     {
@@ -386,7 +386,7 @@ EtwMonitor::StaticBufferEventCallback(
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
     _In_ PEVENT_TRACE_LOGFILE Buffer
-    )
+)
 {
     if (this->m_stopFlag)
     {
@@ -481,7 +481,7 @@ EtwMonitor::StartEtwMonitor()
 DWORD
 EtwMonitor::StartTraceSession(
     _Out_ TRACEHANDLE& TraceSessionHandle
-    )
+)
 {
     const std::wstring mySessionName = g_sessionName;
 
@@ -491,7 +491,7 @@ EtwMonitor::StartTraceSession(
     this->m_vecEventTracePropsBuffer.resize(
         sizeof(EVENT_TRACE_PROPERTIES) + (mySessionName.length() + 1) * sizeof(mySessionName[0]));
 
-    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES) &this->m_vecEventTracePropsBuffer[0];
+    PEVENT_TRACE_PROPERTIES petp = (PEVENT_TRACE_PROPERTIES)&this->m_vecEventTracePropsBuffer[0];
     petp->Wnode.BufferSize = (ULONG)this->m_vecEventTracePropsBuffer.size();
 
     petp->Wnode.ClientContext = 1;  //use QPC for timestamp resolution
@@ -508,7 +508,7 @@ EtwMonitor::StartTraceSession(
     this->m_vecStopTracePropsBuffer.resize(
         sizeof(EVENT_TRACE_PROPERTIES) + 1024 * sizeof(WCHAR) + 1024 * sizeof(WCHAR));
 
-    PEVENT_TRACE_PROPERTIES petpStop = (PEVENT_TRACE_PROPERTIES)& this->m_vecStopTracePropsBuffer[0];
+    PEVENT_TRACE_PROPERTIES petpStop = (PEVENT_TRACE_PROPERTIES)&this->m_vecStopTracePropsBuffer[0];
     petpStop->Wnode.BufferSize = (ULONG)this->m_vecStopTracePropsBuffer.size();
 
     petpStop->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
@@ -626,7 +626,7 @@ EtwMonitor::StartTraceSession(
 DWORD
 EtwMonitor::OnRecordEvent(
     _In_ const PEVENT_RECORD EventRecord
-    )
+)
 {
     DWORD status = ERROR_SUCCESS;
     PTRACE_EVENT_INFO pInfo = NULL;
@@ -688,7 +688,7 @@ EtwMonitor::OnRecordEvent(
         // Process all the event types, but WPP kind.
         //
         if (status == ERROR_SUCCESS &&
-               (pInfo->DecodingSource == DecodingSourceXMLFile ||
+            (pInfo->DecodingSource == DecodingSourceXMLFile ||
                 pInfo->DecodingSource == DecodingSourceWbem ||
                 pInfo->DecodingSource == DecodingSourceTlg))
         {
@@ -705,6 +705,103 @@ EtwMonitor::OnRecordEvent(
     return status;
 }
 
+///
+/// Format ETW eventlog into a JSON output
+///
+std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
+{
+    std::wostringstream oss;
+    // construct the JSON output
+    oss << L"{\"LogEntry\":{\"Source\":\"ETW\",";
+    oss << L"\"Time\":\"" << pLogEntry->Time << L"\",";
+    oss << L"\"ProviderName\":\"" << pLogEntry->ProviderName << L"\",";
+    oss << L"\"ProviderId\":\"" << pLogEntry->ProviderId << "\",";
+    oss << L"\"DecodingSource\":\"" << pLogEntry->DecodingSource << L"\",";
+    oss << L"\"Execution\":{";
+    oss << L"\"ProcessId\":" << pLogEntry->ExecProcessId << ",";
+    oss << L"\"ThreadId\":" << pLogEntry->ExecThreadId;
+    oss << "},";
+    oss << L"\"Level\":\"" << pLogEntry->Level << L"\",";
+    oss << L"\"Keyword\":\"" << pLogEntry->Keyword << L"\",";
+    oss << L"\"EventId\":\"" << pLogEntry->EventId << "\",";
+
+    oss << L"\"EventData\":{";
+    bool firstEntry = true;
+    for (auto evtData : pLogEntry->EventData) {
+        oss << (firstEntry ? "" : ",");
+        firstEntry = false;
+
+        wstring key = evtData.first;
+        Utility::SanitizeJson(key);
+        oss << "\"" << key << "\":";
+
+        //
+        // format (JSON) numbers without quotation marks, e.g.
+        /*
+        "EventData": {
+                "FrameUniqueID": 403787,
+                "PortNumber" : 0,
+                "TID" : 0,
+                "PeerID" : 0,
+                "PayloadLength" : 68,
+                "QueueLength" : 0,
+                "QueueState" : "false",
+                "CustomData1" : 24,
+                "CustomData2" : 0,
+                "CustomData3" : 0
+        }
+        */
+        //
+        if (Utility::isJsonNumber(evtData.second)) {
+            oss << evtData.second;
+        }
+        else {
+            wstring value = evtData.second;
+            Utility::SanitizeJson(value);
+            oss << L"\"" << value << L"\"";
+        }
+    }
+    oss << L"}";
+
+    oss << L"},\"SchemaVersion\":\"1.0.0\"}";
+
+    return oss.str();
+}
+
+///
+/// Format ETW eventlog into a XML output
+///
+std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
+{
+    std::wostringstream oss;
+
+    // construct the JSON output
+    oss << L"<LogEntry><Source>ETW</Source>";
+    oss << L"<Time>" << pLogEntry->Time << L"</Time>";
+    oss << L"<ProviderName>" << pLogEntry->ProviderName << L"</ProviderName>";
+    oss << L"<ProviderId>" << pLogEntry->ProviderId << "</ProviderId>";
+    oss << L"<DecodingSource>" << pLogEntry->DecodingSource << L"</DecodingSource>";
+    oss << L"<Execution>";
+    oss << L"<ProcessId>" << pLogEntry->ExecProcessId << L"</ProcessId>";
+    oss << L"<ThreadId>" << pLogEntry->ExecThreadId << L"</ThreadId>";
+    oss << "</Execution>";
+    oss << L"<Level>" << pLogEntry->Level << L"</Level>";
+    oss << L"<Keyword>" << pLogEntry->Keyword << L"</Keyword>";
+    oss << L"<EventId>" << pLogEntry->EventId << L"</EventId>";
+
+    oss << L"<EventData>";
+    for (auto evtData : pLogEntry->EventData) {
+
+        wstring key = evtData.first;
+        wstring value = evtData.second;
+        oss << "<" << key << ">" << value <<"</" << key << ">";
+
+    }
+    oss << L"</EventData></LogEntry>";
+
+    return oss.str();
+}
+
 
 ///
 /// Prints the data and metadata of the event.
@@ -719,13 +816,17 @@ DWORD
 EtwMonitor::PrintEvent(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo
-    )
+)
 {
     DWORD status = ERROR_SUCCESS;
 
+    // struct to hold the Etw log entry and later format print
+    EtwLogEntry logEntry;
+    EtwLogEntry* pLogEntry = &logEntry;
+
     try
     {
-        status = FormatMetadata(EventRecord, EventInfo, metadataStr);
+        status = FormatMetadata(EventRecord, EventInfo, pLogEntry);
 
         if (status != ERROR_SUCCESS)
         {
@@ -735,7 +836,8 @@ EtwMonitor::PrintEvent(
             return status;
         }
 
-        status = FormatData(EventRecord, EventInfo, dataStr);
+        std::wstring dataStr;
+        status = FormatData(EventRecord, EventInfo, pLogEntry);
 
         if (status != ERROR_SUCCESS)
         {
@@ -748,34 +850,18 @@ EtwMonitor::PrintEvent(
         std::wstring formattedEvent;
         if (Utility::CompareWStrings(m_logFormat, L"JSON"))
         {
-            formattedEvent = JSONFormattedETW();
+            formattedEvent = etwJsonFormat(pLogEntry);
         } else {
-            formattedEvent = XMLFormattedETW();
-        }
-
-        //
-        // If the multi-line option is disabled, remove all new lines from the output.
-        //
-        if (!this->m_eventFormatMultiLine)
-        {
-            std::transform(formattedEvent.begin(), formattedEvent.end(), formattedEvent.begin(),
-                [](WCHAR ch) {
-                    switch (ch) {
-                    case L'\r':
-                    case L'\n':
-                        return L' ';
-                    }
-                    return ch;
-                });
+            formattedEvent = etwXMLFormat(pLogEntry);
         }
 
         logWriter.WriteConsoleLog(formattedEvent);
     }
-    catch(std::bad_alloc&)
+    catch (std::bad_alloc&)
     {
         status = ERROR_NOT_ENOUGH_MEMORY;
     }
-    catch(...)
+    catch (...)
     {
         status = ERROR_BAD_FORMAT;
     }
@@ -790,10 +876,9 @@ DWORD
 EtwMonitor::FormatMetadata(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo,
-    _Inout_ std::wstring& Result
-    )
+    _Inout_ EtwLogEntry* pLogEntry
+)
 {
-    std::wostringstream oss;
     FILETIME fileTime;
     LPWSTR pName = NULL;
 
@@ -803,36 +888,15 @@ EtwMonitor::FormatMetadata(
     fileTime.dwHighDateTime = EventRecord->EventHeader.TimeStamp.HighPart;
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
+    pLogEntry->Time = Utility::FileTimeToString(fileTime).c_str();
+
     //
     // Format provider Name
     //
     if (EventInfo->ProviderNameOffset > 0) {
         pName = (LPWSTR)((PBYTE)(EventInfo)+EventInfo->ProviderNameOffset);
     }
-    //
-    // Names of the DecodingSource enum values
-    //
-    static const std::vector<std::wstring> c_DecodingSourceToString =
-    {
-        L"DecodingSourceXMLFile",
-        L"DecodingSourceWbem",
-        L"DecodingSourceWPP",
-        L"DecodingSourceTlg",
-        L"DecodingSourceMax",
-    };
-
-    //
-    // Print Level and Keyword
-    //
-    static const std::vector<std::wstring> c_LevelToString =
-    {
-        L"None",
-        L"Critical",
-        L"Error",
-        L"Warning",
-        L"Information",
-        L"Verbose",
-    };
+    pLogEntry->ProviderName = pName;
 
     //
     // Format provider Id
@@ -848,59 +912,43 @@ EtwMonitor::FormatMetadata(
         return hr;
     }
 
-    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+    pLogEntry->ProviderId = std::wstring(pwsProviderId);
+    CoTaskMemFree(pwsProviderId);
+    pwsProviderId = NULL;
+
+    //
+    // Names of the DecodingSource enum values
+    //
+    static const std::vector<std::wstring> c_DecodingSourceToString =
     {
+        L"DecodingSourceXMLFile",
+        L"DecodingSourceWbem",
+        L"DecodingSourceWPP",
+        L"DecodingSourceTlg",
+        L"DecodingSourceMax",
+    };
 
-        oss << L"\"Time\":\"" << Utility::FileTimeToString(fileTime).c_str() << L"\",";
+    pLogEntry->DecodingSource = c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str();
 
-        oss << L"\"ProviderName\":\"" << pName << L"\",";
+    pLogEntry->ExecProcessId = EventRecord->EventHeader.ProcessId;
+    pLogEntry->ExecThreadId = EventRecord->EventHeader.ThreadId;
 
-        oss << L"\"ProviderId\":\"" << pwsProviderId << "\",";
-        CoTaskMemFree(pwsProviderId);
-        pwsProviderId = NULL;
+    //
+    // Print Level and Keyword
+    //
+    static const std::vector<std::wstring> c_LevelToString =
+    {
+        L"None",
+        L"Critical",
+        L"Error",
+        L"Warning",
+        L"Information",
+        L"Verbose",
+    };
 
-        oss << L"\"DecodingSource\":\""
-            << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
-            << L"\",";
+    pLogEntry->Level = c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level];
 
-        oss << L"\"Execution\":{\"ProcessId\":"
-            << EventRecord->EventHeader.ProcessId << ",\"ThreadId\":"
-            << EventRecord->EventHeader.ThreadId << "},";
-
-
-        oss << L"\"Level\":\""
-            << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
-            << L"\",";
-
-        oss << L"\"Keyword\":\""
-            << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
-            << L"\",";
-    } else {
-        oss << L"<Time>" << Utility::FileTimeToString(fileTime).c_str() << L"</Time>";
-
-        oss << L"<Provider Name=\"" << pName << "\"/>";
-
-        oss << L"<Provider idGuid=\"" << pwsProviderId << "\"/>";
-        CoTaskMemFree(pwsProviderId);
-        pwsProviderId = NULL;
-
-        oss << L"<DecodingSource>"
-            << c_DecodingSourceToString[static_cast<UINT8>(EventInfo->DecodingSource)].c_str()
-            << L"</DecodingSource>";
-
-        oss << L"<Execution ProcessID=\""
-            << EventRecord->EventHeader.ProcessId << "\" ThreadID=\""
-            << EventRecord->EventHeader.ThreadId << "\" />";
-
-        oss << L"<Level>"
-            << c_LevelToString[EventRecord->EventHeader.EventDescriptor.Level]
-            << L"</Level>";
-
-        oss << L"<Keyword>"
-            << Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword)
-            << L"</Keyword>";
-
-    }
+    pLogEntry->Keyword = Utility::FormatString(L"0x%llx", EventRecord->EventHeader.EventDescriptor.Keyword);
 
     //
     // Format specific metadata by type
@@ -917,30 +965,15 @@ EtwMonitor::FormatMetadata(
             return hr;
         }
 
-        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-        {
-            oss << L"\"EventId\":\"" << pwsEventGuid << "\",";;
-        } else {
-            oss << L"<EventID idGuid=\"" << pwsEventGuid << "\" />";;
-        }
+        std::wstring eventId(pwsEventGuid);
+        pLogEntry->EventId = eventId;
         CoTaskMemFree(pwsEventGuid);
         pwsEventGuid = NULL;
     }
     else if (DecodingSourceXMLFile == EventInfo->DecodingSource) // Instrumentation manifest
     {
-        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-        {
-            oss << L"\"EventId\":" << (int)EventInfo->EventDescriptor.Id << ",";
-        } else {
-            oss << L"<EventID Qualifiers=\"" << (int)EventInfo->EventDescriptor.Id << "\">"
-                << (int)EventInfo->EventDescriptor.Id << "</EventID>";
-        }
+        pLogEntry->EventId = std::to_wstring(EventInfo->EventDescriptor.Id);
     }
-
-    //
-    // Convert the stream to a wstring
-    //
-    Result = oss.str();
 
     return ERROR_SUCCESS;
 }
@@ -959,8 +992,8 @@ DWORD
 EtwMonitor::FormatData(
     _In_ const PEVENT_RECORD EventRecord,
     _In_ const PTRACE_EVENT_INFO EventInfo,
-    _Inout_ std::wstring& Result
-    )
+    _Inout_ EtwLogEntry* pLogEntry
+)
 {
     DWORD status = ERROR_SUCCESS;
     std::wostringstream oss;
@@ -980,15 +1013,10 @@ EtwMonitor::FormatData(
     // property information array. If the EVENT_HEADER_FLAG_STRING_ONLY flag is set,
     // the event data is a null-terminated string, so just print it.
     //
-    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-    {
-        oss << L"\"EventData\":{";
-    } else {
-        oss << L"<EventData>";
-    }
     if (EVENT_HEADER_FLAG_STRING_ONLY == (EventRecord->EventHeader.Flags & EVENT_HEADER_FLAG_STRING_ONLY))
     {
-        oss << (LPWSTR)EventRecord->UserData;
+        std::wstring data((LPWSTR)EventRecord->UserData);
+        pLogEntry->EventData.push_back(std::make_pair(L"Header", data));
     }
     else
     {
@@ -997,7 +1025,7 @@ EtwMonitor::FormatData(
 
         for (USHORT i = 0; i < EventInfo->TopLevelPropertyCount; i++)
         {
-            status = _FormatData(EventRecord, EventInfo, i, pUserData, pEndOfUserData, oss);
+            status = _FormatData(EventRecord, EventInfo, i, pUserData, pEndOfUserData, pLogEntry);
             if (ERROR_SUCCESS != status)
             {
                 logWriter.TraceError(L"Failed to format ETW event user data..");
@@ -1006,17 +1034,6 @@ EtwMonitor::FormatData(
             }
         }
     }
-    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-    {
-        oss << L"}";
-    } else {
-        oss << L"</EventData>";
-    }
-
-    Result = oss.str();
-
-    // tream off the trailing comma (,) for the last key/value pair
-    Result.replace(Result.size() - 2, 1, L"");
 
     return ERROR_SUCCESS;
 }
@@ -1042,8 +1059,8 @@ EtwMonitor::_FormatData(
     _In_ USHORT Index,
     _Inout_ PBYTE& UserData,
     _In_ PBYTE EndOfUserData,
-    _Inout_ std::wostringstream& Result
-    )
+    _Inout_ EtwLogEntry* pLogEntry
+)
 {
     DWORD status = ERROR_SUCCESS;
     DWORD lastMember = 0;  // Last member of a structure
@@ -1071,7 +1088,8 @@ EtwMonitor::_FormatData(
 
     for (USHORT k = 0; k < arraySize; k++)
     {
-        Result << "\"" << (LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset) << "\":";
+        std::wstring evtKey((LPWSTR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].NameOffset));
+        pLogEntry->EventData.push_back(std::make_pair(evtKey, L""));
 
         //
         // If the property is a structure, print the members of the structure.
@@ -1083,7 +1101,7 @@ EtwMonitor::_FormatData(
 
             for (USHORT j = EventInfo->EventPropertyInfoArray[Index].structType.StructStartIndex; j < lastMember; j++)
             {
-                status = _FormatData(EventRecord, EventInfo, j, UserData, EndOfUserData, Result);
+                status = _FormatData(EventRecord, EventInfo, j, UserData, EndOfUserData, pLogEntry);
                 if (ERROR_SUCCESS != status || UserData == NULL)
                 {
                     logWriter.TraceError(L"Failed to format ETW event user data.");
@@ -1091,7 +1109,7 @@ EtwMonitor::_FormatData(
                 }
             }
         }
-        else if(propertyLength > 0 || (EndOfUserData - UserData) > 0)
+        else if (propertyLength > 0 || (EndOfUserData - UserData) > 0)
         {
             PEVENT_MAP_INFO pMapInfo = NULL;
 
@@ -1102,7 +1120,7 @@ EtwMonitor::_FormatData(
                 EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset != 0)
             {
                 status = GetMapInfo(EventRecord,
-                    (PWCHAR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
+                    (PWCHAR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].nonStructType.MapNameOffset),
                     EventInfo->DecodingSource,
                     pMapInfo);
 
@@ -1171,16 +1189,9 @@ EtwMonitor::_FormatData(
             if (ERROR_SUCCESS == status)
             {
                 auto fd = (PWCHAR)formattedData.data();
-                if (!Utility::isJsonNumber(fd)) {
-                    // clean the JSON string `fd`
-                    wstring fdStr(fd);
-                    Utility::SanitizeJson(fdStr);
-                    Result << L"\"" << fdStr << L"\"";
-                }
-                else {
-                    Result << fd;
-                }
-                
+                std::wstring evtValue(fd);
+                // the key, evtKey was already set earlier
+                pLogEntry->EventData.back().second = evtValue;
 
                 UserData += userDataConsumed;
             }
@@ -1196,7 +1207,6 @@ EtwMonitor::_FormatData(
                 break;
             }
         }
-        Result << ",";
     }
 
     return status;
@@ -1224,7 +1234,7 @@ EtwMonitor::GetPropertyLength(
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _In_ const USHORT Index,
     _Out_ USHORT& PropertyLength
-    )
+)
 {
     DWORD status = ERROR_SUCCESS;
     PROPERTY_DATA_DESCRIPTOR dataDescriptor;
@@ -1245,7 +1255,7 @@ EtwMonitor::GetPropertyLength(
         DWORD length = 0;  // Expects the length to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].lengthPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)&length);
@@ -1311,7 +1321,7 @@ EtwMonitor::GetArraySize(
     _In_ const PTRACE_EVENT_INFO EventInfo,
     _In_ const USHORT Index,
     _Out_ USHORT& ArraySize
-    )
+)
 {
     DWORD status = ERROR_SUCCESS;
     PROPERTY_DATA_DESCRIPTOR dataDescriptor;
@@ -1322,7 +1332,7 @@ EtwMonitor::GetArraySize(
         DWORD count = 0;  // Expects the count to be defined by a UINT16 or UINT32
         DWORD j = EventInfo->EventPropertyInfoArray[Index].countPropertyIndex;
         ZeroMemory(&dataDescriptor, sizeof(PROPERTY_DATA_DESCRIPTOR));
-        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[j].NameOffset);
+        dataDescriptor.PropertyName = (ULONGLONG)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[j].NameOffset);
         dataDescriptor.ArrayIndex = ULONG_MAX;
         status = TdhGetPropertySize(EventRecord, 0, NULL, 1, &dataDescriptor, &propertySize);
         if (status != ERROR_SUCCESS)
@@ -1330,7 +1340,7 @@ EtwMonitor::GetArraySize(
             ArraySize = 0;
             return ERROR_SUCCESS;
         }
-        status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)& count);
+        status = TdhGetProperty(EventRecord, 0, NULL, 1, &dataDescriptor, propertySize, (PBYTE)&count);
         ArraySize = (USHORT)count;
     }
     else
@@ -1358,7 +1368,7 @@ EtwMonitor::GetMapInfo(
     _In_ LPWSTR MapName,
     _In_ DWORD DecodingSource,
     _Out_ PEVENT_MAP_INFO& MapInfo
-    )
+)
 {
     DWORD status = ERROR_SUCCESS;
     DWORD mapSize = 0;
@@ -1417,7 +1427,7 @@ inline
 void
 EtwMonitor::RemoveTrailingSpace(
     _In_ PEVENT_MAP_INFO MapName
-    )
+)
 {
     size_t byteLength = 0;
 
@@ -1426,32 +1436,4 @@ EtwMonitor::RemoveTrailingSpace(
         byteLength = (wcslen((LPWSTR)((PBYTE)MapName + MapName->MapEntryArray[i].OutputOffset)) - 1) * 2;
         *((LPWSTR)((PBYTE)MapName + (MapName->MapEntryArray[i].OutputOffset + byteLength))) = L'\0';
     }
-}
-
-/// <summary>
-/// XML Formatted ETW
-/// </summary>
-std::wstring EtwMonitor::XMLFormattedETW()
-{
-    auto logFmt = L"<Source>EtwEvent</Source>%ls%ls";
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        metadataStr.c_str(),
-        dataStr.c_str());
-
-    return formattedEvent;
-}
-
-/// <summary>
-/// JSON Formatted ETW
-/// </summary>
-std::wstring EtwMonitor::JSONFormattedETW()
-{
-    auto logFmt = L"{\"Source\":\"ETW\",\"LogEntry\":{%ls%ls},\"SchemaVersion\":\"1.0.0\"}";
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        metadataStr.c_str(),
-        dataStr.c_str());
-
-    return formattedEvent;
 }
