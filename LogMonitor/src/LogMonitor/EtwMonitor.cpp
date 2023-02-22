@@ -802,7 +802,6 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
     return oss.str();
 }
 
-
 ///
 /// Prints the data and metadata of the event.
 ///
@@ -819,6 +818,10 @@ EtwMonitor::PrintEvent(
     )
 {
     DWORD status = ERROR_SUCCESS;
+    
+    // struct to hold the Etw log entry and later format print
+    EtwLogEntry logEntry;
+    EtwLogEntry* pLogEntry = &logEntry;
 
     // struct to hold the Etw log entry and later format print
     EtwLogEntry logEntry;
@@ -854,6 +857,7 @@ EtwMonitor::PrintEvent(
         } else {
             formattedEvent = etwXMLFormat(pLogEntry);
         }
+
 
         logWriter.WriteConsoleLog(formattedEvent);
     }
@@ -1088,7 +1092,7 @@ EtwMonitor::_FormatData(
 
     for (USHORT k = 0; k < arraySize; k++)
     {
-        std::wstring evtKey((LPWSTR)((PBYTE)(EventInfo)+EventInfo->EventPropertyInfoArray[Index].NameOffset));
+        std::wstring evtKey((LPWSTR)((PBYTE)(EventInfo) + EventInfo->EventPropertyInfoArray[Index].NameOffset));
         pLogEntry->EventData.push_back(std::make_pair(evtKey, L""));
 
         //

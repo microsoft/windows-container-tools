@@ -250,6 +250,7 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
 /// 
 /// helper function for a basic check if a string is a Number (JSON)
 /// as per the JSON spec - https://www.json.org/json-en.html
+/// only numbers not covered are those in scientific e-notation
 /// 
 bool Utility::isJsonNumber(_In_ std::wstring& str)
 {
