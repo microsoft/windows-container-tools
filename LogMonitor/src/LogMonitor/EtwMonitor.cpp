@@ -852,7 +852,6 @@ EtwMonitor::PrintEvent(
             formattedEvent = etwXMLFormat(pLogEntry);
         }
 
-
         logWriter.WriteConsoleLog(formattedEvent);
     }
     catch(std::bad_alloc&)
