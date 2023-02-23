@@ -823,10 +823,6 @@ EtwMonitor::PrintEvent(
     EtwLogEntry logEntry;
     EtwLogEntry* pLogEntry = &logEntry;
 
-    // struct to hold the Etw log entry and later format print
-    EtwLogEntry logEntry;
-    EtwLogEntry* pLogEntry = &logEntry;
-
     try
     {
         status = FormatMetadata(EventRecord, EventInfo, pLogEntry);
