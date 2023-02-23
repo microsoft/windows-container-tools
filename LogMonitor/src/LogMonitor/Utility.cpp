@@ -315,8 +315,13 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 /// <returns></returns>
 bool Utility::CompareWStrings(wstring stringA, wstring stringB)
 {
-    return stringA.size() == stringB.size()
-        && equal(stringA.cbegin(), stringA.cend(), stringB.cbegin(),
-            [](wstring::value_type l1, wstring::value_type r1)
-            { return towupper(l1) == towupper(r1); });
+    return stringA.size() == stringB.size() && 
+        equal(
+            stringA.cbegin(), 
+            stringA.cend(), 
+            stringB.cbegin(),
+            [](wstring::value_type l1, wstring::value_type r1) { 
+                return towupper(l1) == towupper(r1); 
+            }
+    );
 }

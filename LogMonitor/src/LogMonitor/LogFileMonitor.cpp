@@ -1698,16 +1698,22 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            fileName = fmtFileName.c_str();
-            fileMessage = msg.c_str();
-
-            std::wstring formattedlog;
+            std::wstring formattedlog, logFmt;
             if (Utility::CompareWStrings(m_logFormat, L"JSON"))
             {
-                formattedlog = JSONFormattedLog();
-            }
-            else {
-                formattedlog = XMLFormattedLog();
+                logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+                // sanitize message
+                Utility::SanitizeJson(msg);
+
+                formattedlog = Utility::FormatString(
+                    logFmt.c_str(),
+                    msg.c_str(),
+                    fmtFileName.c_str());
+            } else {
+                logFmt = L"<Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry>";
+                formattedlog = Utility::FormatString(
+                msg.c_str(),
+                fmtFileName.c_str());
             }
 
             logWriter.WriteConsoleLog(formattedlog);
@@ -2046,36 +2052,4 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
-}
-
-/// <summary>
-/// XML Formatted Log
-/// </summary>
-std::wstring LogFileMonitor::XMLFormattedLog()
-{
-    auto logFmt = L"<LogEntry><Source>File</Source><Logline>%s</Logline><FileName>%s</FileName></LogEntry>";
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        fileMessage.c_str(),
-        fileName.c_str());
-
-    return formattedEvent;
-}
-
-/// <summary>
-/// JSON Formatted Log
-/// </summary>
-std::wstring LogFileMonitor::JSONFormattedLog()
-{
-    auto logFmt = L"{\"LogEntry\": {\"Source\": \"File\",\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
-
-    // sanitize message
-    Utility::SanitizeJson(fileMessage);
-
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        fileMessage.c_str(),
-        fileName.c_str());
-
-    return formattedEvent;
 }

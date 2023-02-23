@@ -712,7 +712,7 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
     // construct the JSON output
-    oss << L"{\"LogEntry\":{\"Source\":\"ETW\",";
+    oss << L"{\"Source\":\"ETW\",\"LogEntry\":{";
     oss << L"\"Time\":\"" << pLogEntry->Time << L"\",";
     oss << L"\"ProviderName\":\"" << pLogEntry->ProviderName << L"\",";
     oss << L"\"ProviderId\":\"" << pLogEntry->ProviderId << "\",";
@@ -776,7 +776,7 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
     std::wostringstream oss;
 
     // construct the JSON output
-    oss << L"<LogEntry><Source>ETW</Source>";
+    oss << L"<Source>ETW</Source><LogEntry>";
     oss << L"<Time>" << pLogEntry->Time << L"</Time>";
     oss << L"<ProviderName>" << pLogEntry->ProviderName << L"</ProviderName>";
     oss << L"<ProviderId>" << pLogEntry->ProviderId << "</ProviderId>";
@@ -791,11 +791,9 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
 
     oss << L"<EventData>";
     for (auto evtData : pLogEntry->EventData) {
-
         wstring key = evtData.first;
         wstring value = evtData.second;
         oss << "<" << key << ">" << value <<"</" << key << ">";
-
     }
     oss << L"</EventData></LogEntry>";
 

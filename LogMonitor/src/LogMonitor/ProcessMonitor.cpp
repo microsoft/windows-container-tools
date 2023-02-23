@@ -240,13 +240,13 @@ size_t formatProcessLog(char* chBuf)
     const char* suffix;
     if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
     {
-        // {"LogEntry":{"Source":"Process","Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
-        prefix = "{\"LogEntry\":{\"Source\":\"Process\",\"Logline\":\"";
+        // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
+        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
     else {
-        // <LogEntry><Source>Process</Source><Logline><chBuf>Z</Logline></LogEntry>
-        prefix = "<LogEntry><Source>Process</Source><Logline>";
+        // <Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry>
+        prefix = "<Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry>\n";
     }
     
@@ -265,7 +265,7 @@ size_t formatProcessLog(char* chBuf)
     index = bufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-    // leave at least 36 slots to close the JSON/XML
+    // leave at least 36 slots for JSON or 21 slots for XML
     // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
