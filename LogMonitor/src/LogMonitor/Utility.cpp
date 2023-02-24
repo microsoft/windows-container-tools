@@ -323,5 +323,5 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
             [](wstring::value_type l1, wstring::value_type r1) {
                 return towupper(l1) == towupper(r1);
             }
-    );
+        );
 }
