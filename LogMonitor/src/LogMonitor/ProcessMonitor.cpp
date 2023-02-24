@@ -245,7 +245,7 @@ size_t formatProcessLog(char* chBuf)
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
     else {
-        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>\
+        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
     }
