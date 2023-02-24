@@ -68,8 +68,4 @@ private:
     void EnableEventLogChannels();
 
     static void EnableEventLogChannel(_In_ LPCWSTR ChannelPath);
-
-    std::wstring XMLFormattedEvent();
-
-    std::wstring JSONFormattedEvent();
 };

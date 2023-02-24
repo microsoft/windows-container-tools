@@ -560,13 +560,26 @@ EventMonitor::PrintEvent(
                 eventLevel = c_LevelToString[static_cast<UINT8>(level)];
                 eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
-                std::wstring formattedEvent;
+                std::wstring logFmt;
                 if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                 {
-                    formattedEvent = JSONFormattedEvent();
+                    logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
+                    // sanitize message
+                    std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
+                    Utility::SanitizeJson(msg);
                 } else {
-                    formattedEvent = XMLFormattedEvent();
+                    logFmt = L"<Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>";
                 }
+
+                std::wstring formattedEvent = Utility::FormatString(
+                    logFmt.c_str(),
+                    source.c_str(),
+                    eventTime.c_str(),
+                    eventChannel.c_str(),
+                    eventLevel.c_str(),
+                    eventId,
+                    eventMessage.c_str()
+                );
 
                 logWriter.WriteConsoleLog(formattedEvent);
             }
@@ -710,44 +723,4 @@ Exit:
     {
         EvtClose(channelConfig);
     }
-}
-
-/// <summary>
-/// XML Formatted Event
-/// </summary>
-std::wstring EventMonitor::XMLFormattedEvent()
-{
-    auto logFmt = L"<Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>";
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        source.c_str(),
-        eventTime.c_str(),
-        eventChannel.c_str(),
-        eventLevel.c_str(),
-        eventId,
-        eventMessage.c_str()
-    );
-
-    return formattedEvent;
-}
-
-/// <summary>
-/// JSON Formatted Event
-/// </summary>
-std::wstring EventMonitor::JSONFormattedEvent()
-{
-    auto logFmt = L"{\"Source\": \"EventLog\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
-    // sanitize message
-    std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-    Utility::SanitizeJson(msg);
-
-    std::wstring formattedEvent = Utility::FormatString(
-        logFmt,
-        eventTime.c_str(),
-        eventChannel.c_str(),
-        eventLevel.c_str(),
-        eventId,
-        eventMessage.c_str());
-
-    return formattedEvent;
 }

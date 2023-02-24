@@ -775,7 +775,7 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
 
-    // construct the JSON output
+    // construct the XML output
     oss << L"<Source>ETW</Source><LogEntry>";
     oss << L"<Time>" << pLogEntry->Time << L"</Time>";
     oss << L"<ProviderName>" << pLogEntry->ProviderName << L"</ProviderName>";
