@@ -776,7 +776,7 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
     std::wostringstream oss;
 
     // construct the XML output
-    oss << L"<Source>ETW</Source><LogEntry>";
+    oss << L"<Log><Source>ETW</Source><LogEntry>";
     oss << L"<Time>" << pLogEntry->Time << L"</Time>";
     oss << L"<ProviderName>" << pLogEntry->ProviderName << L"</ProviderName>";
     oss << L"<ProviderId>" << pLogEntry->ProviderId << "</ProviderId>";
@@ -795,7 +795,7 @@ std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
         wstring value = evtData.second;
         oss << "<" << key << ">" << value <<"</" << key << ">";
     }
-    oss << L"</EventData></LogEntry>";
+    oss << L"</EventData></LogEntry></Log>";
 
     return oss.str();
 }

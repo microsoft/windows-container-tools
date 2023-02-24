@@ -1705,7 +1705,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
                 // sanitize message
                 Utility::SanitizeJson(msg);
             } else {
-                logFmt = L"<Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry>";
+                logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
             }
 
             std::wstring formattedlog = Utility::FormatString(logFmt.c_str(), msg.c_str(), fmtFileName.c_str());

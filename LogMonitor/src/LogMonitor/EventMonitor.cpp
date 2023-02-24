@@ -568,7 +568,7 @@ EventMonitor::PrintEvent(
                     std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
                     Utility::SanitizeJson(msg);
                 } else {
-                    logFmt = L"<Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry>";
+                    logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
                 }
 
                 std::wstring formattedEvent = Utility::FormatString(

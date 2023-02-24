@@ -245,9 +245,9 @@ size_t formatProcessLog(char* chBuf)
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
     else {
-        // <Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry>
-        prefix = "<Source>Process</Source><LogEntry><Logline>";
-        suffix = "</Logline></LogEntry>\n";
+        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>\
+        prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
+        suffix = "</Logline></LogEntry></Log>\n";
     }
     
     char chBufCpy[BUFSIZE] = "";
