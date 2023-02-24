@@ -560,15 +560,13 @@ EventMonitor::PrintEvent(
                 eventLevel = c_LevelToString[static_cast<UINT8>(level)];
                 eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
-                std::wstring logFmt;
+                std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
                 if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                 {
                     logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
                     // sanitize message
                     std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
                     Utility::SanitizeJson(msg);
-                } else {
-                    logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
                 }
 
                 std::wstring formattedEvent = Utility::FormatString(

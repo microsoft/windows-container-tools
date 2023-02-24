@@ -1698,14 +1698,12 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            std::wstring logFmt;
+            std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
             if (Utility::CompareWStrings(m_logFormat, L"JSON"))
             {
                 logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                 // sanitize message
                 Utility::SanitizeJson(msg);
-            } else {
-                logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
             }
 
             std::wstring formattedlog = Utility::FormatString(logFmt.c_str(), msg.c_str(), fmtFileName.c_str());
