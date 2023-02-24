@@ -14,6 +14,7 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 
 DWORD g_processId = 0;
 wstring g_processName = L"";
+LoggerSettings settings;
 
 
 DWORD CreateChildProcess(std::wstring& Cmdline);
@@ -26,8 +27,9 @@ DWORD ReadFromPipe(LPVOID Param);
 ///
 /// \return Status
 ///
-DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
+DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config)
 {
+    settings = Config;
     SECURITY_ATTRIBUTES saAttr;
     DWORD status = ERROR_SUCCESS;
 
@@ -235,7 +237,6 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 ///
 size_t formatProcessLog(char* chBuf)
 {
-    LoggerSettings settings;
     const char* prefix;
     const char* suffix;
     if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
@@ -273,7 +274,7 @@ size_t formatProcessLog(char* chBuf)
         {
             suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         } else {
-            suffix = "...\</Logline></LogEntry>\n";
+            suffix = "...\</Logline></LogEntry></Log>\n";
         }
     }
 

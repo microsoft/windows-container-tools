@@ -269,7 +269,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             cmdline += argv[i];
         }
 
-        exitcode = CreateAndMonitorProcess(cmdline);
+        exitcode = CreateAndMonitorProcess(cmdline, settings);
     }
     else
     {
