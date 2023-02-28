@@ -14,6 +14,7 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 
 DWORD g_processId = 0;
 wstring g_processName = L"";
+LoggerSettings settings;
 
 
 DWORD CreateChildProcess(std::wstring& Cmdline);
@@ -26,8 +27,9 @@ DWORD ReadFromPipe(LPVOID Param);
 ///
 /// \return Status
 ///
-DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
+DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config)
 {
+    settings = Config;
     SECURITY_ATTRIBUTES saAttr;
     DWORD status = ERROR_SUCCESS;
 
@@ -235,9 +237,20 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 ///
 size_t formatProcessLog(char* chBuf)
 {
-    // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
-    const char* prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
-    const char* suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    const char* prefix;
+    const char* suffix;
+    if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
+    {
+        // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
+        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
+        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
+    else {
+        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>
+        prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
+        suffix = "</Logline></LogEntry></Log>\n";
+    }
+    
     char chBufCpy[BUFSIZE] = "";
 
     //
@@ -253,11 +266,16 @@ size_t formatProcessLog(char* chBuf)
     index = bufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-    // leave at least 36 slots to close the JSON with `..."},\"SchemaVersion\":\"1.0.0\"}\n`
+    // leave at least 36 slots for JSON or 21 slots for XML
     // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
-        suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+        if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
+        {
+            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+        } else {
+            suffix = "...\</Logline></LogEntry></Log>\n";
+        }
     }
 
     index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);

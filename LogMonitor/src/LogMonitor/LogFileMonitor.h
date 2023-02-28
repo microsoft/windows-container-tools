@@ -60,7 +60,8 @@ public:
     LogFileMonitor(
         _In_ const std::wstring& LogDirectory,
         _In_ const std::wstring& Filter,
-        _In_ bool IncludeSubfolders
+        _In_ bool IncludeSubfolders,
+        _In_ std::wstring LogFormat
         );
 
     ~LogFileMonitor();
@@ -73,6 +74,7 @@ private:
     std::wstring m_shortLogDirectory;
     std::wstring m_filter;
     bool m_includeSubfolders;
+    std::wstring m_logFormat;
 
     //
     // Signaled by destructor to request the spawned thread to stop.

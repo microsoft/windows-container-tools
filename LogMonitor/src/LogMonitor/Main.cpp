@@ -84,6 +84,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+    std::wstring logFormat = settings.LogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -113,7 +114,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
                     std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
                         sourceFile->Directory,
                         sourceFile->Filter,
-                        sourceFile->IncludeSubdirectories
+                        sourceFile->IncludeSubdirectories,
+                        logFormat
                     );
                     g_logfileMonitors.push_back(std::move(logfileMon));
                 }
@@ -159,7 +161,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat);
         }
         catch (std::exception& ex)
         {
@@ -184,7 +186,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat);
         }
         catch (...)
         {
@@ -267,7 +269,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             cmdline += argv[i];
         }
 
-        exitcode = CreateAndMonitorProcess(cmdline);
+        exitcode = CreateAndMonitorProcess(cmdline, settings);
     }
     else
     {
