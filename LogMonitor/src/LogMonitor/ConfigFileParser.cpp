@@ -139,9 +139,10 @@ ReadLogConfigObject(
     bool sourcesTagFound = false;
     if (Parser.BeginParseObject())
     {
+        std::wstring key;
         do
         {
-            const std::wstring key(Parser.GetKey());
+            key = Parser.GetKey();
 
             if (_wcsnicmp(key.c_str(), JSON_TAG_SOURCES, _countof(JSON_TAG_SOURCES)) == 0)
             {
@@ -186,6 +187,10 @@ ReadLogConfigObject(
                         }
                     }
                 } while (Parser.ParseNextArrayElement());
+            }
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_LOG_FORMAT, _countof(JSON_TAG_LOG_FORMAT)) == 0)
+            {
+                Config.LogFormat = std::wstring(Parser.ParseStringValue());
             }
             else
             {

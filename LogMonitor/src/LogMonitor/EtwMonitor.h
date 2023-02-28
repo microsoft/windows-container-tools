@@ -34,7 +34,7 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ bool EventFormatMultiLine
+        _In_ std::wstring LogFormat
     );
 
     ~EtwMonitor();
@@ -43,7 +43,7 @@ private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;
-    bool m_eventFormatMultiLine;
+    std::wstring m_logFormat;
     TRACEHANDLE m_startTraceHandle;
 
     //
