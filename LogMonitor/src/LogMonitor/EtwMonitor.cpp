@@ -30,9 +30,9 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
-    _In_ bool EventFormatMultiLine
+    _In_ std::wstring LogFormat
     ) :
-    m_eventFormatMultiLine(EventFormatMultiLine)
+    m_logFormat(LogFormat)
 {
     //
     // This is set as 'true' to stop processing events.
@@ -768,6 +768,37 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
     return oss.str();
 }
 
+///
+/// Format ETW eventlog into a XML output
+///
+std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
+{
+    std::wostringstream oss;
+
+    // construct the XML output
+    oss << L"<Log><Source>ETW</Source><LogEntry>";
+    oss << L"<Time>" << pLogEntry->Time << L"</Time>";
+    oss << L"<ProviderName>" << pLogEntry->ProviderName << L"</ProviderName>";
+    oss << L"<ProviderId>" << pLogEntry->ProviderId << "</ProviderId>";
+    oss << L"<DecodingSource>" << pLogEntry->DecodingSource << L"</DecodingSource>";
+    oss << L"<Execution>";
+    oss << L"<ProcessId>" << pLogEntry->ExecProcessId << L"</ProcessId>";
+    oss << L"<ThreadId>" << pLogEntry->ExecThreadId << L"</ThreadId>";
+    oss << "</Execution>";
+    oss << L"<Level>" << pLogEntry->Level << L"</Level>";
+    oss << L"<Keyword>" << pLogEntry->Keyword << L"</Keyword>";
+    oss << L"<EventId>" << pLogEntry->EventId << L"</EventId>";
+
+    oss << L"<EventData>";
+    for (auto evtData : pLogEntry->EventData) {
+        wstring key = evtData.first;
+        wstring value = evtData.second;
+        oss << "<" << key << ">" << value <<"</" << key << ">";
+    }
+    oss << L"</EventData></LogEntry></Log>";
+
+    return oss.str();
+}
 
 ///
 /// Prints the data and metadata of the event.
@@ -813,7 +844,14 @@ EtwMonitor::PrintEvent(
             return status;
         }
 
-        std::wstring formattedEvent = etwJsonFormat(pLogEntry);
+        std::wstring formattedEvent;
+        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+        {
+            formattedEvent = etwJsonFormat(pLogEntry);
+        } else {
+            formattedEvent = etwXMLFormat(pLogEntry);
+        }
+
         logWriter.WriteConsoleLog(formattedEvent);
     }
     catch(std::bad_alloc&)

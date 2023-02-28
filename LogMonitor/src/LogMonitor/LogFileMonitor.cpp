@@ -39,11 +39,13 @@ using namespace std;
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
-                               _In_ bool IncludeSubfolders
+                               _In_ bool IncludeSubfolders,
+                               _In_ std::wstring LogFormat
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
-                               m_includeSubfolders(IncludeSubfolders)
+                               m_includeSubfolders(IncludeSubfolders),
+                               m_logFormat(LogFormat)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1696,12 +1698,18 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            // sanitize msg
-            Utility::SanitizeJson(msg);
-            auto log = Utility::FormatString(logFmt, msg.c_str(), fmtFileName.c_str());
-            logWriter.WriteConsoleLog(log);
-        }
+            std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
+            if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+            {
+                logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+                // sanitize message
+                Utility::SanitizeJson(msg);
+            }
 
+            std::wstring formattedlog = Utility::FormatString(logFmt.c_str(), msg.c_str(), fmtFileName.c_str());
+
+            logWriter.WriteConsoleLog(formattedlog);
+        }
         if (i >= Message.size()) break;
     }
 }

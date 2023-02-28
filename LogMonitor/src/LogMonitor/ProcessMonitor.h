@@ -5,5 +5,5 @@
 
 #pragma once
 
-DWORD CreateAndMonitorProcess(std::wstring& Cmdline);
+DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config);
 
