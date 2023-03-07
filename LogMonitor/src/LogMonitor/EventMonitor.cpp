@@ -28,12 +28,14 @@ EventMonitor::EventMonitor(
     _In_ const std::vector<EventLogChannel>& EventChannels,
     _In_ bool EventFormatMultiLine,
     _In_ bool StartAtOldestRecord,
-    _In_ std::wstring LogFormat
+    _In_ std::wstring LogFormat,
+    _In_ std::wstring LineLogFormat
     ) :
     m_eventChannels(EventChannels),
     m_eventFormatMultiLine(EventFormatMultiLine),
     m_startAtOldestRecord(StartAtOldestRecord),
-    m_logFormat(LogFormat)
+    m_logFormat(LogFormat),
+    m_lineLogFormat(LineLogFormat)
 {
     m_stopEvent = NULL;
     m_eventMonitorThread = NULL;
@@ -413,6 +415,10 @@ EventMonitor::PrintEvent(
     EVT_HANDLE renderContext = NULL;
     EVT_HANDLE publisher = NULL;
 
+    // struct to hold the Etw log entry and later format print
+    EventLogEntry logEntry;
+    EventLogEntry* pLogEntry = &logEntry;
+
     static constexpr LPCWSTR defaultValuePaths[] = {
         L"Event/System/Provider/@Name",
         L"Event/System/Channel",
@@ -501,7 +507,7 @@ EventMonitor::PrintEvent(
             //
             std::wstring providerName = (EvtVarTypeString != variants[0].Type) ? L"" : variants[0].StringVal;
             std::wstring channelName = (EvtVarTypeString != variants[1].Type) ? L"" : variants[1].StringVal;
-            eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
+            pLogEntry->eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
             UINT8 level = (EvtVarTypeByte != variants[3].Type) ? 0 : variants[3].ByteVal;
             ULARGE_INTEGER fileTimeAsInt{};
             fileTimeAsInt.QuadPart = (EvtVarTypeFileTime != variants[4].Type) ? 0 : variants[4].FileTimeVal;
@@ -554,30 +560,36 @@ EventMonitor::PrintEvent(
 
             if (status == ERROR_SUCCESS)
             {
-                source = L"EventLog";
-                eventTime = Utility::FileTimeToString(fileTimeCreated);
-                eventChannel = channelName;
-                eventLevel = c_LevelToString[static_cast<UINT8>(level)];
-                eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
+                pLogEntry->source = L"EventLog";
+                pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
+                pLogEntry->eventChannel = channelName;
+                pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
+                pLogEntry->eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
-                std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
-                if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-                {
-                    logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
-                    // sanitize message
-                    std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-                    Utility::SanitizeJson(msg);
+                std::wstring formattedEvent;
+                if (Utility::CompareWStrings(m_logFormat, L"Line")) {
+                    formattedEvent = SanitizeLineLogFormat(m_lineLogFormat, pLogEntry);
                 }
+                else {
+                    std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
+                    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+                    {
+                        logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
+                        // sanitize message
+                        std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
+                        Utility::SanitizeJson(msg);
+                    }
 
-                std::wstring formattedEvent = Utility::FormatString(
-                    logFmt.c_str(),
-                    source.c_str(),
-                    eventTime.c_str(),
-                    eventChannel.c_str(),
-                    eventLevel.c_str(),
-                    eventId,
-                    eventMessage.c_str()
-                );
+                    formattedEvent = Utility::FormatString(
+                        logFmt.c_str(),
+                        pLogEntry->source.c_str(),
+                        pLogEntry->eventTime.c_str(),
+                        pLogEntry->eventChannel.c_str(),
+                        pLogEntry->eventLevel.c_str(),
+                        pLogEntry->eventId,
+                        pLogEntry->eventMessage.c_str()
+                    );
+                }
 
                 logWriter.WriteConsoleLog(formattedEvent);
             }
@@ -721,4 +733,41 @@ Exit:
     {
         EvtClose(channelConfig);
     }
+}
+
+std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventFields, _Inout_ EventLogEntry* pLogEntry) {
+
+    std::wostringstream oss;
+    if (eventFields == L"TimeStamp") oss << pLogEntry->eventTime;
+    if (eventFields == L"Severity") oss << pLogEntry->eventLevel;
+    if (eventFields == L"Source") oss << pLogEntry->source;
+    if (eventFields == L"EventID") oss << pLogEntry->eventId;
+    if (eventFields == L"Message") oss << pLogEntry->eventMessage;
+
+    return oss.str();
+}
+
+std::wstring EventMonitor::SanitizeLineLogFormat(_In_ std::wstring str, _Inout_ EventLogEntry* pLogEntry)
+{
+    //std::set<wstring> fields;
+    size_t i = 0, j = 1, ind = 0;
+    while (i < str.size()) {
+        auto sub = str.substr(i, j);
+        auto sub_length = sub.size();
+        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+            j++, i++;
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%') {
+            //substring found
+            wstring neString = EventFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            str.replace(i, j, neString);
+
+            i = i + neString.length(), j = 1;
+        }
+        else {
+            j++;
+        }
+    }
+
+    return str;
 }

@@ -14,6 +14,7 @@
 /// Log formatting attributes
 /// 
 #define JSON_TAG_LOG_FORMAT L"logFormat"
+#define JSON_TAG_LINE_LOG_FORMAT L"lineLogFormat"
 
 ///
 /// Valid source attributes
@@ -207,6 +208,7 @@ public:
     std::vector<EventLogChannel> Channels;
     bool EventFormatMultiLine = true;
     bool StartAtOldestRecord = false;
+    std::wstring LineLogFormat;
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -246,6 +248,15 @@ public:
             NewSource.StartAtOldestRecord = *(bool*)Attributes[JSON_TAG_START_AT_OLDEST_RECORD];
         }
 
+        //
+        // lineLogFormat is an optional value
+        //
+        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        {
+            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
+        }
+
         return true;
     }
 };
@@ -259,6 +270,7 @@ public:
     std::wstring Directory;
     std::wstring Filter;
     bool IncludeSubdirectories = false;
+    std::wstring LineLogFormat;
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -296,6 +308,15 @@ public:
             && Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES] != nullptr)
         {
             NewSource.IncludeSubdirectories = *(bool*)Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES];
+        }
+
+        //
+        // lineLogFormat is an optional value
+        //
+        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        {
+            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
         }
 
         return true;
@@ -364,6 +385,7 @@ class SourceETW : LogSource
 public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
+    std::wstring LineLogFormat;
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -392,6 +414,15 @@ public:
             && Attributes[JSON_TAG_FORMAT_MULTILINE] != nullptr)
         {
             NewSource.EventFormatMultiLine = *(bool*)Attributes[JSON_TAG_FORMAT_MULTILINE];
+        }
+
+        //
+        // lineLogFormat is an optional value
+        //
+        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        {
+            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
         }
 
 

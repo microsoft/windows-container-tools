@@ -40,12 +40,14 @@ using namespace std;
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
-                               _In_ std::wstring LogFormat
+                               _In_ std::wstring LogFormat,
+                               _In_ std::wstring LineLogFormat
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
                                m_includeSubfolders(IncludeSubfolders),
-                               m_logFormat(LogFormat)
+                               m_logFormat(LogFormat),
+                               m_lineLogFormat(LineLogFormat)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;

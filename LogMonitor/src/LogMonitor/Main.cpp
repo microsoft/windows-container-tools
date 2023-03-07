@@ -85,6 +85,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
     std::wstring logFormat = settings.LogFormat;
+    std::wstring lineLogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -102,6 +103,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
                 eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
+                lineLogFormat = sourceEventLog->LineLogFormat;
 
                 break;
             }
@@ -115,7 +117,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
-                        logFormat
+                        logFormat,
+                        sourceFile->LineLogFormat
                     );
                     g_logfileMonitors.push_back(std::move(logfileMon));
                 }
@@ -151,6 +154,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
                 }
 
                 etwMonMultiLine = sourceETW->EventFormatMultiLine;
+                lineLogFormat = sourceETW->LineLogFormat;
 
                 break;
             }
@@ -161,7 +165,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat);
+            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat, lineLogFormat);
         }
         catch (std::exception& ex)
         {
@@ -186,7 +190,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat, lineLogFormat);
         }
         catch (...)
         {

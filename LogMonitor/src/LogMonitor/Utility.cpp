@@ -325,3 +325,33 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
             }
         );
 }
+
+std::wstring Utility::SanitizeLineLogFormat(_In_ std::wstring str)
+{
+    //std::set<wstring> fields;
+    size_t i = 0, j = 1, ind = 0;
+    while (i < str.size()) {
+        auto sub = str.substr(i, j);
+        auto sub_length = sub.size();
+        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+            j++, i++;
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%') {
+
+            //substring found
+            //fields.insert((sub.substr(1, sub_length - 2)));
+            wstring neString = L"+\"" + sub.substr(1, sub_length - 2) + L"+\"";
+            str.replace(i, j, neString);
+            //str.replace(i, j, L"%s");
+
+            i = i + neString.length(), j = 1;
+        }
+        else {
+            j++;
+        }
+    }
+
+    std::wstring formattedEvent = str;// Utility::FormatString(str.c_str(), "", "", "");
+
+    return formattedEvent;
+}

@@ -34,7 +34,8 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ std::wstring LogFormat
+        _In_ std::wstring LogFormat,
+        _In_ std::wstring LineLogFormat
     );
 
     ~EtwMonitor();
@@ -44,6 +45,7 @@ private:
 
     std::vector<ETWProvider> m_providersConfig;
     std::wstring m_logFormat;
+    std::wstring m_lineLogFormat;
     TRACEHANDLE m_startTraceHandle;
 
     //
