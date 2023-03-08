@@ -103,7 +103,7 @@ namespace LogMonitorTests
         {
             std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
 
-            EventMonitor eventMonitor(eventChannels, true, false, L"json");
+            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
             Sleep(WAIT_TIME_EVENTMONITOR_START);
 
             //
@@ -209,7 +209,7 @@ namespace LogMonitorTests
         {
             std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
 
-            EventMonitor eventMonitor(eventChannels, true, false, L"json");
+            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
             Sleep(WAIT_TIME_EVENTMONITOR_START);
 
             //
@@ -356,7 +356,7 @@ namespace LogMonitorTests
 
             Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
-            EventMonitor eventMonitor(eventChannels, true, true, L"json");
+            EventMonitor eventMonitor(eventChannels, true, true, L"json", L"");
             Sleep(WAIT_TIME_EVENTMONITOR_START);
 
             {
@@ -382,7 +382,7 @@ namespace LogMonitorTests
         {
             std::vector<EventLogChannel> eventChannels = { {L"System", EventChannelLogLevel::Information} };
 
-            EventMonitor eventMonitor(eventChannels, false, false, L"json");
+            EventMonitor eventMonitor(eventChannels, false, false, L"json", L"");
             Sleep(WAIT_TIME_EVENTMONITOR_START);
 
             {

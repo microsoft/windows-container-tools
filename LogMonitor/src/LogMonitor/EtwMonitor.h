@@ -14,6 +14,7 @@ typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
 // struct to hold the ETW logEntry data
 //
 struct EtwLogEntry {
+    std::wstring source;
     std::wstring Time;
     std::wstring ProviderId;
     std::wstring ProviderName;
@@ -150,4 +151,8 @@ private:
     inline void RemoveTrailingSpace(
         _In_ PEVENT_MAP_INFO MapInfo
     );
+
+    std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry);
+
+    std::wstring FormatETWLineLog(_In_ std::wstring str, _Inout_ EtwLogEntry* pLogEntry);
 };

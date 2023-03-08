@@ -714,7 +714,7 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
     // construct the JSON output
-    oss << L"{\"Source\":\"ETW\",\"LogEntry\":{";
+    oss << L"{\"Source\":\"" << pLogEntry->source << L"\",\"LogEntry\":{";
     oss << L"\"Time\":\"" << pLogEntry->Time << L"\",";
     oss << L"\"ProviderName\":\"" << pLogEntry->ProviderName << L"\",";
     oss << L"\"ProviderId\":\"" << pLogEntry->ProviderId << "\",";
@@ -850,7 +850,11 @@ EtwMonitor::PrintEvent(
         if (Utility::CompareWStrings(m_logFormat, L"JSON"))
         {
             formattedEvent = etwJsonFormat(pLogEntry);
-        } else {
+        }
+        else if (Utility::CompareWStrings(m_logFormat, L"Line")) {
+            formattedEvent = FormatETWLineLog(m_lineLogFormat, pLogEntry);
+        }
+        else {
             formattedEvent = etwXMLFormat(pLogEntry);
         }
 
@@ -887,6 +891,7 @@ EtwMonitor::FormatMetadata(
     fileTime.dwHighDateTime = EventRecord->EventHeader.TimeStamp.HighPart;
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
+    pLogEntry->source = L"ETW";
     pLogEntry->Time = Utility::FileTimeToString(fileTime).c_str();
 
     //
@@ -1435,4 +1440,52 @@ EtwMonitor::RemoveTrailingSpace(
         byteLength = (wcslen((LPWSTR)((PBYTE)MapName + MapName->MapEntryArray[i].OutputOffset)) - 1) * 2;
         *((LPWSTR)((PBYTE)MapName + (MapName->MapEntryArray[i].OutputOffset + byteLength))) = L'\0';
     }
+}
+
+std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry) 
+{
+    std::wostringstream oss;
+    if (etwFields == L"TimeStamp") oss << pLogEntry->Time;
+    if (etwFields == L"Severity") oss << pLogEntry->Level;
+    if (etwFields == L"Source") oss << pLogEntry->source;
+    if (etwFields == L"ProviderId") oss << pLogEntry->ProviderId;
+    if (etwFields == L"ProviderName") oss << pLogEntry->ProviderName;
+    if (etwFields == L"DecodingSource") oss << pLogEntry->DecodingSource;
+    if (etwFields == L"ExecutionProcessId") oss << pLogEntry->ExecProcessId;
+    if (etwFields == L"ExecutionThreadId") oss << pLogEntry->ExecThreadId;
+    if (etwFields == L"Keyword") oss << pLogEntry->Keyword;
+    if (etwFields == L"EventId") oss << pLogEntry->EventId;
+    if (etwFields == L"EventData") {
+        for (auto evtData : pLogEntry->EventData) {
+            wstring key = evtData.first;
+            wstring value = evtData.second;
+            oss << key << ": " << value << " ";
+        }
+    }
+
+    return oss.str();
+}
+
+std::wstring EtwMonitor::FormatETWLineLog(_In_ std::wstring str, _Inout_ EtwLogEntry* pLogEntry)
+{
+    size_t i = 0, j = 1;
+    while (i < str.size()) {
+        auto sub = str.substr(i, j);
+        auto sub_length = sub.size();
+        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+            j++, i++;
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+            //substring found
+            wstring neString = EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            str.replace(i, j, neString);
+
+            i = i + neString.length(), j = 1;
+        }
+        else {
+            j++;
+        }
+    }
+
+    return str;
 }

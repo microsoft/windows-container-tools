@@ -71,7 +71,7 @@ private:
 
     std::wstring EventFieldsMapping(_In_ std::wstring eventFields, _Inout_ EventLogEntry* pLogEntry);
 
-    std::wstring SanitizeLineLogFormat(_In_ std::wstring str, _Inout_ EventLogEntry* pLogEntry);
+    std::wstring FormatEventLineLog(_In_ std::wstring str, _Inout_ EventLogEntry* pLogEntry);
 
     void EnableEventLogChannels();
 

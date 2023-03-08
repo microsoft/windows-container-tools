@@ -53,8 +53,4 @@ public:
         _In_ std::wstring stringA,
         _In_ std::wstring stringB
     );
-
-    static std::wstring SanitizeLineLogFormat(
-        _In_ std::wstring str
-    );
 };
