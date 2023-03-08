@@ -78,6 +78,13 @@ private:
     std::wstring m_logFormat;
     std::wstring m_lineLogFormat;
 
+    struct FileLogEntry {
+        std::wstring source;
+        std::wstring currentTime;
+        std::wstring fileName;
+        std::wstring message;
+    };
+
     //
     // Signaled by destructor to request the spawned thread to stop.
     //
@@ -226,4 +233,8 @@ private:
         _Out_ FILE_ID_INFO& FileId,
         _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE
         );
+
+    std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _Inout_ FileLogEntry* pLogEntry);
+
+    std::wstring FormatFileLineLog(_In_ std::wstring str, _Inout_ FileLogEntry* pLogEntry);
 };

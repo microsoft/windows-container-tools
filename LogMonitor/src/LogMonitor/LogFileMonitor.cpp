@@ -1676,10 +1676,19 @@ LogFileMonitor::ReadLogFile(
 }
 
 void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
-    auto logFmt = L"{\"Source\":\"File\",\"LogEntry\":{\"Logline\":\"%s\",\"FileName\":\"%s\"},\"SchemaVersion\":\"1.0.0\"}";
     size_t start = 0;
     size_t i = 0;
     wstring msg;
+
+    // struct to hold the File log entry and later format print
+    FileLogEntry logEntry;
+    FileLogEntry* pLogEntry = &logEntry;
+
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+
+    pLogEntry->source = L"File";
+    pLogEntry->currentTime = Utility::SystemTimeToString(st).c_str();
 
     while (true) {
         i = Message.find(L"\n", start);
@@ -1700,17 +1709,30 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
-            if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-            {
-                logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
-                // sanitize message
-                Utility::SanitizeJson(msg);
+            pLogEntry->fileName = fmtFileName;
+            pLogEntry->message = msg;
+
+            std::wstring formattedFileEntry;
+            if (Utility::CompareWStrings(m_logFormat, L"Line")) {
+                formattedFileEntry = FormatFileLineLog(m_lineLogFormat, pLogEntry);
+            }
+            else {
+                std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
+                if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+                {
+                    logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
+                    // sanitize message
+                    Utility::SanitizeJson(msg);
+                }
+
+                formattedFileEntry = Utility::FormatString(
+                    logFmt.c_str(), 
+                    pLogEntry->message.c_str(), 
+                    pLogEntry->fileName.c_str()
+                );
             }
 
-            std::wstring formattedlog = Utility::FormatString(logFmt.c_str(), msg.c_str(), fmtFileName.c_str());
-
-            logWriter.WriteConsoleLog(formattedlog);
+            logWriter.WriteConsoleLog(formattedFileEntry);
         }
         if (i >= Message.size()) break;
     }
@@ -2046,4 +2068,39 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
+}
+
+std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _Inout_ FileLogEntry* pLogEntry)
+{
+    std::wostringstream oss;
+    if (fileFields == L"TimeStamp") oss << pLogEntry->currentTime;
+    if (fileFields == L"FileName") oss << pLogEntry->fileName;
+    if (fileFields == L"Source") oss << pLogEntry->source;
+    if (fileFields == L"Message") oss << pLogEntry->message;
+
+    return oss.str();
+}
+
+std::wstring LogFileMonitor::FormatFileLineLog(_In_ std::wstring str, _Inout_ FileLogEntry* pLogEntry)
+{
+    size_t i = 0, j = 1;
+    while (i < str.size()) {
+        auto sub = str.substr(i, j);
+        auto sub_length = sub.size();
+        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+            j++, i++;
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+            //substring found
+            wstring neString = FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            str.replace(i, j, neString);
+
+            i = i + neString.length(), j = 1;
+        }
+        else {
+            j++;
+        }
+    }
+
+    return str;
 }

@@ -415,7 +415,7 @@ EventMonitor::PrintEvent(
     EVT_HANDLE renderContext = NULL;
     EVT_HANDLE publisher = NULL;
 
-    // struct to hold the Etw log entry and later format print
+    // struct to hold the Event log entry and later format print
     EventLogEntry logEntry;
     EventLogEntry* pLogEntry = &logEntry;
 
