@@ -2073,10 +2073,10 @@ LogFileMonitor::GetFileId(
 std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _Inout_ FileLogEntry* pLogEntry)
 {
     std::wostringstream oss;
-    if (fileFields == L"TimeStamp") oss << pLogEntry->currentTime;
-    if (fileFields == L"FileName") oss << pLogEntry->fileName;
-    if (fileFields == L"Source") oss << pLogEntry->source;
-    if (fileFields == L"Message") oss << pLogEntry->message;
+    if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
+    if (Utility::CompareWStrings(fileFields, L"FileName")) oss << pLogEntry->fileName;
+    if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
 
     return oss.str();
 }

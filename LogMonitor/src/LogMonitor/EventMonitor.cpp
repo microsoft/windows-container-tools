@@ -738,11 +738,11 @@ Exit:
 std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventFields, _Inout_ EventLogEntry* pLogEntry) 
 {
     std::wostringstream oss;
-    if (eventFields == L"TimeStamp") oss << pLogEntry->eventTime;
-    if (eventFields == L"Severity") oss << pLogEntry->eventLevel;
-    if (eventFields == L"Source") oss << pLogEntry->source;
-    if (eventFields == L"EventID") oss << pLogEntry->eventId;
-    if (eventFields == L"Message") oss << pLogEntry->eventMessage;
+    if (Utility::CompareWStrings(eventFields, L"TimeStamp")) oss << pLogEntry->eventTime;
+    if (Utility::CompareWStrings(eventFields, L"Severity")) oss << pLogEntry->eventLevel;
+    if (Utility::CompareWStrings(eventFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(eventFields, L"EventID")) oss << pLogEntry->eventId;
+    if (Utility::CompareWStrings(eventFields, L"Message")) oss << pLogEntry->eventMessage;
 
     return oss.str();
 }

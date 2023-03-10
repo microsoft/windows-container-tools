@@ -1445,17 +1445,17 @@ EtwMonitor::RemoveTrailingSpace(
 std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry) 
 {
     std::wostringstream oss;
-    if (etwFields == L"TimeStamp") oss << pLogEntry->Time;
-    if (etwFields == L"Severity") oss << pLogEntry->Level;
-    if (etwFields == L"Source") oss << pLogEntry->source;
-    if (etwFields == L"ProviderId") oss << pLogEntry->ProviderId;
-    if (etwFields == L"ProviderName") oss << pLogEntry->ProviderName;
-    if (etwFields == L"DecodingSource") oss << pLogEntry->DecodingSource;
-    if (etwFields == L"ExecutionProcessId") oss << pLogEntry->ExecProcessId;
-    if (etwFields == L"ExecutionThreadId") oss << pLogEntry->ExecThreadId;
-    if (etwFields == L"Keyword") oss << pLogEntry->Keyword;
-    if (etwFields == L"EventId") oss << pLogEntry->EventId;
-    if (etwFields == L"EventData") {
+    if (Utility::CompareWStrings(etwFields, L"TimeStamp")) oss << pLogEntry->Time;
+    if (Utility::CompareWStrings(etwFields, L"Severity")) oss << pLogEntry->Level;
+    if (Utility::CompareWStrings(etwFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(etwFields, L"ProviderId")) oss << pLogEntry->ProviderId;
+    if (Utility::CompareWStrings(etwFields, L"ProviderName")) oss << pLogEntry->ProviderName;
+    if (Utility::CompareWStrings(etwFields, L"DecodingSource")) oss << pLogEntry->DecodingSource;
+    if (Utility::CompareWStrings(etwFields, L"ExecutionProcessId")) oss << pLogEntry->ExecProcessId;
+    if (Utility::CompareWStrings(etwFields, L"ExecutionThreadId")) oss << pLogEntry->ExecThreadId;
+    if (Utility::CompareWStrings(etwFields, L"Keyword")) oss << pLogEntry->Keyword;
+    if (Utility::CompareWStrings(etwFields, L"EventId")) oss << pLogEntry->EventId;
+    if (Utility::CompareWStrings(etwFields, L"EventData")) {
         for (auto evtData : pLogEntry->EventData) {
             wstring key = evtData.first;
             wstring value = evtData.second;
