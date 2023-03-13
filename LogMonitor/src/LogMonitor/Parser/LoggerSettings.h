@@ -208,7 +208,7 @@ public:
     std::vector<EventLogChannel> Channels;
     bool EventFormatMultiLine = true;
     bool StartAtOldestRecord = false;
-    std::wstring LineLogFormat;
+    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] %Message%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -270,7 +270,7 @@ public:
     std::wstring Directory;
     std::wstring Filter;
     bool IncludeSubdirectories = false;
-    std::wstring LineLogFormat;
+    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%FileName%] %Message%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -385,7 +385,7 @@ class SourceETW : LogSource
 public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
-    std::wstring LineLogFormat;
+    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %EventData%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,

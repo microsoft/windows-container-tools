@@ -847,14 +847,11 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent;
-        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-        {
+        if (Utility::CompareWStrings(m_logFormat, L"JSON")) {
             formattedEvent = etwJsonFormat(pLogEntry);
-        }
-        else if (Utility::CompareWStrings(m_logFormat, L"Line")) {
+        } else if (Utility::CompareWStrings(m_logFormat, L"Line")) {
             formattedEvent = FormatETWLineLog(m_lineLogFormat, pLogEntry);
-        }
-        else {
+        } else {
             formattedEvent = etwXMLFormat(pLogEntry);
         }
 
@@ -1466,26 +1463,24 @@ std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ E
     return oss.str();
 }
 
-std::wstring EtwMonitor::FormatETWLineLog(_In_ std::wstring str, _Inout_ EtwLogEntry* pLogEntry)
+std::wstring EtwMonitor::FormatETWLineLog(_In_ std::wstring logLineFormat, _Inout_ EtwLogEntry* pLogEntry)
 {
     size_t i = 0, j = 1;
-    while (i < str.size()) {
-        auto sub = str.substr(i, j);
+    while (i < logLineFormat.size()) {
+        auto sub = logLineFormat.substr(i, j);
         auto sub_length = sub.size();
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
-        }
-        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
             //substring found
             wstring neString = EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            str.replace(i, j, neString);
+            logLineFormat.replace(i, j, neString);
 
             i = i + neString.length(), j = 1;
-        }
-        else {
+        } else {
             j++;
         }
     }
 
-    return str;
+    return logLineFormat;
 }

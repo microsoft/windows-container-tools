@@ -1715,8 +1715,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
             std::wstring formattedFileEntry;
             if (Utility::CompareWStrings(m_logFormat, L"Line")) {
                 formattedFileEntry = FormatFileLineLog(m_lineLogFormat, pLogEntry);
-            }
-            else {
+            } else {
                 std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
                 if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                 {
@@ -2081,26 +2080,24 @@ std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _In
     return oss.str();
 }
 
-std::wstring LogFileMonitor::FormatFileLineLog(_In_ std::wstring str, _Inout_ FileLogEntry* pLogEntry)
+std::wstring LogFileMonitor::FormatFileLineLog(_In_ std::wstring logLineFormat, _Inout_ FileLogEntry* pLogEntry)
 {
     size_t i = 0, j = 1;
-    while (i < str.size()) {
-        auto sub = str.substr(i, j);
+    while (i < logLineFormat.size()) {
+        auto sub = logLineFormat.substr(i, j);
         auto sub_length = sub.size();
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
-        }
-        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
             //substring found
             wstring neString = FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            str.replace(i, j, neString);
+            logLineFormat.replace(i, j, neString);
 
             i = i + neString.length(), j = 1;
-        }
-        else {
+        } else {
             j++;
         }
     }
 
-    return str;
+    return logLineFormat;
 }

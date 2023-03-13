@@ -236,5 +236,5 @@ private:
 
     std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _Inout_ FileLogEntry* pLogEntry);
 
-    std::wstring FormatFileLineLog(_In_ std::wstring str, _Inout_ FileLogEntry* pLogEntry);
+    std::wstring FormatFileLineLog(_In_ std::wstring logLineFormat, _Inout_ FileLogEntry* pLogEntry);
 };

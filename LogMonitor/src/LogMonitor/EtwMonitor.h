@@ -154,5 +154,5 @@ private:
 
     std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry);
 
-    std::wstring FormatETWLineLog(_In_ std::wstring str, _Inout_ EtwLogEntry* pLogEntry);
+    std::wstring FormatETWLineLog(_In_ std::wstring logLineFormat, _Inout_ EtwLogEntry* pLogEntry);
 };

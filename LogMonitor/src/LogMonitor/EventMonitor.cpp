@@ -569,8 +569,7 @@ EventMonitor::PrintEvent(
                 std::wstring formattedEvent;
                 if (Utility::CompareWStrings(m_logFormat, L"Line")) {
                     formattedEvent = FormatEventLineLog(m_lineLogFormat, pLogEntry);
-                }
-                else {
+                } else {
                     std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
                     if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                     {
@@ -747,26 +746,24 @@ std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventFields, _In
     return oss.str();
 }
 
-std::wstring EventMonitor::FormatEventLineLog(_In_ std::wstring str, _Inout_ EventLogEntry* pLogEntry)
+std::wstring EventMonitor::FormatEventLineLog(_In_ std::wstring logLineFormat, _Inout_ EventLogEntry* pLogEntry)
 {
     size_t i = 0, j = 1;
-    while (i < str.size()) {
-        auto sub = str.substr(i, j);
+    while (i < logLineFormat.size()) {
+        auto sub = logLineFormat.substr(i, j);
         auto sub_length = sub.size();
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
-        }
-        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
             //substring found
             wstring neString = EventFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            str.replace(i, j, neString);
+            logLineFormat.replace(i, j, neString);
 
             i = i + neString.length(), j = 1;
-        }
-        else {
+        } else {
             j++;
         }
     }
 
-    return str;
+    return logLineFormat;
 }
