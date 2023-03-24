@@ -1687,8 +1687,10 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
     SYSTEMTIME st;
     GetSystemTime(&st);
 
+    Utility util;
+
     pLogEntry->source = L"File";
-    pLogEntry->currentTime = Utility::SystemTimeToString(st).c_str();
+    pLogEntry->currentTime = util.SystemTimeToString(st).c_str();
 
     while (true) {
         i = Message.find(L"\n", start);
@@ -1708,23 +1710,23 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         // ignore empty lines
         if (msg.size() > 0) {
             // escape backslashes in FileName
-            auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
+            auto fmtFileName = util.ReplaceAll(FileName, L"\\", L"\\\\");
             pLogEntry->fileName = fmtFileName;
             pLogEntry->message = msg;
 
             std::wstring formattedFileEntry;
-            if (Utility::CompareWStrings(m_logFormat, L"Line")) {
-                formattedFileEntry = FormatFileLineLog(m_lineLogFormat, pLogEntry);
+            if (util.CompareWStrings(m_logFormat, L"Custom")) {
+                formattedFileEntry = util.FormatEventLineLog(m_lineLogFormat, pLogEntry, pLogEntry->source);
             } else {
                 std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
-                if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+                if (util.CompareWStrings(m_logFormat, L"JSON"))
                 {
                     logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                     // sanitize message
-                    Utility::SanitizeJson(msg);
+                    util.SanitizeJson(msg);
                 }
 
-                formattedFileEntry = Utility::FormatString(
+                formattedFileEntry = util.FormatString(
                     logFmt.c_str(), 
                     pLogEntry->message.c_str(), 
                     pLogEntry->fileName.c_str()
@@ -2069,35 +2071,15 @@ LogFileMonitor::GetFileId(
     return status;
 }
 
-std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _Inout_ FileLogEntry* pLogEntry)
+std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
 {
     std::wostringstream oss;
+    FileLogEntry* pLogEntry = (FileLogEntry*)pLogEntryData;
+
     if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
     if (Utility::CompareWStrings(fileFields, L"FileName")) oss << pLogEntry->fileName;
     if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
     if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
 
     return oss.str();
-}
-
-std::wstring LogFileMonitor::FormatFileLineLog(_In_ std::wstring logLineFormat, _Inout_ FileLogEntry* pLogEntry)
-{
-    size_t i = 0, j = 1;
-    while (i < logLineFormat.size()) {
-        auto sub = logLineFormat.substr(i, j);
-        auto sub_length = sub.size();
-        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
-            j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-            //substring found
-            wstring neString = FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            logLineFormat.replace(i, j, neString);
-
-            i = i + neString.length(), j = 1;
-        } else {
-            j++;
-        }
-    }
-
-    return logLineFormat;
 }

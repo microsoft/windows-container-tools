@@ -313,6 +313,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 /// <param name="stringA"></param>
 /// <param name="stringB"></param>
 /// <returns></returns>
+/// 
 bool Utility::CompareWStrings(wstring stringA, wstring stringB)
 {
     return stringA.size() == stringB.size() &&
@@ -324,4 +325,36 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
                 return towupper(l1) == towupper(r1);
             }
         );
+}
+
+std::wstring Utility::FormatEventLineLog(_In_ std::wstring logLineFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
+{
+    size_t i = 0, j = 1;
+    while (i < logLineFormat.size()) {
+        auto sub = logLineFormat.substr(i, j);
+        auto sub_length = sub.size();
+        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+            j++, i++;
+        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+            //valid field name found
+            wstring fieldValue;
+            if (sourceType == L"ETW") {
+                fieldValue = EtwMonitor::EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            }
+            if (sourceType == L"EventLog") {
+                fieldValue = EventMonitor::EventFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            }
+            if (sourceType == L"File") {
+                fieldValue = LogFileMonitor::FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            }
+            //substitute the field name with value
+            logLineFormat.replace(i, j, fieldValue);
+
+            i = i + fieldValue.length(), j = 1;
+        } else {
+            j++;
+        }
+    }
+
+    return logLineFormat;
 }

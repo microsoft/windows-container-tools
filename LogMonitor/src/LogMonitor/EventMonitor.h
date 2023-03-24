@@ -20,6 +20,8 @@ public:
 
     ~EventMonitor();
 
+    static std::wstring EventFieldsMapping(_In_ std::wstring eventField, _In_ void* pLogEntryData);
+
 private:
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int EVENT_ARRAY_SIZE = 10;
@@ -68,10 +70,6 @@ private:
     DWORD PrintEvent(
         _In_ const HANDLE& EventHandle
         );
-
-    std::wstring EventFieldsMapping(_In_ std::wstring eventFields, _Inout_ EventLogEntry* pLogEntry);
-
-    std::wstring FormatEventLineLog(_In_ std::wstring logLineFormat, _Inout_ EventLogEntry* pLogEntry);
 
     void EnableEventLogChannels();
 

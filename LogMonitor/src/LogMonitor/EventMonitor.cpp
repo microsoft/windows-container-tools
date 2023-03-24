@@ -419,6 +419,8 @@ EventMonitor::PrintEvent(
     EventLogEntry logEntry;
     EventLogEntry* pLogEntry = &logEntry;
 
+    Utility util;
+
     static constexpr LPCWSTR defaultValuePaths[] = {
         L"Event/System/Provider/@Name",
         L"Event/System/Channel",
@@ -494,7 +496,7 @@ EventMonitor::PrintEvent(
                 status = GetLastError();
 
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to render event. Error: %lu", status).c_str()
+                    util.FormatString(L"Failed to render event. Error: %lu", status).c_str()
                 );
             }
         }
@@ -561,25 +563,25 @@ EventMonitor::PrintEvent(
             if (status == ERROR_SUCCESS)
             {
                 pLogEntry->source = L"EventLog";
-                pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
+                pLogEntry->eventTime = util.FileTimeToString(fileTimeCreated);
                 pLogEntry->eventChannel = channelName;
                 pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
                 pLogEntry->eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
                 std::wstring formattedEvent;
-                if (Utility::CompareWStrings(m_logFormat, L"Line")) {
-                    formattedEvent = FormatEventLineLog(m_lineLogFormat, pLogEntry);
+                if (util.CompareWStrings(m_logFormat, L"Custom")) {
+                    formattedEvent = util.FormatEventLineLog(m_lineLogFormat, pLogEntry, pLogEntry->source);
                 } else {
                     std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
-                    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
+                    if (util.CompareWStrings(m_logFormat, L"JSON"))
                     {
                         logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
                         // sanitize message
                         std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-                        Utility::SanitizeJson(msg);
+                        util.SanitizeJson(msg);
                     }
 
-                    formattedEvent = Utility::FormatString(
+                    formattedEvent = util.FormatString(
                         logFmt.c_str(),
                         pLogEntry->source.c_str(),
                         pLogEntry->eventTime.c_str(),
@@ -734,36 +736,16 @@ Exit:
     }
 }
 
-std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventFields, _Inout_ EventLogEntry* pLogEntry) 
+std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventField, _In_ void* pLogEntryData)
 {
     std::wostringstream oss;
-    if (Utility::CompareWStrings(eventFields, L"TimeStamp")) oss << pLogEntry->eventTime;
-    if (Utility::CompareWStrings(eventFields, L"Severity")) oss << pLogEntry->eventLevel;
-    if (Utility::CompareWStrings(eventFields, L"Source")) oss << pLogEntry->source;
-    if (Utility::CompareWStrings(eventFields, L"EventID")) oss << pLogEntry->eventId;
-    if (Utility::CompareWStrings(eventFields, L"Message")) oss << pLogEntry->eventMessage;
+    EventLogEntry* pLogEntry = (EventLogEntry*)pLogEntryData;
+
+    if (Utility::CompareWStrings(eventField, L"TimeStamp")) oss << pLogEntry->eventTime;
+    if (Utility::CompareWStrings(eventField, L"Severity")) oss << pLogEntry->eventLevel;
+    if (Utility::CompareWStrings(eventField, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(eventField, L"EventID")) oss << pLogEntry->eventId;
+    if (Utility::CompareWStrings(eventField, L"Message")) oss << pLogEntry->eventMessage;
 
     return oss.str();
-}
-
-std::wstring EventMonitor::FormatEventLineLog(_In_ std::wstring logLineFormat, _Inout_ EventLogEntry* pLogEntry)
-{
-    size_t i = 0, j = 1;
-    while (i < logLineFormat.size()) {
-        auto sub = logLineFormat.substr(i, j);
-        auto sub_length = sub.size();
-        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
-            j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-            //substring found
-            wstring neString = EventFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            logLineFormat.replace(i, j, neString);
-
-            i = i + neString.length(), j = 1;
-        } else {
-            j++;
-        }
-    }
-
-    return logLineFormat;
 }

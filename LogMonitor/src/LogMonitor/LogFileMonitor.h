@@ -67,6 +67,8 @@ public:
 
     ~LogFileMonitor();
 
+    static std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
+
 private:
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int RECORDS_BUFFER_SIZE_BYTES = 8 * 1024;
@@ -233,8 +235,4 @@ private:
         _Out_ FILE_ID_INFO& FileId,
         _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE
         );
-
-    std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _Inout_ FileLogEntry* pLogEntry);
-
-    std::wstring FormatFileLineLog(_In_ std::wstring logLineFormat, _Inout_ FileLogEntry* pLogEntry);
 };

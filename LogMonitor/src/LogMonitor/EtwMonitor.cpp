@@ -823,6 +823,7 @@ EtwMonitor::PrintEvent(
     EtwLogEntry logEntry;
     EtwLogEntry* pLogEntry = &logEntry;
 
+    Utility util;
     try
     {
         status = FormatMetadata(EventRecord, EventInfo, pLogEntry);
@@ -830,7 +831,7 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to format ETW event metadata. Error: %lu", status).c_str()
+                util.FormatString(L"Failed to format ETW event metadata. Error: %lu", status).c_str()
             );
             return status;
         }
@@ -841,16 +842,16 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to format ETW event data. Error: %lu", status).c_str()
+                util.FormatString(L"Failed to format ETW event data. Error: %lu", status).c_str()
             );
             return status;
         }
 
         std::wstring formattedEvent;
-        if (Utility::CompareWStrings(m_logFormat, L"JSON")) {
+        if (util.CompareWStrings(m_logFormat, L"JSON")) {
             formattedEvent = etwJsonFormat(pLogEntry);
-        } else if (Utility::CompareWStrings(m_logFormat, L"Line")) {
-            formattedEvent = FormatETWLineLog(m_lineLogFormat, pLogEntry);
+        } else if (util.CompareWStrings(m_logFormat, L"Custom")) {
+            formattedEvent = util.FormatEventLineLog(m_lineLogFormat, pLogEntry, pLogEntry->source);
         } else {
             formattedEvent = etwXMLFormat(pLogEntry);
         }
@@ -1439,9 +1440,11 @@ EtwMonitor::RemoveTrailingSpace(
     }
 }
 
-std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry) 
+std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _In_ void* pLogEntryData)
 {
     std::wostringstream oss;
+    EtwLogEntry* pLogEntry = (EtwLogEntry*)pLogEntryData;
+
     if (Utility::CompareWStrings(etwFields, L"TimeStamp")) oss << pLogEntry->Time;
     if (Utility::CompareWStrings(etwFields, L"Severity")) oss << pLogEntry->Level;
     if (Utility::CompareWStrings(etwFields, L"Source")) oss << pLogEntry->source;
@@ -1461,26 +1464,4 @@ std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ E
     }
 
     return oss.str();
-}
-
-std::wstring EtwMonitor::FormatETWLineLog(_In_ std::wstring logLineFormat, _Inout_ EtwLogEntry* pLogEntry)
-{
-    size_t i = 0, j = 1;
-    while (i < logLineFormat.size()) {
-        auto sub = logLineFormat.substr(i, j);
-        auto sub_length = sub.size();
-        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
-            j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-            //substring found
-            wstring neString = EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            logLineFormat.replace(i, j, neString);
-
-            i = i + neString.length(), j = 1;
-        } else {
-            j++;
-        }
-    }
-
-    return logLineFormat;
 }

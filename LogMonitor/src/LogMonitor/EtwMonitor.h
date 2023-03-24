@@ -41,6 +41,8 @@ public:
 
     ~EtwMonitor();
 
+    static std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _In_ void* pLogEntryData);
+
 private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
@@ -151,8 +153,4 @@ private:
     inline void RemoveTrailingSpace(
         _In_ PEVENT_MAP_INFO MapInfo
     );
-
-    std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _Inout_ EtwLogEntry* pLogEntry);
-
-    std::wstring FormatETWLineLog(_In_ std::wstring logLineFormat, _Inout_ EtwLogEntry* pLogEntry);
 };
