@@ -41,13 +41,13 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
                                _In_ std::wstring LogFormat,
-                               _In_ std::wstring LineLogFormat
+                               _In_ std::wstring CustomLogFormat
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
                                m_includeSubfolders(IncludeSubfolders),
                                m_logFormat(LogFormat),
-                               m_lineLogFormat(LineLogFormat)
+                               m_customLogFormat(CustomLogFormat)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1716,7 +1716,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
 
             std::wstring formattedFileEntry;
             if (util.CompareWStrings(m_logFormat, L"Custom")) {
-                formattedFileEntry = util.FormatEventLineLog(m_lineLogFormat, pLogEntry, pLogEntry->source);
+                formattedFileEntry = util.FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
             } else {
                 std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
                 if (util.CompareWStrings(m_logFormat, L"JSON"))

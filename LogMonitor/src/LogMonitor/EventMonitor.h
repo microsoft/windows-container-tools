@@ -15,7 +15,7 @@ public:
         _In_ bool EventFormatMultiLine,
         _In_ bool StartAtOldestRecord,
         _In_ std::wstring LogFormat,
-        _In_ std::wstring LineLogFormat
+        _In_ std::wstring CustomLogFormat
         );
 
     ~EventMonitor();
@@ -30,7 +30,7 @@ private:
     bool m_eventFormatMultiLine;
     bool m_startAtOldestRecord;
     std::wstring m_logFormat;
-    std::wstring m_lineLogFormat;
+    std::wstring m_customLogFormat;
 
     struct EventLogEntry {
         std::wstring source;

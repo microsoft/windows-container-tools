@@ -29,13 +29,13 @@ EventMonitor::EventMonitor(
     _In_ bool EventFormatMultiLine,
     _In_ bool StartAtOldestRecord,
     _In_ std::wstring LogFormat,
-    _In_ std::wstring LineLogFormat
+    _In_ std::wstring CustomLogFormat
     ) :
     m_eventChannels(EventChannels),
     m_eventFormatMultiLine(EventFormatMultiLine),
     m_startAtOldestRecord(StartAtOldestRecord),
     m_logFormat(LogFormat),
-    m_lineLogFormat(LineLogFormat)
+    m_customLogFormat(CustomLogFormat)
 {
     m_stopEvent = NULL;
     m_eventMonitorThread = NULL;
@@ -570,7 +570,7 @@ EventMonitor::PrintEvent(
 
                 std::wstring formattedEvent;
                 if (util.CompareWStrings(m_logFormat, L"Custom")) {
-                    formattedEvent = util.FormatEventLineLog(m_lineLogFormat, pLogEntry, pLogEntry->source);
+                    formattedEvent = util.FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
                 } else {
                     std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
                     if (util.CompareWStrings(m_logFormat, L"JSON"))

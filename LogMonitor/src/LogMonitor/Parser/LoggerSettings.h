@@ -14,7 +14,7 @@
 /// Log formatting attributes
 /// 
 #define JSON_TAG_LOG_FORMAT L"logFormat"
-#define JSON_TAG_LINE_LOG_FORMAT L"lineLogFormat"
+#define JSON_TAG_CUSTOM_LOG_FORMAT L"customLogFormat"
 
 ///
 /// Valid source attributes
@@ -208,7 +208,7 @@ public:
     std::vector<EventLogChannel> Channels;
     bool EventFormatMultiLine = true;
     bool StartAtOldestRecord = false;
-    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] %Message%";
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] %Message%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -251,10 +251,10 @@ public:
         //
         // lineLogFormat is an optional value
         //
-        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
-            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
         {
-            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
+            NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
         }
 
         return true;
@@ -270,7 +270,7 @@ public:
     std::wstring Directory;
     std::wstring Filter;
     bool IncludeSubdirectories = false;
-    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%FileName%] %Message%";
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%FileName%] %Message%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -313,10 +313,10 @@ public:
         //
         // lineLogFormat is an optional value
         //
-        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
-            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
         {
-            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
+            NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
         }
 
         return true;
@@ -385,7 +385,7 @@ class SourceETW : LogSource
 public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
-    std::wstring LineLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %EventData%";
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %EventData%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -419,10 +419,10 @@ public:
         //
         // lineLogFormat is an optional value
         //
-        if (Attributes.find(JSON_TAG_LINE_LOG_FORMAT) != Attributes.end()
-            && Attributes[JSON_TAG_LINE_LOG_FORMAT] != nullptr)
+        if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
         {
-            NewSource.LineLogFormat = *(std::wstring*)Attributes[JSON_TAG_LINE_LOG_FORMAT];
+            NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
         }
 
 

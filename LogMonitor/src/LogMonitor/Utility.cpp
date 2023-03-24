@@ -327,16 +327,19 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
         );
 }
 
-std::wstring Utility::FormatEventLineLog(_In_ std::wstring logLineFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
+std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
 {
     size_t i = 0, j = 1;
-    while (i < logLineFormat.size()) {
-        auto sub = logLineFormat.substr(i, j);
+    while (i < customLogFormat.size()) {
+
+        auto sub = customLogFormat.substr(i, j - i);
         auto sub_length = sub.size();
+
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
         } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-            //valid field name found
+
+            //valid field name found in custom log format
             wstring fieldValue;
             if (sourceType == L"ETW") {
                 fieldValue = EtwMonitor::EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
@@ -348,13 +351,13 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring logLineFormat, _In_ v
                 fieldValue = LogFileMonitor::FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
             }
             //substitute the field name with value
-            logLineFormat.replace(i, j, fieldValue);
+            customLogFormat.replace(i, sub_length, fieldValue);
 
-            i = i + fieldValue.length(), j = 1;
+            i = i + fieldValue.length(), j = i + 1;
         } else {
             j++;
         }
     }
 
-    return logLineFormat;
+    return customLogFormat;
 }
