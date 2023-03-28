@@ -1687,10 +1687,8 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
     SYSTEMTIME st;
     GetSystemTime(&st);
 
-    Utility util;
-
     pLogEntry->source = L"File";
-    pLogEntry->currentTime = util.SystemTimeToString(st).c_str();
+    pLogEntry->currentTime = Utility::SystemTimeToString(st).c_str();
 
     while (true) {
         i = Message.find(L"\n", start);
@@ -1710,23 +1708,23 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         // ignore empty lines
         if (msg.size() > 0) {
             // escape backslashes in FileName
-            auto fmtFileName = util.ReplaceAll(FileName, L"\\", L"\\\\");
+            auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
             pLogEntry->fileName = fmtFileName;
             pLogEntry->message = msg;
 
             std::wstring formattedFileEntry;
-            if (util.CompareWStrings(m_logFormat, L"Custom")) {
-                formattedFileEntry = util.FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+            if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+                formattedFileEntry = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
             } else {
                 std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
-                if (util.CompareWStrings(m_logFormat, L"JSON"))
+                if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                 {
                     logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                     // sanitize message
-                    util.SanitizeJson(msg);
+                    Utility::SanitizeJson(msg);
                 }
 
-                formattedFileEntry = util.FormatString(
+                formattedFileEntry = Utility::FormatString(
                     logFmt.c_str(), 
                     pLogEntry->message.c_str(), 
                     pLogEntry->fileName.c_str()

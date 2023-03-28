@@ -338,7 +338,6 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
         } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-
             //valid field name found in custom log format
             wstring fieldValue;
             if (sourceType == L"ETW") {

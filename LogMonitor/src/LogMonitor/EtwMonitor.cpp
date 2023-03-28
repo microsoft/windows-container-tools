@@ -823,7 +823,6 @@ EtwMonitor::PrintEvent(
     EtwLogEntry logEntry;
     EtwLogEntry* pLogEntry = &logEntry;
 
-    Utility util;
     try
     {
         status = FormatMetadata(EventRecord, EventInfo, pLogEntry);
@@ -831,7 +830,7 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                util.FormatString(L"Failed to format ETW event metadata. Error: %lu", status).c_str()
+                Utility::FormatString(L"Failed to format ETW event metadata. Error: %lu", status).c_str()
             );
             return status;
         }
@@ -842,16 +841,16 @@ EtwMonitor::PrintEvent(
         if (status != ERROR_SUCCESS)
         {
             logWriter.TraceError(
-                util.FormatString(L"Failed to format ETW event data. Error: %lu", status).c_str()
+                Utility::FormatString(L"Failed to format ETW event data. Error: %lu", status).c_str()
             );
             return status;
         }
 
         std::wstring formattedEvent;
-        if (util.CompareWStrings(m_logFormat, L"JSON")) {
+        if (Utility::CompareWStrings(m_logFormat, L"JSON")) {
             formattedEvent = etwJsonFormat(pLogEntry);
-        } else if (util.CompareWStrings(m_logFormat, L"Custom")) {
-            formattedEvent = util.FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+        } else if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+            formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
         } else {
             formattedEvent = etwXMLFormat(pLogEntry);
         }

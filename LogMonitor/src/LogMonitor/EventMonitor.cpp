@@ -419,8 +419,6 @@ EventMonitor::PrintEvent(
     EventLogEntry logEntry;
     EventLogEntry* pLogEntry = &logEntry;
 
-    Utility util;
-
     static constexpr LPCWSTR defaultValuePaths[] = {
         L"Event/System/Provider/@Name",
         L"Event/System/Channel",
@@ -496,7 +494,7 @@ EventMonitor::PrintEvent(
                 status = GetLastError();
 
                 logWriter.TraceError(
-                    util.FormatString(L"Failed to render event. Error: %lu", status).c_str()
+                    Utility::FormatString(L"Failed to render event. Error: %lu", status).c_str()
                 );
             }
         }
@@ -563,25 +561,25 @@ EventMonitor::PrintEvent(
             if (status == ERROR_SUCCESS)
             {
                 pLogEntry->source = L"EventLog";
-                pLogEntry->eventTime = util.FileTimeToString(fileTimeCreated);
+                pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
                 pLogEntry->eventChannel = channelName;
                 pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
                 pLogEntry->eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
 
                 std::wstring formattedEvent;
-                if (util.CompareWStrings(m_logFormat, L"Custom")) {
-                    formattedEvent = util.FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+                if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+                    formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
                 } else {
                     std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
-                    if (util.CompareWStrings(m_logFormat, L"JSON"))
+                    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
                     {
                         logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
                         // sanitize message
                         std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-                        util.SanitizeJson(msg);
+                        Utility::SanitizeJson(msg);
                     }
 
-                    formattedEvent = util.FormatString(
+                    formattedEvent = Utility::FormatString(
                         logFmt.c_str(),
                         pLogEntry->source.c_str(),
                         pLogEntry->eventTime.c_str(),
