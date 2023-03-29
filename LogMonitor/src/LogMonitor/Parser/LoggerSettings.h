@@ -436,5 +436,5 @@ public:
 typedef struct _LoggerSettings
 {
     std::vector<std::shared_ptr<LogSource> > Sources;
-    std::wstring LogFormat = L"XML";
+    std::wstring LogFormat = L"JSON";
 } LoggerSettings;

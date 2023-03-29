@@ -29,7 +29,7 @@ EventMonitor::EventMonitor(
     _In_ bool EventFormatMultiLine,
     _In_ bool StartAtOldestRecord,
     _In_ std::wstring LogFormat,
-    _In_ std::wstring CustomLogFormat
+    _In_ std::wstring CustomLogFormat = L""
     ) :
     m_eventChannels(EventChannels),
     m_eventFormatMultiLine(EventFormatMultiLine),
@@ -570,9 +570,11 @@ EventMonitor::PrintEvent(
                 if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
                     formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
                 } else {
-                    std::wstring logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
-                    if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-                    {
+                    std::wstring logFmt;
+                    if (Utility::CompareWStrings(m_logFormat, L"XML")) {
+                        logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
+                    }
+                    else {
                         logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
                         // sanitize message
                         std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());

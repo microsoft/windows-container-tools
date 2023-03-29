@@ -41,7 +41,7 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
                                _In_ std::wstring LogFormat,
-                               _In_ std::wstring CustomLogFormat
+                               _In_ std::wstring CustomLogFormat = L""
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
@@ -1716,9 +1716,11 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
             if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
                 formattedFileEntry = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
             } else {
-                std::wstring logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
-                if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-                {
+                std::wstring logFmt;
+                if (Utility::CompareWStrings(m_logFormat, L"XML")) {
+                    logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
+                }
+                else {
                     logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                     // sanitize message
                     Utility::SanitizeJson(msg);

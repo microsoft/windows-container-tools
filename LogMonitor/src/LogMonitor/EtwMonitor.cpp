@@ -31,7 +31,7 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
     _In_ std::wstring LogFormat,
-    _In_ std::wstring CustomLogFormat
+    _In_ std::wstring CustomLogFormat = L""
     ) :
     m_logFormat(LogFormat),
     m_customLogFormat(CustomLogFormat)
@@ -847,12 +847,12 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent;
-        if (Utility::CompareWStrings(m_logFormat, L"JSON")) {
-            formattedEvent = etwJsonFormat(pLogEntry);
+        if (Utility::CompareWStrings(m_logFormat, L"XML")) {
+            formattedEvent = etwXMLFormat(pLogEntry);
         } else if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
             formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
         } else {
-            formattedEvent = etwXMLFormat(pLogEntry);
+            formattedEvent = etwJsonFormat(pLogEntry);
         }
 
         logWriter.WriteConsoleLog(formattedEvent);
