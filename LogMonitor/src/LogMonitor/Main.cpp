@@ -84,6 +84,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
     std::wstring logFormat = settings.LogFormat;
+    std::wstring eventCustomLogFormat;
+    std::wstring etwCustomLogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -101,6 +103,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
                 eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
+                eventCustomLogFormat = sourceEventLog->CustomLogFormat;
 
                 break;
             }
@@ -114,7 +117,8 @@ void StartMonitors(_In_ LoggerSettings& settings)
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
-                        logFormat
+                        logFormat,
+                        sourceFile->CustomLogFormat
                     );
                     g_logfileMonitors.push_back(std::move(logfileMon));
                 }
@@ -150,6 +154,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
                 }
 
                 etwMonMultiLine = sourceETW->EventFormatMultiLine;
+                etwCustomLogFormat = sourceETW->CustomLogFormat;
 
                 break;
             }
@@ -160,7 +165,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat);
+            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat, eventCustomLogFormat);
         }
         catch (std::exception& ex)
         {
@@ -185,7 +190,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat, etwCustomLogFormat);
         }
         catch (...)
         {
