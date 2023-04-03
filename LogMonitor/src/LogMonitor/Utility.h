@@ -53,4 +53,6 @@ public:
         _In_ std::wstring stringA,
         _In_ std::wstring stringB
     );
+
+    static std::wstring FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType);
 };
