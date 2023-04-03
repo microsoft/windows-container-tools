@@ -310,9 +310,11 @@ ReadSourceAttributes(
             // These attributes are string type
             // * directory
             // * filter
+            // * lineLogFormat
             //
             else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0
-                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
+                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0
+                || _wcsnicmp(key.c_str(), JSON_TAG_CUSTOM_LOG_FORMAT, _countof(JSON_TAG_CUSTOM_LOG_FORMAT)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
             }

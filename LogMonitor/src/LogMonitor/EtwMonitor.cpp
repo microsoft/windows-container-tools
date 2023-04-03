@@ -30,9 +30,11 @@ static const std::wstring g_sessionName = L"Log Monitor ETW Session";
 
 EtwMonitor::EtwMonitor(
     _In_ const std::vector<ETWProvider>& Providers,
-    _In_ std::wstring LogFormat
+    _In_ std::wstring LogFormat,
+    _In_ std::wstring CustomLogFormat = L""
     ) :
-    m_logFormat(LogFormat)
+    m_logFormat(LogFormat),
+    m_customLogFormat(CustomLogFormat)
 {
     //
     // This is set as 'true' to stop processing events.
@@ -712,7 +714,7 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
     // construct the JSON output
-    oss << L"{\"Source\":\"ETW\",\"LogEntry\":{";
+    oss << L"{\"Source\":\"" << pLogEntry->source << L"\",\"LogEntry\":{";
     oss << L"\"Time\":\"" << pLogEntry->Time << L"\",";
     oss << L"\"ProviderName\":\"" << pLogEntry->ProviderName << L"\",";
     oss << L"\"ProviderId\":\"" << pLogEntry->ProviderId << "\",";
@@ -845,11 +847,12 @@ EtwMonitor::PrintEvent(
         }
 
         std::wstring formattedEvent;
-        if (Utility::CompareWStrings(m_logFormat, L"JSON"))
-        {
-            formattedEvent = etwJsonFormat(pLogEntry);
-        } else {
+        if (Utility::CompareWStrings(m_logFormat, L"XML")) {
             formattedEvent = etwXMLFormat(pLogEntry);
+        } else if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+            formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+        } else {
+            formattedEvent = etwJsonFormat(pLogEntry);
         }
 
         logWriter.WriteConsoleLog(formattedEvent);
@@ -885,6 +888,7 @@ EtwMonitor::FormatMetadata(
     fileTime.dwHighDateTime = EventRecord->EventHeader.TimeStamp.HighPart;
     fileTime.dwLowDateTime = EventRecord->EventHeader.TimeStamp.LowPart;
 
+    pLogEntry->source = L"ETW";
     pLogEntry->Time = Utility::FileTimeToString(fileTime).c_str();
 
     //
@@ -1433,4 +1437,30 @@ EtwMonitor::RemoveTrailingSpace(
         byteLength = (wcslen((LPWSTR)((PBYTE)MapName + MapName->MapEntryArray[i].OutputOffset)) - 1) * 2;
         *((LPWSTR)((PBYTE)MapName + (MapName->MapEntryArray[i].OutputOffset + byteLength))) = L'\0';
     }
+}
+
+std::wstring EtwMonitor::EtwFieldsMapping(_In_ std::wstring etwFields, _In_ void* pLogEntryData)
+{
+    std::wostringstream oss;
+    EtwLogEntry* pLogEntry = (EtwLogEntry*)pLogEntryData;
+
+    if (Utility::CompareWStrings(etwFields, L"TimeStamp")) oss << pLogEntry->Time;
+    if (Utility::CompareWStrings(etwFields, L"Severity")) oss << pLogEntry->Level;
+    if (Utility::CompareWStrings(etwFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(etwFields, L"ProviderId")) oss << pLogEntry->ProviderId;
+    if (Utility::CompareWStrings(etwFields, L"ProviderName")) oss << pLogEntry->ProviderName;
+    if (Utility::CompareWStrings(etwFields, L"DecodingSource")) oss << pLogEntry->DecodingSource;
+    if (Utility::CompareWStrings(etwFields, L"ExecutionProcessId")) oss << pLogEntry->ExecProcessId;
+    if (Utility::CompareWStrings(etwFields, L"ExecutionThreadId")) oss << pLogEntry->ExecThreadId;
+    if (Utility::CompareWStrings(etwFields, L"Keyword")) oss << pLogEntry->Keyword;
+    if (Utility::CompareWStrings(etwFields, L"EventId")) oss << pLogEntry->EventId;
+    if (Utility::CompareWStrings(etwFields, L"EventData")) {
+        for (auto evtData : pLogEntry->EventData) {
+            wstring key = evtData.first;
+            wstring value = evtData.second;
+            oss << key << ": " << value << " ";
+        }
+    }
+
+    return oss.str();
 }

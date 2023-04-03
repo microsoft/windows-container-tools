@@ -14,6 +14,7 @@ typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
 // struct to hold the ETW logEntry data
 //
 struct EtwLogEntry {
+    std::wstring source;
     std::wstring Time;
     std::wstring ProviderId;
     std::wstring ProviderName;
@@ -34,16 +35,20 @@ public:
 
     EtwMonitor(
         _In_ const std::vector<ETWProvider>& Providers,
-        _In_ std::wstring LogFormat
+        _In_ std::wstring LogFormat,
+        _In_ std::wstring CustomLogFormat
     );
 
     ~EtwMonitor();
+
+    static std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _In_ void* pLogEntryData);
 
 private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;
     std::wstring m_logFormat;
+    std::wstring m_customLogFormat;
     TRACEHANDLE m_startTraceHandle;
 
     //
