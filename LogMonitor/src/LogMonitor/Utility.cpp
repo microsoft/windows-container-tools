@@ -358,5 +358,21 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
         }
     }
 
+    SanitizeCustomLog(customLogFormat);
+
     return customLogFormat;
+}
+
+void Utility::SanitizeCustomLog(_Inout_ std::wstring& customLog)
+{
+    auto npos = customLog.find(L"|");
+
+    std::wstring substr;
+    if (npos != std::string::npos)
+        substr = customLog.substr(npos + 1);
+
+    if (!substr.empty() && CompareWStrings(substr, L"JSON"))
+        SanitizeJson(customLog);
+
+    customLog = customLog.substr(0, customLog.find(L"|"));
 }
