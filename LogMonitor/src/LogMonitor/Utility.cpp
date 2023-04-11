@@ -367,9 +367,9 @@ void Utility::SanitizeCustomLog(_Inout_ std::wstring& customLog)
 {
     auto npos = customLog.find(L"|");
     std::wstring substr;
-
     if (npos != std::string::npos)
         substr = customLog.substr(npos + 1);
+        substr.erase(std::remove(substr.begin(), substr.end(), ' '), substr.end());
 
     if (!substr.empty() && CompareWStrings(substr, L"JSON"))
         SanitizeJson(customLog);
