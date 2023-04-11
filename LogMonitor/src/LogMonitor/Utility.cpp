@@ -366,8 +366,8 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
 void Utility::SanitizeCustomLog(_Inout_ std::wstring& customLog)
 {
     auto npos = customLog.find(L"|");
-
     std::wstring substr;
+
     if (npos != std::string::npos)
         substr = customLog.substr(npos + 1);
 
