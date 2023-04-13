@@ -373,6 +373,7 @@ void Utility::SanitizeCustomLog(_Inout_ std::wstring& customLog)
 
     if (!substr.empty() && CompareWStrings(substr, L"JSON"))
         SanitizeJson(customLog);
+        customLog = ReplaceAll(customLog, L"'", L"\"");
 
     customLog = customLog.substr(0, customLog.find(L"|"));
 }
