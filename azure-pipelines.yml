@@ -49,6 +49,11 @@ jobs:
         artifactType: 'pipeline'
         artifactName: '64-bit'
     
+    - task: Powershell@2
+      displayName: 'Verify LogMonitor binary is signed'
+      inputs:
+        filePath: '$(LogMonitor)\VerifySigning\verify_signing.ps1'
+    
   - job: x86_build
     steps:
       - task: VSBuild@1
