@@ -268,6 +268,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     size_t i = 0;
     while (i < str.size()) {
         auto sub = str.substr(i, 1);
+        auto s = str.substr(0, i + 1);
         if (sub == L"\"") {
             if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
                 || i == 0)
@@ -277,7 +278,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
             }
             else if (i > 0 && str.substr(i - 1, 1) == L"~") {
                 str.replace(i - 1, 1, L"");
-                i++;
+                i--;
             }
         }
         else if (sub == L"\\") {
