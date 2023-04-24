@@ -24,9 +24,9 @@ jobs:
 
     - task: ComponentGovernanceComponentDetection@0
       inputs:
-        scanType: 'LogOnly'
+        scanType: 'Register'
         verbosity: 'Verbose'
-        alertWarningLevel: 'High'
+        alertWarningLevel: 'Low'
 
     - task: VisualStudioTestPlatformInstaller@1
       inputs:
