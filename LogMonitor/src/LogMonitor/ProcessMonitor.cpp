@@ -274,7 +274,7 @@ size_t formatProcessLog(char* chBuf)
         {
             suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         } else {
-            suffix = "...\</Logline></LogEntry></Log>\n";
+            suffix = "...\"</Logline></LogEntry></Log>\n";
         }
     }
 
@@ -325,7 +325,7 @@ DWORD ReadFromPipe(LPVOID Param)
         // move valid chars from remainder buffer to chBuf
         // then ReadFile starts from the end position (chBuf + cnt)
         char* ptrRem = chBufRem;
-        size_t cnt = 0;
+        DWORD cnt = 0;
         while (*ptrRem > 0 && cnt < BUFSIZE) {
             chBuf[cnt++] = *ptrRem;
             ptrRem++;
