@@ -1277,7 +1277,8 @@ EtwMonitor::GetPropertyLength(
             // EVENT_PROPERTY_INFO.length field will be zero.
             //
             if (TDH_INTYPE_BINARY == EventInfo->EventPropertyInfoArray[Index].nonStructType.InType &&
-                TDH_OUTTYPE_IPV6 == EventInfo->EventPropertyInfoArray[Index].nonStructType.OutType)
+                TDH_OUTTYPE_IPV6 == EventInfo->EventPropertyInfoArray[Index].nonStructType.OutType &&
+                EventInfo->EventPropertyInfoArray[Index].length == 0)
             {
                 PropertyLength = (USHORT)sizeof(IN6_ADDR);
             }
@@ -1286,6 +1287,39 @@ EtwMonitor::GetPropertyLength(
                 (EventInfo->EventPropertyInfoArray[Index].Flags & PropertyStruct) == PropertyStruct)
             {
                 PropertyLength = EventInfo->EventPropertyInfoArray[Index].length;
+            }
+            else if (0 == (EventInfo->EventPropertyInfoArray[Index].Flags & (PropertyStruct | PropertyParamCount)) &&
+                EventInfo->EventPropertyInfoArray[Index].count == 1 )
+            {
+                BYTE const* pbData = static_cast<BYTE const*>(EventRecord->UserData);
+                BYTE const* pbDataEnd = pbData + EventRecord->UserDataLength;
+
+                switch (EventInfo->EventPropertyInfoArray[Index].nonStructType.InType)
+                {
+                    case TDH_INTYPE_INT8:
+                    case TDH_INTYPE_UINT8:
+                    if ((pbDataEnd - pbData) >= 1) 
+                    {
+                        PropertyLength = *pbData;
+                    }
+                    break;
+                    case TDH_INTYPE_INT16:
+                    case TDH_INTYPE_UINT16:
+                    if ((pbDataEnd - pbData) >= 2)
+                    {
+                        PropertyLength = *reinterpret_cast<UINT16 const UNALIGNED*>(pbData);
+                    }
+                    break;
+                    case TDH_INTYPE_INT32:
+                    case TDH_INTYPE_UINT32:
+                    case TDH_INTYPE_HEXINT32:
+                    if ((pbDataEnd - pbData) >= 4)
+                    {
+                        auto val = *reinterpret_cast<UINT32 const UNALIGNED*>(pbData);
+                        PropertyLength = static_cast<USHORT>(val > 0xffffu ? 0xffffu : val);
+                    }
+                    break;
+                }
             }
             else
             {
