@@ -11,7 +11,7 @@
 
 A sample Log Monitor Config file would be structured as follows: 
 
-```
+```json
 {
   "LogConfig": {
     "sources": [
@@ -159,15 +159,21 @@ Example 1 (Application channel, verboseness: Error):
 
  ```json
 {
-  "type": "EventLog",
-  "startAtOldestRecord": true,
-  "eventFormatMultiLine": false,
-  "channels": [
-    {
-      "name": "application",
-      "level": "Error"
-    }
-  ]
+  "LogConfig": {
+    "sources": [
+      {
+        "type": "EventLog",
+        "startAtOldestRecord": true,
+        "eventFormatMultiLine": false,
+        "channels": [
+          {
+            "name": "application",
+            "level": "Error"
+          }
+        ]
+      }
+    ]
+  }
 }
  ```
 
@@ -175,15 +181,21 @@ Example 1 (Application channel, verboseness: Error):
 
  ```json
 {
-  "type": "EventLog",
-  "startAtOldestRecord": true,
-  "eventFormatMultiLine": true,
-  "channels": [
-    {
-      "name": "system",
-      "level": " Information"
-    }
-  ]
+  "LogConfig": {
+    "sources": [
+      {
+        "type": "EventLog",
+        "startAtOldestRecord": true,
+        "eventFormatMultiLine": true,
+        "channels": [
+          {
+            "name": "system",
+            "level": " Information"
+          }
+        ]
+      }
+    ]
+  }
 }
  ```
 
