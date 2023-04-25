@@ -3,7 +3,7 @@
 @echo.This script simply calls msbuild to build LogMonitor.exe
 @echo.*************************************************************
 @echo.
-msbuild LogMonitor\LogMonitor.sln /p:platform=x64 /p:configuration=Release %*
+msbuild LogMonitor\LogMonitor.sln /m /p:platform=x64 /p:configuration=Release
 @if '%ERRORLEVEL%' == '0' (
     echo.
     echo.
