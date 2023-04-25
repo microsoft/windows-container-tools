@@ -55,4 +55,6 @@ public:
     );
 
     static std::wstring FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType);
+
+    static bool isCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
 };

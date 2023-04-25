@@ -268,12 +268,17 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     size_t i = 0;
     while (i < str.size()) {
         auto sub = str.substr(i, 1);
+        auto s = str.substr(0, i + 1);
         if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
+            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
                 || i == 0)
             {
                 str.replace(i, 1, L"\\\"");
                 i++;
+            }
+            else if (i > 0 && str.substr(i - 1, 1) == L"~") {
+                str.replace(i - 1, 1, L"");
+                i--;
             }
         }
         else if (sub == L"\\") {
@@ -329,6 +334,8 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
 
 std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
 {
+    bool customJsonFormat = isCustomJsonFormat(customLogFormat);
+
     size_t i = 0, j = 1;
     while (i < customLogFormat.size()) {
 
@@ -358,5 +365,33 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
         }
     }
 
+    if(customJsonFormat)
+        SanitizeJson(customLogFormat);
+
     return customLogFormat;
+}
+ 
+/// <summary>
+/// check if custom format specified in config is JSON for sanitization purposes
+/// </summary>
+/// <param name="customLogFormat"></param>
+/// <returns></returns>
+bool Utility::isCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
+{
+    bool isCustomJSONFormat = false;
+
+    auto npos = customLogFormat.find_last_of(L"|");
+    std::wstring substr;
+    if (npos != std::string::npos) {
+        substr = customLogFormat.substr(npos + 1);
+        substr.erase(std::remove(substr.begin(), substr.end(), ' '), substr.end());
+
+        if (!substr.empty() && CompareWStrings(substr, L"JSON")) {
+            customLogFormat = ReplaceAll(customLogFormat, L"'", L"~\"");
+            isCustomJSONFormat = true;
+        }
+
+        customLogFormat = customLogFormat.substr(0, customLogFormat.find_last_of(L"|"));
+    }
+    return isCustomJSONFormat;
 }
