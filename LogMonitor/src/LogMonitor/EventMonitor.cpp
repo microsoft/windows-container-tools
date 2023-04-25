@@ -579,6 +579,7 @@ EventMonitor::PrintEvent(
                         // sanitize message
                         std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
                         Utility::SanitizeJson(msg);
+                        pLogEntry->eventMessage = msg;
                     }
 
                     formattedEvent = Utility::FormatString(

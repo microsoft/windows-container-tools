@@ -1724,6 +1724,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
                     logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                     // sanitize message
                     Utility::SanitizeJson(msg);
+                    pLogEntry->message = msg;
                 }
 
                 formattedFileEntry = Utility::FormatString(
