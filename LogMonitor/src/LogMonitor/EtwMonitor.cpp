@@ -1296,23 +1296,23 @@ EtwMonitor::GetPropertyLength(
 
                 switch (EventInfo->EventPropertyInfoArray[Index].nonStructType.InType)
                 {
-                case TDH_INTYPE_INT8:
-                case TDH_INTYPE_UINT8:
+                    case TDH_INTYPE_INT8:
+                    case TDH_INTYPE_UINT8:
                     if ((pbDataEnd - pbData) >= 1) 
                     {
                         PropertyLength = *pbData;
                     }
                     break;
-                case TDH_INTYPE_INT16:
-                case TDH_INTYPE_UINT16:
+                    case TDH_INTYPE_INT16:
+                    case TDH_INTYPE_UINT16:
                     if ((pbDataEnd - pbData) >= 2)
                     {
                         PropertyLength = *reinterpret_cast<UINT16 const UNALIGNED*>(pbData);
                     }
                     break;
-                case TDH_INTYPE_INT32:
-                case TDH_INTYPE_UINT32:
-                case TDH_INTYPE_HEXINT32:
+                    case TDH_INTYPE_INT32:
+                    case TDH_INTYPE_UINT32:
+                    case TDH_INTYPE_HEXINT32:
                     if ((pbDataEnd - pbData) >= 4)
                     {
                         auto val = *reinterpret_cast<UINT32 const UNALIGNED*>(pbData);
