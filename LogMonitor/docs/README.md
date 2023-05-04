@@ -1,50 +1,53 @@
 # Log Monitor Documentation
 
 **Contents:**
-- [Logs Customization](#logs-customization)
+- [Log Format Customization](#log-format-customization)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
 
-## Logs Customization
+## Log Format Customization
 
 ### Description
-By default, log monitor's logs will be displayed in JSON format. However, a user has the flexibility to configure the logs to be displayed in either `XML` format or their own `custom` defined format.
+By default, logs will be displayed in JSON format. However, users have the flexibility to configure logs to be displayed in either `XML` or their own `custom` defined formats.
 
-To "specify the log format to be used, a user will need to add a new field 'logFormat' in the config file and specify it's value as either `XML`, `JSON` or `Custom` <em>(the field value is case-insensitive)</em>
-<br> For the `JSON` and `XML` log formats, no additional configurations are needed. However, for the `Custom` log format, a user needs to specify the custom log format at the source type level.
+To specify the log format, a user needs to configure the 'logFormat' field in the config to either `XML`, `JSON` or `Custom` <em>(the field value is not case-insensitive)</em>
+<br>For the `JSON` and `XML` log formats, no additional configurations are needed. However, in the case of `Custom` log format, a user needs to configure the `custom log format` at the source type level.
 
 ### Custom Log Format Pattern Layout
-To ensure the different fields values you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%) and the field names specified match the correct field names for the specific log sources.
+To ensure the different field values are correctly displayed in the customized log outputs:
+- Wrap the field names within percentage signs / modulo operators (%)
+- Ensure the field names specified matches the correct log sources' field names.
 
-`For example: %Message%, [%TimeStamp%]`
+    `For example: %Message%, [%TimeStamp%]`
 
-Different logs source types have different field names:<br> 
+The different source types tracked by log monitor have different field names <em>(a few are common)</em>:<br> 
+
 <strong>Event Logs:</strong>
   - `Source`: The source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
-  - `TimeStamp`: The time the event was logged
-  - `EventID`: The event Id
-  - `Severity`: A label that indicates the severity or urgency of a log entry
+  - `TimeStamp`: The time at which the event was generated
+  - `EventID`: The unique identifier assigned to an individual event
+  - `Severity`: A label that indicates the importance or criticality of an event
   - `Message`: The event message
 
 <strong>ETW Logs:</strong>
   - `Source`: The Log source (Event Log)
-  - `TimeStamp`: The time the event was logged
-  - `Severity`: A label that indicates the severity or urgency of a log entry
-  - `ProviderId`: The ETW Event Provider ID
-  - `ProviderName`: The ETW Event Provider Name
-  - `DecodingSource`
-  - `ExecutionProcessId`
-  - `ExecutionThreadId`
-  - `Keyword`
-  - `EventId`
-  - `EventData`
+  - `TimeStamp`: The time at which the event was generated
+  - `Severity`: A label that indicates the importance or criticality of an event
+  - `ProviderId`:  The unique identifier that is assigned to the event provider during its registration process.
+  - `ProviderName`: Unique identifier or name assigned to an event provider
+  - `DecodingSource`: Component or provider responsible for decoding and translating raw event data into a human-readable format
+  - `ExecutionProcessId`: An identifier associated with a process that is being executed at the time an event is generated
+  - `ExecutionThreadId`: The identifier associated with a thread at the time an event is generated
+  - `Keyword`:  A flag or attribute assigned to an event or a group of related events, that provides a way to categorize and organize events, enabling more efficient filtering, tracing, and analysis
+  - `EventId`: The unique identifier assigned to an individual event
+  - `EventData`: The payload or data associated with an event.
 
 <strong>File Logs:</strong>
   - `Source`: The Log source (File)
-  - `TimeStamp`: The time when the change was introduced in the monitored file.
+  - `TimeStamp`: The time at which the change was introduced in the monitored file.
   - `FileName`: The name of the file that the log entry is read from.
   - `Message`: The line/change added in the monitored file.
 
@@ -65,7 +68,7 @@ Different logs source types have different field names:<br>
             "level": "Information"
           }
         ],
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}"
       },
       {
         "type": "File",
@@ -79,8 +82,9 @@ Different logs source types have different field names:<br>
 }
 ```
 
-For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. 
-In such a case, The `logFormat` field configured value should be `custom`. In addition to that, to enable sanitization of the JSON output and validation of the outputs displayed by the tool, the user can add a suffix: `'|json'` after the desired custom log format.
+For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. In such a case, The `logFormat` value should be `custom`. 
+<br>To enable sanitization of the JSON output and ensure the the outputs displayed by the tool is valid, the user can add a suffix: `'|json'` after the desired custom log format.
+
 For example:
 ```json
 {
@@ -97,7 +101,7 @@ For example:
                     "level": "Information"
                    }
                  ],
-                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}|json"
+                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
 	      }
         ]
   }
