@@ -23,16 +23,16 @@ To ensure the different fields values you want to display appear in the customiz
 
 Different logs source types have different field names:<br> 
 <strong>Event Logs:</strong>
-  - `Source`: This is the source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
+  - `Source`: The source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
   - `TimeStamp`: The time the event was logged
   - `EventID`: The event Id
-  - `Severity`: label that indicate the severity or urgency of a log entry
+  - `Severity`: A label that indicates the severity or urgency of a log entry
   - `Message`: The event message
 
 <strong>ETW Logs:</strong>
-  - `Source`: Log source (Event Log)
+  - `Source`: The Log source (Event Log)
   - `TimeStamp`: The time the event was logged
-  - `Severity`: label that indicate the severity or urgency of a log entry
+  - `Severity`: A label that indicates the severity or urgency of a log entry
   - `ProviderId`: The ETW Event Provider ID
   - `ProviderName`: The ETW Event Provider Name
   - `DecodingSource`
@@ -43,10 +43,10 @@ Different logs source types have different field names:<br>
   - `EventData`
 
 <strong>File Logs:</strong>
-  - `Source`: Log source (File)
-  - `TimeStamp`: Timestamp when the change is added in file.
-  - `FileName`: Name of the file that the log entry is read from.
-  - `Message`: The line/change added in the file.
+  - `Source`: The Log source (File)
+  - `TimeStamp`: The time when the change was introduced in the monitored file.
+  - `FileName`: The name of the file that the log entry is read from.
+  - `Message`: The line/change added in the monitored file.
 
 ### Sample Custom Log Configuration
 
