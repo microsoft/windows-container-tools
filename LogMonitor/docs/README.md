@@ -1,11 +1,88 @@
 # Log Monitor Documentation
 
 **Contents:**
+- [Logs Customization](#logs-customization)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
+
+## Logs Customization
+
+### Description
+By default, log monitor's logs will be displayed in JSON format. However, a user has the flexibility to configure the logs in XML format or their own custom defined format.
+
+To define the log format, add a new field 'logFormat' and specify it as either 'XML', 'JSON' or 'Custom' (the field value is case-insensitive)
+For the 'Custom' log format, the user can specify the custom log format at source type level.
+
+## Sample Custom Log Configuration
+
+```json
+{
+  "LogConfig": {
+    "logFormat": "custom",
+    "sources": [
+      {
+        "type": "ETW",
+        "eventFormatMultiLine": false,
+        "providers": [
+          {
+            "providerName": "Microsoft-Windows-WLAN-Drive",
+            "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+            "level": "Information"
+          }
+        ],
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}"
+      },
+      {
+        "type": "File",
+        "directory": "c:\\inetpub\\logs",
+        "filter": "*.log",
+        "includeSubdirectories": true,
+        "customLogFormat": "{'message':%Message%,'source':%Source%,'fileName':%FileName%}"
+      }
+    ]
+  }
+}
+```
+### Custom Log Format Pattern Layout
+To ensure the different fields you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%)
+
+For example: `%Message%, [%TimeStamp%]`
+
+Ensure that the fields used match with the fields specified for the different log sources:
+
+Event Logs Fields
+For event logs the following fields can be used: 
+- `%Source%`: This is the source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
+- `%TimeStamp%`: The time the event was logged
+- `%EventID%`: 
+- `%Severity%`: 
+- `%Message%`: Event message
+
+Event Logs Fields
+For ETW logs the following fields can be used: 
+- `%Source%`:
+- `%TimeStamp%`:
+- `%Severity%`:
+- `%ProviderId%`:
+- `%ProviderName%`:
+- `%DecodingSource%`:
+- `%ExecutionProcessId%`:
+- `%ExecutionThreadId%`:
+- `%Keyword%`:
+- `%EventId`:
+- `%EventData%`:
+
+File Logs Fields
+For file logs the following fields can be used: 
+- `%Source%`: Log source (File)
+- `%TimeStamp%`: Timestamp when the change is added in file.
+- `%FileName%`: Name of the file that the log entry is read from.
+- `%Message%`: The line/change added in the file.
+
+For advanced usage of the custom log feature, a user can 
 
 ## Sample Config File
 
