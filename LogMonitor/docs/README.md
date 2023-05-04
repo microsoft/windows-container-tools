@@ -13,10 +13,45 @@
 ### Description
 By default, log monitor's logs will be displayed in JSON format. However, a user has the flexibility to configure the logs in XML format or their own custom defined format.
 
-To define the log format, add a new field 'logFormat' and specify it as either 'XML', 'JSON' or 'Custom' (the field value is case-insensitive)
-For the 'Custom' log format, the user can specify the custom log format at source type level.
+To define the log format, add a new field 'logFormat' and specify it as either `XML`, `JSON` or `Custom` (the field value is case-insensitive)
+For the `Custom` log format, the user can specify the custom log format at source type level.
 
-## Sample Custom Log Configuration
+### Custom Log Format Pattern Layout
+To ensure the different fields values you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%) and the field names specified match with the correct field names for the different log sources.
+
+`For example: %Message%, [%TimeStamp%]`
+
+Different logs source types have different field names: 
+Event Logs Fields
+For event logs the following fields can be used: 
+  - `Source`: This is the source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
+  - `TimeStamp`: The time the event was logged
+  - `EventID`: The event Id
+  - `Severity`: label that indicate the severity or urgency of a log entry
+  - `Message`: The event message
+
+ETW Logs Fields
+For ETW logs the following fields can be used: 
+  - `Source`: Log source (Event Log)
+  - `TimeStamp`: The time the event was logged
+  - `Severity`: label that indicate the severity or urgency of a log entry
+  - `ProviderId`: The ETW Event Provider ID
+  - `ProviderName`: The ETW Event Provider Name
+  - `DecodingSource`
+  - `ExecutionProcessId`
+  - `ExecutionThreadId`
+  - `Keyword`
+  - `EventId`
+  - `EventData`
+
+File Logs Fields
+For file logs the following fields can be used: 
+  - `Source`: Log source (File)
+  - `TimeStamp`: Timestamp when the change is added in file.
+  - `FileName`: Name of the file that the log entry is read from.
+  - `Message`: The line/change added in the file.
+
+### Sample Custom Log Configuration
 
 ```json
 {
@@ -46,43 +81,31 @@ For the 'Custom' log format, the user can specify the custom log format at sourc
   }
 }
 ```
-### Custom Log Format Pattern Layout
-To ensure the different fields you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%)
 
-For example: `%Message%, [%TimeStamp%]`
-
-Ensure that the fields used match with the fields specified for the different log sources:
-
-Event Logs Fields
-For event logs the following fields can be used: 
-- `%Source%`: This is the source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
-- `%TimeStamp%`: The time the event was logged
-- `%EventID%`: 
-- `%Severity%`: 
-- `%Message%`: Event message
-
-Event Logs Fields
-For ETW logs the following fields can be used: 
-- `%Source%`:
-- `%TimeStamp%`:
-- `%Severity%`:
-- `%ProviderId%`:
-- `%ProviderName%`:
-- `%DecodingSource%`:
-- `%ExecutionProcessId%`:
-- `%ExecutionThreadId%`:
-- `%Keyword%`:
-- `%EventId`:
-- `%EventData%`:
-
-File Logs Fields
-For file logs the following fields can be used: 
-- `%Source%`: Log source (File)
-- `%TimeStamp%`: Timestamp when the change is added in file.
-- `%FileName%`: Name of the file that the log entry is read from.
-- `%Message%`: The line/change added in the file.
-
-For advanced usage of the custom log feature, a user can 
+For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. 
+To enable sanitization of the JSON output and validation of the output, the user can add a suffix: `'|json'` after the desired custom log format.
+For example:
+```json
+{
+  "LogConfig": {
+	"logFormat": "custom",
+        "sources": [
+	      {
+                "type": "ETW",
+                "eventFormatMultiLine": false,
+                "providers": [
+                  {
+                     "providerName": "Microsoft-Windows-WLAN-Drive",
+                    "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+                    "level": "Information"
+                   }
+                 ],
+                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}|json"
+	      }
+        ]
+  }
+}
+```
 
 ## Sample Config File
 
