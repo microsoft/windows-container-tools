@@ -11,27 +11,25 @@
 ## Logs Customization
 
 ### Description
-By default, log monitor's logs will be displayed in JSON format. However, a user has the flexibility to configure the logs in XML format or their own custom defined format.
+By default, log monitor's logs will be displayed in JSON format. However, a user has the flexibility to configure the logs to be displayed in either `XML` format or their own `custom` defined format.
 
-To define the log format, add a new field 'logFormat' and specify it as either `XML`, `JSON` or `Custom` (the field value is case-insensitive)
-For the `Custom` log format, the user can specify the custom log format at source type level.
+To "specify the log format to be used, a user will need to add a new field 'logFormat' in the config file and specify it's value as either `XML`, `JSON` or `Custom` <em>(the field value is case-insensitive)</em>
+<br> For the `JSON` and `XML` log formats, no additional configurations are needed. However, for the `Custom` log format, a user needs to specify the custom log format at the source type level.
 
 ### Custom Log Format Pattern Layout
-To ensure the different fields values you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%) and the field names specified match with the correct field names for the different log sources.
+To ensure the different fields values you want to display appear in the customized log outputs, ensure to enclose the field names with the percentage sign (%) and the field names specified match the correct field names for the specific log sources.
 
 `For example: %Message%, [%TimeStamp%]`
 
-Different logs source types have different field names: 
-Event Logs Fields
-For event logs the following fields can be used: 
+Different logs source types have different field names:<br> 
+<strong>Event Logs:</strong>
   - `Source`: This is the source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
   - `TimeStamp`: The time the event was logged
   - `EventID`: The event Id
   - `Severity`: label that indicate the severity or urgency of a log entry
   - `Message`: The event message
 
-ETW Logs Fields
-For ETW logs the following fields can be used: 
+<strong>ETW Logs:</strong>
   - `Source`: Log source (Event Log)
   - `TimeStamp`: The time the event was logged
   - `Severity`: label that indicate the severity or urgency of a log entry
@@ -44,8 +42,7 @@ For ETW logs the following fields can be used:
   - `EventId`
   - `EventData`
 
-File Logs Fields
-For file logs the following fields can be used: 
+<strong>File Logs:</strong>
   - `Source`: Log source (File)
   - `TimeStamp`: Timestamp when the change is added in file.
   - `FileName`: Name of the file that the log entry is read from.
@@ -83,7 +80,7 @@ For file logs the following fields can be used:
 ```
 
 For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. 
-To enable sanitization of the JSON output and validation of the output, the user can add a suffix: `'|json'` after the desired custom log format.
+In such a case, The `logFormat` field configured value should be `custom`. In addition to that, to enable sanitization of the JSON output and validation of the outputs displayed by the tool, the user can add a suffix: `'|json'` after the desired custom log format.
 For example:
 ```json
 {
