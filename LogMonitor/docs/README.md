@@ -11,44 +11,42 @@
 ## Log Format Customization
 
 ### Description
-By default, logs will be displayed in JSON format. However, users have the flexibility to configure logs to be displayed in either `XML` or their own `custom` defined formats.
+By default, logs will be displayed in JSON format. However, users can change the log format to either `XML` or their own `custom` defined format.
 
-To specify the log format, a user needs to configure the 'logFormat' field in the config to either `XML`, `JSON` or `Custom` <em>(the field value is not case-insensitive)</em>
-<br>For the `JSON` and `XML` log formats, no additional configurations are needed. However, in the case of `Custom` log format, a user needs to configure the `custom log format` at the source type level.
+To specify the log format, a user needs to configure the `logFormat` field in `LogMonitorConfig.json` to either `XML`, `JSON` or `Custom` <em>(the field value is not case-insensitive)</em>
+<br>For `JSON` and `XML` log formats, no additional configurations are required. However, the `Custom` log format, needs further configuration. For custom log formats, a user needs to specify the `customLogFormat` at the source level.
 
 ### Custom Log Format Pattern Layout
-To ensure the different field values are correctly displayed in the customized log outputs:
-- Wrap the field names within percentage signs / modulo operators (%)
-- Ensure the field names specified matches the correct log sources' field names.
+To ensure the different field values are correctly displayed in the customized log outputs, ensure to wrap the field names within modulo operators (%) and the field names specified matches the correct log sources' field names.
 
-    `For example: %Message%, [%TimeStamp%]`
+For example: `%Message%, [%TimeStamp%]`<br><br>
 
-The different source types tracked by log monitor have different field names <em>(a few are common)</em>:<br> 
+Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> has log field names specific to them:
 
 <strong>Event Logs:</strong>
-  - `Source`: The source of the log. i.e ‘EventLog’ to differentiate the sources of the different logs being streamed in the console.
-  - `TimeStamp`: The time at which the event was generated
-  - `EventID`: The unique identifier assigned to an individual event
+  - `Source`: The log source (Event Log)
+  - `TimeStamp`: Time at which the event was generated
+  - `EventID`: Unique identifier assigned to an individual event
   - `Severity`: A label that indicates the importance or criticality of an event
   - `Message`: The event message
 
-<strong>ETW Logs:</strong>
-  - `Source`: The Log source (Event Log)
-  - `TimeStamp`: The time at which the event was generated
+<strong>ETW:</strong>
+  - `Source`: The log source (ETW)
+  - `TimeStamp`: Time at which the event was generated
   - `Severity`: A label that indicates the importance or criticality of an event
-  - `ProviderId`:  The unique identifier that is assigned to the event provider during its registration process.
+  - `ProviderId`:  Unique identifier that is assigned to the event provider during its registration process.
   - `ProviderName`: Unique identifier or name assigned to an event provider
   - `DecodingSource`: Component or provider responsible for decoding and translating raw event data into a human-readable format
-  - `ExecutionProcessId`: An identifier associated with a process that is being executed at the time an event is generated
-  - `ExecutionThreadId`: The identifier associated with a thread at the time an event is generated
-  - `Keyword`:  A flag or attribute assigned to an event or a group of related events, that provides a way to categorize and organize events, enabling more efficient filtering, tracing, and analysis
-  - `EventId`: The unique identifier assigned to an individual event
-  - `EventData`: The payload or data associated with an event.
+  - `ExecutionProcessId`: Identifier associated with a process that is being executed at the time an event is generated
+  - `ExecutionThreadId`: Identifier associated with a thread at the time an event is generated
+  - `Keyword`:  Flag or attribute assigned to an event or a group of related events
+  - `EventId`: Unique identifier assigned to an individual event
+  - `EventData`: Payload or data associated with an event.
 
-<strong>File Logs:</strong>
-  - `Source`: The Log source (File)
-  - `TimeStamp`: The time at which the change was introduced in the monitored file.
-  - `FileName`: The name of the file that the log entry is read from.
+<strong>Log Files:</strong>
+  - `Source`: The log source (File)
+  - `TimeStamp`: Time at which the change was introduced in the monitored file.
+  - `FileName`: Name of the file that the log entry is read from.
   - `Message`: The line/change added in the monitored file.
 
 ### Sample Custom Log Configuration
