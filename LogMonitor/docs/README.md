@@ -264,7 +264,7 @@ To specify the log format, a user needs to configure the `logFormat` field in `L
 ### Custom Log Format Pattern Layout
 To ensure the different field values are correctly displayed in the customized log outputs, ensure to wrap the field names within modulo operators (%) and the field names specified matches the correct log sources' field names.
 
-For example: `%Message%, [%TimeStamp%]`<br>
+For example: `%Message%, %TimeStamp%`<br>
 
 Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> has log field names specific to them:
 
