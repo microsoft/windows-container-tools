@@ -7,6 +7,7 @@
 - [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
+- [Log Format Customization](#log-format-customization)
 
 ## Logs Customization
 
@@ -348,3 +349,101 @@ CMD "c:\\windows\\system32\\ping.exe -n 20 localhost"
 ```
 
 The Process Monitor will stream the output for `c:\windows\system32\ping.exe -n 20 localhost`
+
+## Log Format Customization
+
+### Description
+By default, logs will be displayed in JSON format. However, users can change the log format to either `XML` or their own `custom` defined format.
+
+To specify the log format, a user needs to configure the `logFormat` field in `LogMonitorConfig.json` to either `XML`, `JSON` or `Custom` <em>(the field value is not case-insensitive)</em>
+<br>For `JSON` and `XML` log formats, no additional configurations are required. However, the `Custom` log format, needs further configuration. For custom log formats, a user needs to specify the `customLogFormat` at the source level.
+
+### Custom Log Format Pattern Layout
+To ensure the different field values are correctly displayed in the customized log outputs, ensure to wrap the field names within modulo operators (%) and the field names specified matches the correct log sources' field names.
+
+For example: `%Message%, %TimeStamp%`<br>
+
+Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> has log field names specific to them:
+
+<strong>Event Logs:</strong>
+  - `Source`: The log source (Event Log)
+  - `TimeStamp`: Time at which the event was generated
+  - `EventID`: Unique identifier assigned to an individual event
+  - `Severity`: A label that indicates the importance or criticality of an event
+  - `Message`: The event message
+
+<strong>ETW:</strong>
+  - `Source`: The log source (ETW)
+  - `TimeStamp`: Time at which the event was generated
+  - `Severity`: A label that indicates the importance or criticality of an event
+  - `ProviderId`:  Unique identifier that is assigned to the event provider during its registration process.
+  - `ProviderName`: Unique identifier or name assigned to an event provider
+  - `DecodingSource`: Component or provider responsible for decoding and translating raw event data into a human-readable format
+  - `ExecutionProcessId`: Identifier associated with a process that is being executed at the time an event is generated
+  - `ExecutionThreadId`: Identifier associated with a thread at the time an event is generated
+  - `Keyword`:  Flag or attribute assigned to an event or a group of related events
+  - `EventId`: Unique identifier assigned to an individual event
+  - `EventData`: Payload or data associated with an event.
+
+<strong>Log Files:</strong>
+  - `Source`: The log source (File)
+  - `TimeStamp`: Time at which the change was introduced in the monitored file.
+  - `FileName`: Name of the file that the log entry is read from.
+  - `Message`: The line/change added in the monitored file.
+
+### Sample Custom Log Configuration
+
+```json
+{
+  "LogConfig": {
+    "logFormat": "custom",
+    "sources": [
+      {
+        "type": "ETW",
+        "eventFormatMultiLine": false,
+        "providers": [
+          {
+            "providerName": "Microsoft-Windows-WLAN-Drive",
+            "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+            "level": "Information"
+          }
+        ],
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}"
+      },
+      {
+        "type": "File",
+        "directory": "c:\\inetpub\\logs",
+        "filter": "*.log",
+        "includeSubdirectories": true,
+        "customLogFormat": "{'message':%Message%,'source':%Source%,'fileName':%FileName%}"
+      }
+    ]
+  }
+}
+```
+
+For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. In such a case, The `logFormat` value should be `custom`. 
+<br>To enable sanitization of the JSON output and ensure the the outputs displayed by the tool is valid, the user can add a suffix: `'|json'` after the desired custom log format.
+
+For example:
+```json
+{
+  "LogConfig": {
+	"logFormat": "custom",
+        "sources": [
+	      {
+                "type": "ETW",
+                "eventFormatMultiLine": false,
+                "providers": [
+                  {
+                     "providerName": "Microsoft-Windows-WLAN-Drive",
+                    "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+                    "level": "Information"
+                   }
+                 ],
+                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
+	      }
+        ]
+  }
+}
+```
