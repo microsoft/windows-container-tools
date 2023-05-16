@@ -369,7 +369,12 @@ DWORD ReadFromPipe(LPVOID Param)
                 }
             }
             else {
-                chBufOut[outSz++] = *ptr;
+                // no support for multibyte characters for now
+                // TODO(nandaa): https://github.com/microsoft/windows-container-tools/issues/121
+                if (*ptr < 0) {
+                    chBufOut[outSz++] = '?';
+                }
+                else chBufOut[outSz++] = *ptr;
             }
             ptr++;
             count++;
