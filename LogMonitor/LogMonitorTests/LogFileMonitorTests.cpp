@@ -177,6 +177,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -225,6 +226,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -293,6 +295,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -396,6 +399,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -571,6 +575,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -676,6 +681,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -795,6 +801,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -985,6 +992,7 @@ namespace LogMonitorTests
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
             std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, L"json", L"");
+
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
