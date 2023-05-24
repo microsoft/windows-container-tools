@@ -59,11 +59,10 @@ BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 void PrintUsage()
 {
     wprintf(
-        L"\n\tLogMonitor Tool Version %d.%d.%d.%d \n\n",
+        L"\n\tLogMonitor Tool Version %d.%d.%d \n\n",
         LM_MAJORNUMBER,
         LM_MINORNUMBER,
-        LM_BUILDNUMBER,
-        LM_BUILDMINORVERSION
+        LM_BUILDNUMBER
     );
     wprintf(L"\tUsage: LogMonitor.exe [/?] | [--help] | [[/CONFIG <PATH>][COMMAND [PARAMETERS]]] \n\n");
     wprintf(L"\t/?|--help   Shows help information\n");
