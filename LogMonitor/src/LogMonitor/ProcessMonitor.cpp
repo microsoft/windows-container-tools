@@ -346,7 +346,7 @@ DWORD ReadFromPipe(LPVOID Param)
         size_t count = 0;
         size_t lastNewline = 0;
         clearBuffer(chBufOut);
-        while (*ptr > 0 && count < BUFSIZE) {
+        while (*ptr != '\0' && count < BUFSIZE) {
             // copy over to chBufOut till \r\n
             // the remaining will be reserved to be completed
             // by the next read.
