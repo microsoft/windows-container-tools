@@ -275,8 +275,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
             {
                 str.replace(i, 1, L"\\\"");
                 i++;
-            }
-            else if (i > 0 && str.substr(i - 1, 1) == L"~") {
+            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
                 str.replace(i - 1, 1, L"");
                 i--;
             }
@@ -318,7 +317,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 /// <param name="stringA"></param>
 /// <param name="stringB"></param>
 /// <returns></returns>
-/// 
+///
 bool Utility::CompareWStrings(wstring stringA, wstring stringB)
 {
     return stringA.size() == stringB.size() &&
@@ -338,7 +337,6 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
 
     size_t i = 0, j = 1;
     while (i < customLogFormat.size()) {
-
         auto sub = customLogFormat.substr(i, j - i);
         auto sub_length = sub.size();
 

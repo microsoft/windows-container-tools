@@ -12,7 +12,7 @@
 
 ///
 /// Log formatting attributes
-/// 
+///
 #define JSON_TAG_LOG_FORMAT L"logFormat"
 #define JSON_TAG_CUSTOM_LOG_FORMAT L"customLogFormat"
 

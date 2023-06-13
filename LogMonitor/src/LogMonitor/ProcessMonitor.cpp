@@ -244,13 +244,11 @@ size_t formatProcessLog(char* chBuf)
         // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
         prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
-    }
-    else {
+    } else {
         // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
-    }
-    
+    }    
     char chBufCpy[BUFSIZE] = "";
 
     //

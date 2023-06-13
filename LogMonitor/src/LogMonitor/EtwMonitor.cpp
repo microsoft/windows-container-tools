@@ -1298,7 +1298,7 @@ EtwMonitor::GetPropertyLength(
                 {
                     case TDH_INTYPE_INT8:
                     case TDH_INTYPE_UINT8:
-                    if ((pbDataEnd - pbData) >= 1) 
+                    if ((pbDataEnd - pbData) >= 1)
                     {
                         PropertyLength = *pbData;
                     }
