@@ -1719,8 +1719,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
                 std::wstring logFmt;
                 if (Utility::CompareWStrings(m_logFormat, L"XML")) {
                     logFmt = L"<Log><Source>File</Source><LogEntry><Logline>%s</Logline><FileName>%s</FileName></LogEntry></Log>";
-                }
-                else {
+                } else {
                     logFmt = L"{\"Source\": \"File\",\"LogEntry\": {\"Logline\": \"%s\",\"FileName\": \"%s\"},\"SchemaVersion\":\"1.0.0\"}";
                     // sanitize message
                     Utility::SanitizeJson(msg);
@@ -1728,8 +1727,8 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
                 }
 
                 formattedFileEntry = Utility::FormatString(
-                    logFmt.c_str(), 
-                    pLogEntry->message.c_str(), 
+                    logFmt.c_str(),
+                    pLogEntry->message.c_str(),
                     pLogEntry->fileName.c_str()
                 );
             }
