@@ -1,7 +1,6 @@
 # Log Monitor Documentation
 
 **Contents:**
-- [Logs Customization](#logs-customization)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
