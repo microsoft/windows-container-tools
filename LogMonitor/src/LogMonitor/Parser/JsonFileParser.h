@@ -36,6 +36,8 @@ public:
     DataType GetNextDataType();
 
     const std::wstring& ParseStringValue();
+    const std::double_t& ParseNumericValue();
+    const std::double_t& ParseNumber();
 
     bool ParseBooleanValue();
 
@@ -76,6 +78,11 @@ private:
     //
     std::wstring m_stringValue;
 
+    //
+    // Last parsed numeric value
+    //
+    std::double_t m_doubleValue;
+
     static const int EndOfBuffer = -1;
 
     static inline int HexToInt(
@@ -84,6 +91,10 @@ private:
 
     static inline bool IsWhiteSpace(
         _In_ int Character
+        );
+
+    static inline bool ContainsInfinitySymbol(
+        _In_ std::wstring text
         );
 
     static inline wchar_t ParseSpecialCharacter(int Character);

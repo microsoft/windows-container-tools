@@ -447,6 +447,7 @@ namespace LogMonitorTests
                 Assert::AreEqual(directory.c_str(), sourceFile->Directory.c_str());
                 Assert::AreEqual(L"", sourceFile->Filter.c_str());
                 Assert::AreEqual(false, sourceFile->IncludeSubdirectories);
+                Assert::AreEqual(300.0, sourceFile->WaitInSeconds);
             }
         }
 
@@ -1543,5 +1544,130 @@ namespace LogMonitorTests
             Assert::AreEqual(succcess, true);
         }
 
+        TEST_METHOD(TestWaitInSeconds){
+            // Test WaitInSeconds input as value
+            TestWaitInSecondsValues(L"242", false);
+
+            // Test WaitInSeconds input as string
+            TestWaitInSecondsValues(L"359", true);
+
+            // Test WaitInSeconds input is Infinity
+            TestWaitInSecondsValues(L"INFINITY", true);
+        }
+
+        TEST_METHOD(TestInvalidWaitInSeconds) {
+            std::wstring directory = L"C:\\LogMonitor\\logs";
+
+            std::wstring configFileStrFormat =
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"File\",\
+                                \"directory\": \"%s\",\
+                                \"waitInSeconds\": %f\
+                            }\
+                        ]\
+                    }\
+                }";
+
+            TestInvalidWaitInSecondsValues(L"-10", false);
+            TestInvalidWaitInSecondsValues(L"-Inf", true);
+        }
+
+    private:
+
+        void TestWaitInSecondsValues(std::wstring waitInSeconds, bool asString = false) {
+            std::wstring configFileStrFormat;
+            std::wstring directory = L"C:\\LogMonitor\\logs";
+            std::wstring configFileStr = GetConfigFileStrFormat(directory, waitInSeconds, asString);
+
+            JsonFileParser jsonParser(configFileStr);
+            LoggerSettings settings;
+
+            bool success = ReadConfigFile(jsonParser, settings);
+
+            //
+            // The config string was valid
+            //
+            Assert::IsTrue(success);
+
+            //
+            // The source Event Log is valid
+            //
+            Assert::AreEqual((size_t)1, settings.Sources.size());
+            Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
+
+            std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
+
+            if (isinf(std::stod(waitInSeconds))) {
+                Assert::IsTrue(isinf(sourceFile->WaitInSeconds));
+            }
+            else {
+                double precision = 1e-6;
+                Assert::AreEqual(std::stod(waitInSeconds), sourceFile->WaitInSeconds, precision);
+            }
+        }
+        
+        void TestInvalidWaitInSecondsValues(std::wstring waitInSeconds, bool asString = false) {
+            std::wstring directory = L"C:\\LogMonitor\\logs";
+            std::wstring configFileStr = GetConfigFileStrFormat(directory, waitInSeconds, asString);
+
+            JsonFileParser jsonParser(configFileStr);
+            LoggerSettings settings;
+
+            bool success = ReadConfigFile(jsonParser, settings);
+
+            std::wstring output = RecoverOuput();
+
+            Assert::IsTrue(success);
+            Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
+
+            Assert::IsTrue(success);
+            Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
+        }
+
+        std::wstring GetConfigFileStrFormat(std::wstring directory, std::wstring waitInSeconds, bool asString) {
+            std::wstring configFileStrFormat;
+            if (asString) {
+                configFileStrFormat =
+                    L"{    \
+                        \"LogConfig\": {    \
+                            \"sources\": [ \
+                                {\
+                                    \"type\": \"File\",\
+                                    \"directory\": \"%s\",\
+                                    \"waitInSeconds\": \"%s\"\
+                                }\
+                            ]\
+                        }\
+                    }";
+
+                return Utility::FormatString(
+                    configFileStrFormat.c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    waitInSeconds.c_str()
+                );
+            }
+            else {
+                configFileStrFormat =
+                    L"{    \
+                        \"LogConfig\": {    \
+                            \"sources\": [ \
+                                {\
+                                    \"type\": \"File\",\
+                                    \"directory\": \"%s\",\
+                                    \"waitInSeconds\": %f\
+                                }\
+                            ]\
+                        }\
+                    }";
+                return Utility::FormatString(
+                    configFileStrFormat.c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    std::stod(waitInSeconds)
+                );
+            }
+        }
     };
 }

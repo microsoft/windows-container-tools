@@ -4,6 +4,7 @@
 //
 
 #include "pch.h"
+#include <regex>
 
 /// JsonFileParser.cpp
 ///
@@ -73,7 +74,6 @@ JsonFileParser::ParseStringValue()
         throw std::invalid_argument("JsonFileParser: Expected string value");
     }
 }
-
 
 ///
 /// Parses a escape sequence control character.
@@ -145,6 +145,122 @@ JsonFileParser::ParseSpecialCharacter(int Ch)
     return (static_cast<wchar_t>(Ch));
 }
 
+///
+/// Parses a real number (positive or negative integers or decimals) passed as a number (eg. 10) or string (eg. "10").
+/// It also parses infinity values (eg.: Inf, -Inf, INFINITY, INFINITY)
+///
+/// \return A double value.
+///
+const std::double_t &
+JsonFileParser::ParseNumericValue()
+{
+    size_t offset = 0;
+    int ch = PeekNextCharacter(offset);
+
+    if (ch != '"')
+    {
+        return ParseNumber();
+    }
+    else
+    {
+        // Convert string numerical value or infinity to double
+        std::wstring parsedStringValue = ParseStringValue();
+        try
+        {
+            if (ContainsInfinitySymbol(parsedStringValue)) {
+                m_doubleValue = parsedStringValue[0] == '-' ? -INFINITY : INFINITY;
+            }
+            else
+            {
+                // convert string to double
+                m_doubleValue = std::stod(parsedStringValue.c_str());
+            }
+            return m_doubleValue;
+        }
+        catch (...)
+        {
+            throw std::invalid_argument("JsonFileParser: Invalid value. Expected number or infinity");
+        }
+    }
+}
+
+///
+/// Parses a real number (positive or negative integers or decimals) passed as a number
+///
+/// \return A double value.
+///
+const std::double_t&
+JsonFileParser::ParseNumber()
+{
+    bool negativeValue = false;
+    bool decimalFound = false;
+    bool infinitySymbolFound = false;
+
+    double parsedValue = 0.0;
+    double decimalMultiplier = 0.1;
+
+    size_t offset = 0;
+    int ch = PeekNextCharacter(offset);
+
+    if (ch == '-' || ch == '+')
+    {
+        negativeValue = ch == '-';
+        offset++;
+    }
+
+    do
+    {
+        ch = PeekNextCharacter(offset);
+        if (ch >= '0' && ch <= '9')
+        {
+            if (decimalFound)
+            {
+                    parsedValue += static_cast<double>(ch - '0') * decimalMultiplier;
+                    decimalMultiplier *= 0.1;
+            }
+            else
+            {
+                    parsedValue = parsedValue * 10 + static_cast<double>(ch - '0');
+            }
+            offset++;
+        }
+        else if (ch == '.')
+        {
+            if (decimalFound)
+            {
+                    break;
+            }
+
+            decimalFound = true;
+            offset++;
+        }
+        else if (ch == 8734)
+        {
+            if (infinitySymbolFound || offset > 1)
+            {
+                    break;
+            }
+
+            infinitySymbolFound = true;
+            parsedValue = INFINITY;
+            offset++;
+        }
+        else
+        {
+            //
+            // End of string.
+            //
+            offset++;
+            AdvanceBufferPointer(offset);
+
+            m_doubleValue = negativeValue ? -parsedValue : parsedValue;
+            return m_doubleValue;
+        }
+    } while (ch >= '0' && ch <= '9' || ch == '.' || ch == 8734);
+
+    // Handle the case when the loop exits prematurely
+    throw std::invalid_argument("JsonFileParser: Invalid numeric value");
+}
 
 ///
 /// Skips a number at the current position of the buffer.
@@ -631,4 +747,19 @@ JsonFileParser::IsWhiteSpace(
     default:
         return false;
     }
+}
+
+///
+/// Check if parsed text contains the infinity symbol ∞
+///
+/// \return true if contains infinity symbol, false otherwise
+///
+inline
+bool
+JsonFileParser::ContainsInfinitySymbol(std::wstring text)
+{
+    std::wregex pattern(L"^[+|-]?\u221E$");
+
+    std::wsmatch matches;
+    return std::regex_search(text, matches, pattern);
 }
