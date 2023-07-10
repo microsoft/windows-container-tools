@@ -217,7 +217,29 @@ This will monitor any changes in log files matching a specified filter, given th
 - `filter` (optional): uses [MS-DOS wildcard match type](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/indexsrv/ms-dos-and-windows-wildcard-characters) i.e.. `*, ?`. Can be set to empty, which will be default to `"*"`.
 - `includeSubdirectories` (optional) : `"true|false"`, specify if sub-directories also need to be monitored. Defaults to `false`.
 - `includeFileNames` (optional): `"true|false"`, specifies whether to include file names in the logline, eg. `sample.log: xxxxx`. Defaults to `false`.
+- `waitInSeconds` (optional): specifies the duration to wait for a file or folder to be created if it does not exist. It takes integer values between 0-INFINITY. Defaults to `300` seconds, i.e, 5 minutes. It can be passed as a value or a string. 
 
+  -	`waitInSeconds = 0`
+
+    When the value is zero(0), this is means that we do not wait and LogMonitor terminates with an error
+
+  -	`waitInSeconds = "INFINITY"`
+
+    In this case, LogMonitor will wait forever for the folder to be created. When "INFINITY" is passes, it must be passed as a string.
+  -	`waitInSeconds = +integer`
+
+    When the value is a positive integer, LogMonitor will wait for the specified time. Once the predefined time elapses, LogMonitor will terminate with an error.
+
+
+  Examples:
+
+  Example 1: Wait for 10 seconds: 
+    - As a value: `"waitInSeconds": 10`
+    - As a string: `"waitInSeconds": "10"`
+
+  Example 2: Wait forever: 
+    - `"waitInSeconds": "INFINITY"` or  `"waitInSeconds": "inf"`
+    - This field is case-insensitive 
 
 ### Examples
 
@@ -230,7 +252,8 @@ This will monitor any changes in log files matching a specified filter, given th
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
         "includeSubdirectories": true,
-        "includeFileNames": false
+        "includeFileNames": false,
+        "waitInSeconds": 10
       }
     ]
   }
