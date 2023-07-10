@@ -165,9 +165,6 @@ HANDLE _RetryOpenDirectoryWithInterval(std::wstring logDirectory, std::double_t 
         }
     }
 
-    CancelWaitableTimer(timerEvent);
-    CloseHandle(timerEvent);
-
     return logDirHandle;
 }
 

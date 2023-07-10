@@ -365,9 +365,8 @@ ReadSourceAttributes(
             }
             else if (_wcsnicmp(key.c_str(), JSON_TAG_WAITINSECONDS, _countof(JSON_TAG_WAITINSECONDS)) == 0)
             {
-                // TODO: add code to parse numberic values (integers and floats)
-                // Attributes[key] = new std::double_t(Parser.ParseNumericValue());
-                Attributes[key] = new double(10.0);
+
+                Attributes[key] = new std::double_t(Parser.ParseNumericValue());
             }
             else
             {

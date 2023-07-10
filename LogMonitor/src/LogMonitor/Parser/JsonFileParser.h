@@ -36,6 +36,8 @@ public:
     DataType GetNextDataType();
 
     const std::wstring& ParseStringValue();
+    const std::double_t& ParseNumericValue();
+    const std::double_t& ParseNumber();
 
     bool ParseBooleanValue();
 
@@ -75,6 +77,11 @@ private:
     // Last parsed string value
     //
     std::wstring m_stringValue;
+
+    //
+    // Last parsed numeric value
+    //
+    std::double_t m_doubleValue;
 
     static const int EndOfBuffer = -1;
 

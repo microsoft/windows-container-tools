@@ -145,6 +145,104 @@ JsonFileParser::ParseSpecialCharacter(int Ch)
     return (static_cast<wchar_t>(Ch));
 }
 
+///
+/// Parses a real number (positive or negative integers or decimals) passed as a number (eg. 10) or string (eg. "10").
+/// It also parses infinity values (eg.: Inf, -Inf, INFINITY, INFINITY)
+///
+/// \return A double value.
+///
+const std::double_t &
+JsonFileParser::ParseNumericValue()
+{
+    size_t offset = 0;
+    int ch = PeekNextCharacter(offset);
+
+    if (ch != '"')
+    {
+        return ParseNumber();
+    }
+    else
+    {
+        // Convert string numerical value or infinity to double
+        std::wstring parsedStringValue = ParseStringValue();
+        try
+        {
+            // Convert from wide string to narrow string
+            // const std::string s(parsedValue.begin(), parsedValue.end());
+
+            //// convert string to double
+            m_doubleValue = std::stod(parsedStringValue.c_str());
+            return m_doubleValue;
+        }
+        catch (...)
+        {
+            throw std::invalid_argument("JsonFileParser: Invalid value. Expected number or infinity");
+        }
+    }
+}
+
+///
+/// Parses a real number (positive or negative integers or decimals) passed as a number
+///
+/// \return A double value.
+///
+const std::double_t &
+JsonFileParser::ParseNumber()
+{
+    bool negativeValue = false;
+    bool decimalFound = false;
+
+    double parsedValue = 0.0;
+    double decimalMultiplier = 0.1;
+
+    size_t offset = 0;
+    int ch = PeekNextCharacter(offset);
+
+    if (ch == '-' || ch == '+')
+    {
+        negativeValue = ch == '-';
+        offset++;
+    }
+
+    do
+    {
+        ch = PeekNextCharacter(offset);
+        if (ch >= '0' && ch <= '9')
+        {
+            if (decimalFound)
+            {
+                    parsedValue += (ch - '0') * decimalMultiplier;
+                    decimalMultiplier *= 0.1;
+            }
+            else
+            {
+                    parsedValue = parsedValue * 10 + (ch - '0');
+            }
+            offset++;
+        }
+        else if (ch == '.')
+        {
+            if (decimalFound)
+            {
+                    throw std::invalid_argument("JsonFileParser: Invalid numeric value");
+            }
+
+            decimalFound = true;
+            offset++;
+        }
+        else
+        {
+            //
+            // End of string.
+            //
+            offset++;
+            AdvanceBufferPointer(offset);
+
+            m_doubleValue = negativeValue ? -parsedValue : parsedValue;
+            return m_doubleValue;
+        }
+    } while (ch >= '0' && ch <= '9' || ch == '.');
+}
 
 ///
 /// Skips a number at the current position of the buffer.
