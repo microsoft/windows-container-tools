@@ -83,7 +83,10 @@ HANDLE GetLogDirHandle(std::wstring logDirectory, HANDLE stopEvent, std::double_
     return logDirHandle;
 }
 
-HANDLE _RetryOpenDirectoryWithInterval(std::wstring logDirectory, std::double_t waitInSeconds, HANDLE stopEvent, HANDLE timerEvent)
+HANDLE _RetryOpenDirectoryWithInterval(std::wstring logDirectory,
+                                       std::double_t waitInSeconds,
+                                       HANDLE stopEvent,
+                                       HANDLE timerEvent)
 {
     HANDLE logDirHandle = INVALID_HANDLE_VALUE;
     DWORD status = ERROR_FILE_NOT_FOUND;
@@ -113,36 +116,36 @@ HANDLE _RetryOpenDirectoryWithInterval(std::wstring logDirectory, std::double_t 
         DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
         switch (wait)
         {
-            case WAIT_OBJECT_0:
-            {
-                //
-                // The process is exiting. Stop the timer and return.
-                //
-                CancelWaitableTimer(timerEvent);
-                CloseHandle(timerEvent);
-                return INVALID_HANDLE_VALUE;
-            }
+        case WAIT_OBJECT_0:
+        {
+            //
+            // The process is exiting. Stop the timer and return.
+            //
+            CancelWaitableTimer(timerEvent);
+            CloseHandle(timerEvent);
+            return INVALID_HANDLE_VALUE;
+        }
 
-            case WAIT_OBJECT_0 + 1:
-            {
-                //
-                // Timer event. Retry opening directory handle.
-                //
-                break;
-            }
+        case WAIT_OBJECT_0 + 1:
+        {
+            //
+            // Timer event. Retry opening directory handle.
+            //
+            break;
+        }
 
-            default:
-            {
-                //
-                // Wait failed, return the failure.
-                //
-                status = GetLastError();
+        default:
+        {
+            //
+            // Wait failed, return the failure.
+            //
+            status = GetLastError();
 
-                CancelWaitableTimer(timerEvent);
-                CloseHandle(timerEvent);
+            CancelWaitableTimer(timerEvent);
+            CloseHandle(timerEvent);
 
-                return INVALID_HANDLE_VALUE;
-            }
+            return INVALID_HANDLE_VALUE;
+        }
         }
 
         logDirHandle = CreateFileW(logDirectory.c_str(),
@@ -168,9 +171,9 @@ HANDLE _RetryOpenDirectoryWithInterval(std::wstring logDirectory, std::double_t 
     return logDirHandle;
 }
 
-
 // Converts the time to wait to a large integer
-LARGE_INTEGER _ConvertWaitIntervalToLargeInt(int timeInterval) {
+LARGE_INTEGER _ConvertWaitIntervalToLargeInt(int timeInterval)
+{
     LARGE_INTEGER liDueTime{};
 
     int millisecondsToWait = timeInterval * 1000;
@@ -195,6 +198,7 @@ int _GetWaitInterval(std::double_t waitInSeconds, int elapsedTime)
     return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
 }
 
-bool _IsFileErrorStatus(DWORD status) {
+bool _IsFileErrorStatus(DWORD status)
+{
     return status == ERROR_FILE_NOT_FOUND || status == ERROR_PATH_NOT_FOUND;
 }
