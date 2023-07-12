@@ -176,7 +176,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -224,7 +224,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -288,11 +288,12 @@ namespace LogMonitorTests
             sourceFile.Directory = tempDirectory;
             sourceFile.Filter = L"*.log";
             sourceFile.IncludeSubdirectories = true;
+            sourceFile.WaitInSeconds = 10;
 
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -395,7 +396,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -566,11 +567,12 @@ namespace LogMonitorTests
             sourceFile.Directory = tempDirectory;
             sourceFile.Filter = L"*.log";
             sourceFile.IncludeSubdirectories = true;
+            sourceFile.WaitInSeconds = 10;
 
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -671,11 +673,12 @@ namespace LogMonitorTests
             sourceFile.Directory = tempDirectory;
             sourceFile.Filter = L"*.log";
             sourceFile.IncludeSubdirectories = true;
+            sourceFile.WaitInSeconds = 10;
 
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -790,11 +793,12 @@ namespace LogMonitorTests
             sourceFile.Directory = tempDirectory;
             sourceFile.Filter = L"*.log";
             sourceFile.IncludeSubdirectories = true;
+            sourceFile.WaitInSeconds = 10;
 
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -980,11 +984,12 @@ namespace LogMonitorTests
             sourceFile.Directory = tempDirectory;
             sourceFile.Filter = L"*.log";
             sourceFile.IncludeSubdirectories = true;
+            sourceFile.WaitInSeconds = 10;
 
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //

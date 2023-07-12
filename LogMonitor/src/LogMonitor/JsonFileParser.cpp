@@ -186,7 +186,7 @@ JsonFileParser::ParseNumericValue()
 ///
 /// \return A double value.
 ///
-const std::double_t &
+const std::double_t&
 JsonFileParser::ParseNumber()
 {
     bool negativeValue = false;
@@ -224,7 +224,7 @@ JsonFileParser::ParseNumber()
         {
             if (decimalFound)
             {
-                    throw std::invalid_argument("JsonFileParser: Invalid numeric value");
+                    break;
             }
 
             decimalFound = true;
@@ -242,6 +242,9 @@ JsonFileParser::ParseNumber()
             return m_doubleValue;
         }
     } while (ch >= '0' && ch <= '9' || ch == '.');
+
+    // Handle the case when the loop exits prematurely
+    throw std::invalid_argument("JsonFileParser: Invalid numeric value");
 }
 
 ///

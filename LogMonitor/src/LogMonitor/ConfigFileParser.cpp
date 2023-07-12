@@ -366,7 +366,14 @@ ReadSourceAttributes(
             else if (_wcsnicmp(key.c_str(), JSON_TAG_WAITINSECONDS, _countof(JSON_TAG_WAITINSECONDS)) == 0)
             {
 
-                Attributes[key] = new std::double_t(Parser.ParseNumericValue());
+                auto parsedValue = new std::double_t(Parser.ParseNumericValue());
+                if (*parsedValue < 0) {
+                    logWriter.TraceError(L"Error parsing configuration file. 'waitInSeconds' attribute must be greater or equal to zero");
+                    success = false;
+                }
+                else {
+                    Attributes[key] = parsedValue;
+                }
             }
             else
             {
