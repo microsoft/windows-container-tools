@@ -694,7 +694,6 @@ EtwMonitor::OnRecordEvent(
             logWriter.TraceError(
                 Utility::FormatString(L"Failed to query ETW event information for ProviderGUID: %s Error: %lu",
                 guidString, status).c_str());
-
         }
 
 
