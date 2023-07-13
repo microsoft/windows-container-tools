@@ -679,32 +679,30 @@ EtwMonitor::OnRecordEvent(
         if (ERROR_SUCCESS != status)
         {
             // Handle 1168 fails in this block
-            if (ERROR_NOT_FOUND == status)          
+            if (ERROR_NOT_FOUND == status)
             {
                 // Access the ProviderId from the EVENT_HEADER field
                 GUID providerId = EventRecord->EventHeader.ProviderId;
-                
+
                 LPOLESTR clsidString;
                 if (StringFromCLSID(providerId, &clsidString) != S_OK)
                 {
                     logWriter.TraceError(
-                        Utility::FormatString(L"Failed to allocate necessary memory Error: %lu",E_OUTOFMEMORY).c_str()
-                    );
+                        Utility::FormatString(L"Failed to allocate necessary memory Error: %lu",
+                        E_OUTOFMEMORY).c_str());
                 }
-                
+
                 std::wstring guidString(clsidString);
                 CoTaskMemFree(clsidString);
-                
+
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to query ETW event information for ProviderGUID: %s Error: %lu", guidString, status).c_str()
-                );
+                    Utility::FormatString(L"Failed to query ETW event information for ProviderGUID: %s Error: %lu",
+                    guidString, status).c_str());
             }
-            
+
             // Handle all non 1168 fails here
             logWriter.TraceError(
-                Utility::FormatString(L"Failed to query ETW event information. Error: %lu", status).c_str()
-            );
-            
+                Utility::FormatString(L"Failed to query ETW event information. Error: %lu", status).c_str());
         }
 
 
