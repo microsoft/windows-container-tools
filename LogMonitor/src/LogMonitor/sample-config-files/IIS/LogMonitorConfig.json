@@ -1,5 +1,6 @@
 {
   "LogConfig": {
+    "logFormat": "custom",
     "sources": [
       {
         "type": "EventLog",
@@ -14,13 +15,15 @@
             "name": "application",
             "level": "Error"
           }
-        ]
+        ],
+        "customLogFormat": "[%TimeStamp%] [%Source%] [%Severity%] %Message%"
       },
       {
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
-        "includeSubdirectories": true
+        "includeSubdirectories": true,
+        "customLogFormat": "[%TimeStamp%] [%Source%] [%FileName%] %Message%"
       },
       {
         "type": "ETW",
@@ -36,7 +39,8 @@
             "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
             "level": "Information"
           }
-        ]
+        ],
+        "customLogFormat": "[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %eventdata%"
       }
     ]
   }
