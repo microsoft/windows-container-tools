@@ -40,8 +40,8 @@
             "level": "Information"
           },
           {
-             "providerName": "Microsoft-Windows-WLAN-Driver",
-             "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+             "providerName": "Microsoft-Windows-PowerShell",
+             "providerGuid": "A0C1853B-5C40-4B15-8766-3CF1C58F985A",
              "level": "Information"
           }
         ],
