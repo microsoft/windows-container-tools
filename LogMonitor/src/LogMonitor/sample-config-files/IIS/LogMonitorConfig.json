@@ -38,6 +38,11 @@
             "providerName": "Microsoft-Windows-IIS-Logging",
             "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
             "level": "Information"
+          },
+          {
+             "providerName": "Microsoft-Windows-WLAN-Driver",
+             "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+             "level": "Information"
           }
         ],
         "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderName':'%ProviderName%', 'EventData':'%eventdata%'}|json"
