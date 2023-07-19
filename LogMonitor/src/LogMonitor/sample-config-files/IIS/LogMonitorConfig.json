@@ -16,14 +16,14 @@
             "level": "Error"
           }
         ],
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'Message':'%Message%'}"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'Message':'%Message%'}|json"
       },
       {
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
         "includeSubdirectories": true,
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'FileName':'%FileName%', 'Message':'%Message%'}"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'FileName':'%FileName%', 'Message':'%Message%'}|json"
       },
       {
         "type": "ETW",
@@ -40,7 +40,7 @@
             "level": "Information"
           }
         ],
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderName':'%ProviderName%', 'EventData':'%eventdata%'}|json"
       }
     ]
   }
