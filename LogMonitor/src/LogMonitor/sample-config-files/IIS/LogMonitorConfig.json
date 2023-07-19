@@ -16,14 +16,14 @@
             "level": "Error"
           }
         ],
-        "customLogFormat": "[%TimeStamp%] [%Source%] [%Severity%] %Message%"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'Message':'%Message%'}"
       },
       {
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
         "includeSubdirectories": true,
-        "customLogFormat": "[%TimeStamp%] [%Source%] [%FileName%] %Message%"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'FileName':'%FileName%', 'Message':'%Message%'}"
       },
       {
         "type": "ETW",
@@ -40,7 +40,7 @@
             "level": "Information"
           }
         ],
-        "customLogFormat": "[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %eventdata%"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'Message':'%Message%'}"
       }
     ]
   }
