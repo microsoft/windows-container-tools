@@ -21,6 +21,7 @@
 #define JSON_TAG_FILTER L"filter"
 #define JSON_TAG_INCLUDE_SUBDIRECTORIES L"includeSubdirectories"
 #define JSON_TAG_PROVIDERS L"providers"
+#define JSON_TAG_WAITINSECONDS L"waitInSeconds"
 
 ///
 /// Valid channel attributes
@@ -255,6 +256,9 @@ public:
     std::wstring Filter;
     bool IncludeSubdirectories = false;
 
+    // Default wait time: 5minutes
+    std::double_t WaitInSeconds = 300;
+
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
         _Out_ SourceFile& NewSource)
@@ -291,6 +295,15 @@ public:
             && Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES] != nullptr)
         {
             NewSource.IncludeSubdirectories = *(bool*)Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES];
+        }
+
+        //
+        // waitInSeconds is an optional value
+        //
+        if (Attributes.find(JSON_TAG_WAITINSECONDS) != Attributes.end()
+            && Attributes[JSON_TAG_WAITINSECONDS] != nullptr)
+        {
+            NewSource.WaitInSeconds = *(std::double_t*)Attributes[JSON_TAG_WAITINSECONDS];
         }
 
         return true;

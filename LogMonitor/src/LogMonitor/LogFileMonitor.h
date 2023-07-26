@@ -60,7 +60,8 @@ public:
     LogFileMonitor(
         _In_ const std::wstring& LogDirectory,
         _In_ const std::wstring& Filter,
-        _In_ bool IncludeSubfolders
+        _In_ bool IncludeSubfolders,
+        _In_ const std::double_t& WaitInSeconds
         );
 
     ~LogFileMonitor();
@@ -72,6 +73,7 @@ private:
     std::wstring m_logDirectory;
     std::wstring m_shortLogDirectory;
     std::wstring m_filter;
+    std::double_t m_waitInSeconds;
     bool m_includeSubfolders;
 
     //
