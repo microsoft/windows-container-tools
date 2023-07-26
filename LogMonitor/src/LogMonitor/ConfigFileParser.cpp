@@ -370,6 +370,29 @@ ReadSourceAttributes(
                     Attributes[key] = providers;
                 }
             }
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_WAITINSECONDS, _countof(JSON_TAG_WAITINSECONDS)) == 0)
+            {
+                try
+                {
+                    auto parsedValue = new std::double_t(Parser.ParseNumericValue());
+                    if (*parsedValue < 0)
+                    {
+                        logWriter.TraceError(L"Error parsing configuration file. 'waitInSeconds' attribute must be greater or equal to zero");
+                        success = false;
+                    }
+                    else
+                    {
+                        Attributes[key] = parsedValue;
+                    }
+                }
+                catch(const std::exception& ex)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(L"Error parsing configuration file atrribute 'waitInSeconds'. %S", ex.what()).c_str()
+                    );
+                    success = false;
+                }
+            }
             else
             {
                 //
@@ -663,6 +686,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::wprintf(L"\t\tDirectory: %ls\n", sourceFile->Directory.c_str());
             std::wprintf(L"\t\tFilter: %ls\n", sourceFile->Filter.c_str());
             std::wprintf(L"\t\tIncludeSubdirectories: %ls\n", sourceFile->IncludeSubdirectories ? L"true" : L"false");
+            std::wprintf(L"\t\twaitInSeconds: %d\n", int(sourceFile->WaitInSeconds));
             std::wprintf(L"\n");
 
             break;

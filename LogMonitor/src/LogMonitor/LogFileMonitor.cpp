@@ -40,12 +40,14 @@ using namespace std;
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
+                               _In_ const std::double_t& WaitInSeconds,
                                _In_ std::wstring LogFormat,
                                _In_ std::wstring CustomLogFormat = L""
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
                                m_includeSubfolders(IncludeSubfolders),
+                               m_waitInSeconds(WaitInSeconds),
                                m_logFormat(LogFormat),
                                m_customLogFormat(CustomLogFormat)
 {
@@ -318,7 +320,7 @@ LogFileMonitor::StartLogFileMonitor()
     dirMonitorStartedEventSignalled = true;
 
     // Get Log Dir Handle
-    HANDLE logDirHandle = GetLogDirHandle(m_logDirectory, m_stopEvent);
+    HANDLE logDirHandle = GetLogDirHandle(m_logDirectory, m_stopEvent, m_waitInSeconds);
 
     if(logDirHandle == INVALID_HANDLE_VALUE) {
         status = GetLastError();

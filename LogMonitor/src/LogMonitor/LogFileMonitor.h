@@ -61,6 +61,7 @@ public:
         _In_ const std::wstring& LogDirectory,
         _In_ const std::wstring& Filter,
         _In_ bool IncludeSubfolders,
+        _In_ const std::double_t& WaitInSeconds,
         _In_ std::wstring LogFormat,
         _In_ std::wstring CustomLogFormat
         );
@@ -76,6 +77,7 @@ private:
     std::wstring m_logDirectory;
     std::wstring m_shortLogDirectory;
     std::wstring m_filter;
+    std::double_t m_waitInSeconds;
     bool m_includeSubfolders;
     std::wstring m_logFormat;
     std::wstring m_customLogFormat;
