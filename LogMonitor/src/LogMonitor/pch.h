@@ -52,7 +52,7 @@
 #include "LogWriter.h"
 #include "EtwMonitor.h"
 #include "EventMonitor.h"
-#include "FileMonitor/Utilities.h"
+#include "FileMonitor/FileMonitorUtilities.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
 

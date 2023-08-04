@@ -24,7 +24,7 @@
     <ClInclude Include="version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileMonitor\*.h">
+    <ClInclude Include="FileMonitor\FileMonitorUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LogFileMonitor.h">
@@ -83,7 +83,7 @@
     <ClCompile Include="JsonFileParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileMonitor\*.cpp">
+    <ClCompile Include="FileMonitor\FileMonitorUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

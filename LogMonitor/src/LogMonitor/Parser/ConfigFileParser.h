@@ -49,4 +49,6 @@ bool AddNewSource(
     _Inout_ std::vector<std::shared_ptr<LogSource> >& Sources
 );
 
+bool ValidateDirectoryAttributes(_In_ AttributesMap& Attributes);
+
 void _PrintSettings(_Out_ LoggerSettings& Config);
