@@ -1,0 +1,11 @@
+subscriptionId=
+resourceGroup=
+resourceGroupAZ=eastus
+clusterName=
+winUsername=
+winPassword=@dmin5i33a!!#2022 #must be atleast 14 chars
+windowsNodepoolName=
+osType=Windows
+osSKU=Windows2022
+windowsNodeCount=1
+nodeVmSize=Standard_D4s_v3 #Standard_B2ms
