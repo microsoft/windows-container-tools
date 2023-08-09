@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iislogmonitor 
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iislogmonitor
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": windows
+      containers:
+      - name: iislogmonitor
+        image: docker.io/profnandaa/iis-logmonitor:v1.1
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:80
+      os:
+        name: windows
+  selector:
+    matchLabels:
+      app: iislogmonitor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iislogmonitor
+spec:  
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: iislogmonitor
+  
