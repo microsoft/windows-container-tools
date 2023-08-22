@@ -47,14 +47,6 @@
 // Define the AttributesMap, that is a map<wstring, void*> with case
 // insensitive keys
 //
-struct CaseInsensitiveWideString
-{
-    bool operator() (const std::wstring& c1, const std::wstring& c2) const {
-        return _wcsicmp(c1.c_str(), c2.c_str()) < 0;
-    }
-};
-
-typedef std::map<std::wstring, void*, CaseInsensitiveWideString> AttributesMap;
 
 enum class EventChannelLogLevel
 {

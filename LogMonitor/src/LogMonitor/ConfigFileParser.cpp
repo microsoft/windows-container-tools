@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "./Parser/ConfigFileParser.h"
 #include "./LogWriter.h"
+#include "./FileMonitor/FileMonitorUtilities.h"
 
 /// ConfigFileParser.cpp
 ///
@@ -312,8 +313,13 @@ ReadSourceAttributes(
             // * filter
             // * lineLogFormat
             //
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0
-                || _wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0)
+            {
+                std::wstring directory = Parser.ParseStringValue();
+                FileMonitorUtilities::ParseDirectoryValue(directory);
+                Attributes[key] = new std::wstring(directory);
+            }
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0
                 || _wcsnicmp(key.c_str(), JSON_TAG_CUSTOM_LOG_FORMAT, _countof(JSON_TAG_CUSTOM_LOG_FORMAT)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
@@ -401,6 +407,12 @@ ReadSourceAttributes(
                 Parser.SkipValue();
             }
         } while (Parser.ParseNextObjectElement());
+    }
+
+    bool isSourceFileValid = ValidateDirectoryAttributes(Attributes);
+    if (!isSourceFileValid)
+    {
+        success = false;
     }
 
     return success;
@@ -645,6 +657,36 @@ AddNewSource(
         }
     }
     return true;
+}
+
+///
+/// Validates that when root directory is passed, includeSubdirectories is false
+///
+/// \param Attributes   An AttributesMap that contains the attributes of the new source objet.
+/// \return false when root directory is passed, includeSubdirectories = true. Otherwise, true </returns>
+bool ValidateDirectoryAttributes(_In_ AttributesMap &Attributes)
+{
+    if (!Utility::ConfigAttributeExists(Attributes, JSON_TAG_DIRECTORY) ||
+        !Utility::ConfigAttributeExists(Attributes, JSON_TAG_INCLUDE_SUBDIRECTORIES))
+    {
+            return true;
+    }
+
+    std::wstring directory = *(std::wstring *)Attributes[JSON_TAG_DIRECTORY];
+    const bool includeSubdirectories = *(bool *)Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES];
+
+    // Check if Log file monitor config is valid
+    const bool isValid = FileMonitorUtilities::IsValidSourceFile(directory, includeSubdirectories);
+    if (!isValid)
+    {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"LoggerSettings: Invalid Source File atrribute 'directory' (%s) and 'includeSubdirectories' (%s)."
+                    L"'includeSubdirectories' attribute cannot be 'true' for the root directory",
+                    directory.c_str(), includeSubdirectories ? L"true" : L"false")
+                    .c_str());
+    }
+    return isValid;
 }
 
 ///

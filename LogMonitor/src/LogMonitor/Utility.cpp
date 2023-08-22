@@ -311,6 +311,12 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     }
 }
 
+bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
+{
+    auto it = Attributes.find(attributeName);
+    return it != Attributes.end() && it->second != nullptr;
+}
+
 /// <summary>
 /// Comparing wstrings with ignoring the case
 /// </summary>
@@ -328,7 +334,7 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
             [](wstring::value_type l1, wstring::value_type r1) {
                 return towupper(l1) == towupper(r1);
             }
-        );
+    );
 }
 
 std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
@@ -342,7 +348,8 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
 
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
             //valid field name found in custom log format
             wstring fieldValue;
             if (sourceType == L"ETW") {
@@ -358,17 +365,18 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
             customLogFormat.replace(i, sub_length, fieldValue);
 
             i = i + fieldValue.length(), j = i + 1;
-        } else {
+        }
+        else {
             j++;
         }
     }
 
-    if(customJsonFormat)
+    if (customJsonFormat)
         SanitizeJson(customLogFormat);
 
     return customLogFormat;
 }
- 
+
 /// <summary>
 /// check if custom format specified in config is JSON for sanitization purposes
 /// </summary>

@@ -274,6 +274,28 @@ This will monitor any changes in log files matching a specified filter, given th
 }
 ```
 
+**Note:** When the directory is the root directory (e.g. C:\\ ) we can only monitor a file that is in the root directory, not a subfolder. This is due to access issues (even when running LogMonitor as an Admin) for some of the folders in the root directory. Therefore, `includeSubdirectories` must be `false` for the root directory. See example below:
+
+```json
+{
+  "LogConfig": {
+      "sources": [
+          {
+              "type": "File",
+              "directory": "C:",
+              "filter": "*.log",
+              "includeSubdirectories": false
+          }
+      ]
+  }
+}
+```
+When the root directory is passed and `includeSubdirectories = true`, we get an error:
+```
+ERROR: LoggerSettings: Invalid Source File atrribute 'directory' (C:) and 'includeSubdirectories' (true).'includeSubdirectories' attribute cannot be 'true' for the root directory
+WARNING: Failed to parse configuration file. Error retrieving source attributes. Invalid source
+```
+
 ## Process Monitoring
 
 ### Description
