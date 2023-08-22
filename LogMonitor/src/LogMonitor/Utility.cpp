@@ -306,3 +306,9 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
         i++;
     }
 }
+
+bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
+{
+    auto it = Attributes.find(attributeName);
+    return it != Attributes.end() && it->second != nullptr;
+}
