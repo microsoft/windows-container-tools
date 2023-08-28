@@ -811,7 +811,7 @@ LogFileMonitor::LogFilesChangeHandler()
     const DWORD eventsCount = 3;
 
     LARGE_INTEGER liDueTime;
-    INT64 millisecondsToWait = 1000LL;
+    INT64 millisecondsToWait = 3000LL;
     liDueTime.QuadPart = -millisecondsToWait*10000LL; // wait time in 100 nanoseconds
 
     HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
