@@ -1010,6 +1010,8 @@ LogFileMonitor::LogFilesChangeHandler()
         }
     }
 
+    CloseHandle(timerEvent);
+
     return status;
 }
 
