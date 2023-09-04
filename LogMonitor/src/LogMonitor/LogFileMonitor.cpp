@@ -37,6 +37,7 @@ using namespace std;
 /// \param LogDirectory:        The log directory to be monitored
 /// \param Filter:              The filter to apply when looking fr log files
 /// \param IncludeSubfolders:   TRUE if subdirectories also needs to be monitored
+/// \param WaitInSeconds:       Waiting time in seconds to retry if folder/file to be monitored does not exist
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
@@ -815,7 +816,7 @@ LogFileMonitor::LogFilesChangeHandler()
     const DWORD eventsCount = 3;
 
     LARGE_INTEGER liDueTime;
-    INT64 millisecondsToWait = 30000LL;
+    INT64 millisecondsToWait = 1000LL;
     liDueTime.QuadPart = -millisecondsToWait*10000LL; // wait time in 100 nanoseconds
 
     HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
@@ -1013,6 +1014,8 @@ LogFileMonitor::LogFilesChangeHandler()
             break;
         }
     }
+
+    CloseHandle(timerEvent);
 
     return status;
 }
