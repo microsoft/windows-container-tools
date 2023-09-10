@@ -619,6 +619,7 @@ EventMonitor::EnableEventLogChannel(
     EVT_HANDLE  channelConfig = NULL;
     EVT_VARIANT propValue;
     DWORD dwPropValSize;
+    static bool retry = true;
 
     //
     // Open the channel configuration.
@@ -700,9 +701,26 @@ Exit:
 
     if (ERROR_SUCCESS != status)
     {
-        logWriter.TraceError(
-            Utility::FormatString(L"Failed to enable event channel %ws: 0x%X", ChannelPath, status).c_str()
-        );
+        //
+        // retry after 50 seconds because of race condition when EventLog Service starts running and we start monitoring
+        //
+        if (retry) {
+
+            logWriter.TraceInfo(
+                Utility::FormatString(L"50 seconds wait for %ws channel to be enabled", ChannelPath).c_str());
+
+            Sleep(50000);
+
+            EnableEventLogChannel(ChannelPath);
+
+            retry = false;
+
+        } else {
+            logWriter.TraceError(
+            Utility::FormatString(L"Failed to enable event channel %ws: 0x%X", ChannelPath, status).c_str());
+        }
+
+
     }
 
     if (channelConfig != NULL)
