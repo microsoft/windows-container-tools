@@ -8,6 +8,9 @@
 class EventMonitor final
 {
 public:
+
+    static const int WAIT_INTERVAL = 15;
+
     EventMonitor() = delete;
 
     EventMonitor(
@@ -56,7 +59,14 @@ private:
         _In_ const HANDLE& EventHandle
         );
 
+    static LARGE_INTEGER _ConvertWaitIntervalToLargeInt(
+            int timeInterval);
+
+        static int _GetWaitInterval(
+            std::double_t waitInSeconds,
+            int elapsedTime);
+
     void EnableEventLogChannels();
 
-    static void EnableEventLogChannel(_In_ LPCWSTR ChannelPath);
+    static DWORD EnableEventLogChannel(_In_ LPCWSTR ChannelPath);
 };
