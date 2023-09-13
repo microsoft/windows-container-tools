@@ -618,7 +618,7 @@ EventMonitor::EnableEventLogChannels()
             int elapsedTime = 0;
 
             const int eventsCount = 2;
-            HANDLE dirOpenEvents[eventsCount] = {m_stopEvent, timerEvent};
+            HANDLE channelEnableEvents[eventsCount] = {m_stopEvent, timerEvent};
 
             while (elapsedTime < waitInSeconds) {
 
@@ -636,7 +636,7 @@ EventMonitor::EnableEventLogChannels()
                     break;
                 }
 
-                DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
+                DWORD wait = WaitForMultipleObjects(eventsCount, channelEnableEvents, FALSE, INFINITE);
                 switch(wait)
                 {
                     case WAIT_OBJECT_0:
@@ -703,7 +703,7 @@ EventMonitor::EnableEventLogChannels()
             ).c_str()
         );
         }
-        
+
         }
 
         
