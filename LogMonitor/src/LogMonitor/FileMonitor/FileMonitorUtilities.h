@@ -32,13 +32,6 @@ class FileMonitorUtilities final
             HANDLE stopEvent,
             HANDLE timerEvent);
 
-        static LARGE_INTEGER _ConvertWaitIntervalToLargeInt(
-            int timeInterval);
-
-        static int _GetWaitInterval(
-            std::double_t waitInSeconds,
-            int elapsedTime);
-
         static bool _IsFileErrorStatus(DWORD status);
 
         static std::wstring _GetWaitLogMessage(

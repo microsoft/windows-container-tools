@@ -622,8 +622,8 @@ EventMonitor::EnableEventLogChannels()
 
             while (elapsedTime < waitInSeconds) {
 
-                int waitInterval = EventMonitor::_GetWaitInterval(waitInSeconds, elapsedTime);
-                LARGE_INTEGER timeToWait = EventMonitor::_ConvertWaitIntervalToLargeInt(waitInterval);
+                int waitInterval = Utility::GetWaitInterval(waitInSeconds, elapsedTime);
+                LARGE_INTEGER timeToWait = Utility::ConvertWaitIntervalToLargeInt(waitInterval);
 
                 BOOL waitableTimer = SetWaitableTimer(timerEvent, &timeToWait, 0, NULL, NULL, 0);
                 if (!waitableTimer) {
@@ -637,7 +637,7 @@ EventMonitor::EnableEventLogChannels()
                 }
 
                 DWORD wait = WaitForMultipleObjects(eventsCount, channelEnableEvents, FALSE, INFINITE);
-                switch(wait)
+                switch (wait)
                 {
                     case WAIT_OBJECT_0:
                     {
@@ -646,7 +646,6 @@ EventMonitor::EnableEventLogChannels()
                         //
                         CancelWaitableTimer(timerEvent);
                         CloseHandle(timerEvent);
-                        // return INVALID_HANDLE_VALUE;
                     }
 
                     case WAIT_OBJECT_0 + 1:
@@ -663,6 +662,11 @@ EventMonitor::EnableEventLogChannels()
                         // Wait failed, return the failure.
                         //
                         status = GetLastError();
+
+                        logWriter.TraceError(
+                            Utility::FormatString(
+                                L"Failed to enable event channel. Channel: %ws Error: 0x%X",
+                                eventChannel.Name.c_str(), status).c_str());
 
                         CancelWaitableTimer(timerEvent);
                         CloseHandle(timerEvent);
@@ -693,50 +697,13 @@ EventMonitor::EnableEventLogChannels()
             CancelWaitableTimer(timerEvent);
             CloseHandle(timerEvent);
 
-            if(elapsedTime < waitInSeconds) 
-        {
-            logWriter.TraceError(
-            Utility::FormatString(
-                L"Failed to enable event channel. Channel: %ws Error: 0x%X",
-                eventChannel.Name.c_str(),
-                status
-            ).c_str()
-        );
-        }
 
         }
 
-        
-
     }
 }
 
 
-// Converts the time to wait to a large integer
-LARGE_INTEGER EventMonitor::_ConvertWaitIntervalToLargeInt(int timeInterval)
-{
-    LARGE_INTEGER liDueTime{};
-
-    int millisecondsToWait = timeInterval * 1000;
-    liDueTime.QuadPart = -millisecondsToWait * 10000LL; // wait time in 100 nanoseconds
-    return liDueTime;
-}
-
-// Returns the time (in seconds) to wait based on the specified waitInSeconds
-int EventMonitor::_GetWaitInterval(std::double_t waitInSeconds, int elapsedTime)
-{
-    if (isinf(waitInSeconds)) {
-        return int(WAIT_INTERVAL);
-    }
-
-    if (waitInSeconds < WAIT_INTERVAL)
-    {
-        return int(waitInSeconds);
-    }
-
-    const auto remainingTime = int(waitInSeconds - elapsedTime);
-    return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
-}
 
 /// Enables or disables an Event Log channel.
 ///
@@ -835,8 +802,8 @@ Exit:
     if (ERROR_SUCCESS != status)
     {
         logWriter.TraceInfo(
-            Utility::FormatString(L"Waiting for %ws event channel to be enabled", ChannelPath).c_str()
-        );
+            Utility::FormatString(L"Waiting for %ws event channel to be enabled",
+            ChannelPath).c_str());
     }
 
     if (channelConfig != NULL)
