@@ -678,7 +678,7 @@ EventMonitor::EnableEventLogChannels()
 
                 if (status == RPC_S_SERVER_UNAVAILABLE)
                 {
-                    elapsedTime += WAIT_INTERVAL;
+                    elapsedTime += Utility::WAIT_INTERVAL;
                 }
                 else
                 {

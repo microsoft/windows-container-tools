@@ -9,8 +9,6 @@ class EventMonitor final
 {
 public:
 
-    static const int WAIT_INTERVAL = 15;
-
     EventMonitor() = delete;
 
     EventMonitor(

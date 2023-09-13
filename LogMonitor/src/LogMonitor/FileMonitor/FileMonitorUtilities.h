@@ -8,7 +8,6 @@
 class FileMonitorUtilities final
 {
     public:
-        static const int WAIT_INTERVAL = 15;
 
         static HANDLE CreateFileMonitorEvent(
             _In_ BOOL bManualReset,

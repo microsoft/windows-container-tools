@@ -191,7 +191,7 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
         if (logDirHandle == INVALID_HANDLE_VALUE)
         {
             status = GetLastError();
-            elapsedTime += WAIT_INTERVAL;
+            elapsedTime += Utility::WAIT_INTERVAL;
         }
         else
         {
