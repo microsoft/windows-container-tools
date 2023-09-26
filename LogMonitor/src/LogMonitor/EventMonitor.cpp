@@ -601,7 +601,6 @@ EventMonitor::EnableEventLogChannels()
         DWORD status = EnableEventLogChannel(eventChannel.Name.c_str());
 
         if (status == RPC_S_SERVER_UNAVAILABLE) {
-
             HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
 
 
@@ -621,7 +620,6 @@ EventMonitor::EnableEventLogChannels()
             HANDLE channelEnableEvents[eventsCount] = {m_stopEvent, timerEvent};
 
             while (elapsedTime < waitInSeconds) {
-
                 int waitInterval = Utility::GetWaitInterval(waitInSeconds, elapsedTime);
                 LARGE_INTEGER timeToWait = Utility::ConvertWaitIntervalToLargeInt(waitInterval);
 
