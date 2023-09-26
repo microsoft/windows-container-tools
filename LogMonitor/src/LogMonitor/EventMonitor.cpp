@@ -597,8 +597,7 @@ EventMonitor::PrintEvent(
 void
 EventMonitor::EnableEventLogChannels()
 {
-    for (const auto& eventChannel : m_eventChannels)
-    {
+    for (const auto& eventChannel : m_eventChannels) {
         DWORD status = EnableEventLogChannel(eventChannel.Name.c_str());
 
         if (status == RPC_S_SERVER_UNAVAILABLE) {
@@ -611,6 +610,7 @@ EventMonitor::EnableEventLogChannels()
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to create timer object.", status).c_str());
+            break;
                         }
 
             std::double_t waitInSeconds = 300;
@@ -637,8 +637,7 @@ EventMonitor::EnableEventLogChannels()
                 }
 
                 DWORD wait = WaitForMultipleObjects(eventsCount, channelEnableEvents, FALSE, INFINITE);
-                switch (wait)
-                {
+                switch (wait) {
                     case WAIT_OBJECT_0:
                     {
                         //
@@ -651,7 +650,7 @@ EventMonitor::EnableEventLogChannels()
                     case WAIT_OBJECT_0 + 1:
                     {
                         //
-                        // Timer event. Retry opening directory handle.
+                        // Timer event. Retry enabling the failing channel.
                         //
                         break;
                     }
@@ -670,36 +669,27 @@ EventMonitor::EnableEventLogChannels()
 
                         CancelWaitableTimer(timerEvent);
                         CloseHandle(timerEvent);
-
                     }
                 }
 
                 DWORD status = EnableEventLogChannel(eventChannel.Name.c_str());
 
-                if (status == RPC_S_SERVER_UNAVAILABLE)
-                {
+                if (status == RPC_S_SERVER_UNAVAILABLE) {
                     elapsedTime += Utility::WAIT_INTERVAL;
-                }
-                else
-                {
+                } else {
                     logWriter.TraceInfo(
                         Utility::FormatString(
                             L"Enabled %s event channel after %d seconds.",
                             eventChannel.Name.c_str(),
-                            elapsedTime).c_str()
-                    );
+                            elapsedTime).c_str() );
                     status = ERROR_SUCCESS;
                     break;
                 }
-
             }
 
             CancelWaitableTimer(timerEvent);
             CloseHandle(timerEvent);
-
-
         }
-
     }
 }
 
@@ -725,8 +715,7 @@ EventMonitor::EnableEventLogChannel(
     // Open the channel configuration.
     //
     channelConfig = EvtOpenChannelConfig(NULL, ChannelPath, 0);
-    if (NULL == channelConfig)
-    {
+    if (NULL == channelConfig) {
         status = GetLastError();
         goto Exit;
     }
@@ -736,26 +725,20 @@ EventMonitor::EnableEventLogChannel(
         0,
         sizeof(EVT_VARIANT),
         &propValue,
-        &dwPropValSize))
-    {
+        &dwPropValSize)) {
         //
         // Return if event channel is already enabled.
         //
-        if (propValue.BooleanVal)
-        {
+        if (propValue.BooleanVal) {
             goto Exit;
         }
-    }
-    else
-    {
+    } else {
         status = GetLastError();
         logWriter.TraceError(
             Utility::FormatString(
                 L"Failed to query event channel configuration. Channel: %ws Error: 0x%X",
                 ChannelPath,
-                status
-            ).c_str()
-        );
+                status).c_str());
     }
 
     //
@@ -769,9 +752,7 @@ EventMonitor::EnableEventLogChannel(
         channelConfig,
         EvtChannelConfigEnabled,
         0,
-        &propValue
-    ))
-    {
+        &propValue)) {
         status = GetLastError();
         goto Exit;
     }
@@ -779,18 +760,14 @@ EventMonitor::EnableEventLogChannel(
     //
     // Save changes.
     //
-    if (!EvtSaveChannelConfig(channelConfig, 0))
-    {
+    if (!EvtSaveChannelConfig(channelConfig, 0)) {
         status = GetLastError();
-        if (status == ERROR_EVT_INVALID_OPERATION_OVER_ENABLED_DIRECT_CHANNEL)
-        {
+        if (status == ERROR_EVT_INVALID_OPERATION_OVER_ENABLED_DIRECT_CHANNEL) {
             //
             // The channel is already enabled.
             //
             status = ERROR_SUCCESS;
-        }
-        else
-        {
+        } else {
             goto Exit;
         }
     }
@@ -799,15 +776,13 @@ EventMonitor::EnableEventLogChannel(
 
 Exit:
 
-    if (ERROR_SUCCESS != status)
-    {
+    if (ERROR_SUCCESS != status) {
         logWriter.TraceInfo(
             Utility::FormatString(L"Waiting for %ws event channel to be enabled",
             ChannelPath).c_str());
     }
 
-    if (channelConfig != NULL)
-    {
+    if (channelConfig != NULL) {
         EvtClose(channelConfig);
     }
 
