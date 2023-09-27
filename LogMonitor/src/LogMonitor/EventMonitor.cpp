@@ -603,14 +603,13 @@ EventMonitor::EnableEventLogChannels()
         if (status == RPC_S_SERVER_UNAVAILABLE) {
             HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
 
-
             if (!timerEvent) {
             status = GetLastError();
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to create timer object.", status).c_str());
             break;
-                        }
+            }
 
             std::double_t waitInSeconds = 300;
 
@@ -622,7 +621,6 @@ EventMonitor::EnableEventLogChannels()
             while (elapsedTime < waitInSeconds) {
                 int waitInterval = Utility::GetWaitInterval(waitInSeconds, elapsedTime);
                 LARGE_INTEGER timeToWait = Utility::ConvertWaitIntervalToLargeInt(waitInterval);
-
                 BOOL waitableTimer = SetWaitableTimer(timerEvent, &timeToWait, 0, NULL, NULL, 0);
                 if (!waitableTimer) {
                     status = GetLastError();
