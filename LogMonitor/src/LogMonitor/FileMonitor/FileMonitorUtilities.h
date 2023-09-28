@@ -8,7 +8,6 @@
 class FileMonitorUtilities final
 {
     public:
-        static const int WAIT_INTERVAL = 15;
 
         static HANDLE CreateFileMonitorEvent(
             _In_ BOOL bManualReset,
@@ -31,13 +30,6 @@ class FileMonitorUtilities final
             std::double_t waitInSeconds,
             HANDLE stopEvent,
             HANDLE timerEvent);
-
-        static LARGE_INTEGER _ConvertWaitIntervalToLargeInt(
-            int timeInterval);
-
-        static int _GetWaitInterval(
-            std::double_t waitInSeconds,
-            int elapsedTime);
 
         static bool _IsFileErrorStatus(DWORD status);
 

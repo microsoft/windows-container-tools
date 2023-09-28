@@ -344,7 +344,7 @@ LogFileMonitor::StartLogFileMonitor()
     {
         m_readLogFilesFromStart = true;
     }
-
+ 
     m_logDirHandle = logDirHandle;
 
     //

@@ -7,7 +7,7 @@
 #include <regex>
 
 /**
- * Warapper around Create Event API
+ * Wrapper around Create Event API
  *
  * @param bManualReset
  * @param bInitialState
@@ -64,7 +64,7 @@ HANDLE FileMonitorUtilities::GetLogDirHandle(
         //
         // Log directory is not created yet. Keep retrying every
         // 15 seconds for upto five minutes. Also start reading the
-        // log files from the begining, instead of current end of
+        // log files from the beginning, instead of current end of
         // file.
         //
         HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
@@ -128,8 +128,8 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
 
     while (FileMonitorUtilities::_IsFileErrorStatus(status) && elapsedTime < waitInSeconds)
     {
-        int waitInterval = FileMonitorUtilities::_GetWaitInterval(waitInSeconds, elapsedTime);
-        LARGE_INTEGER timeToWait = FileMonitorUtilities::_ConvertWaitIntervalToLargeInt(waitInterval);
+        int waitInterval = Utility::GetWaitInterval(waitInSeconds, elapsedTime);
+        LARGE_INTEGER timeToWait = Utility::ConvertWaitIntervalToLargeInt(waitInterval);
 
         BOOL waitableTimer = SetWaitableTimer(timerEvent, &timeToWait, 0, NULL, NULL, 0);
         if (!waitableTimer)
@@ -191,7 +191,7 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
         if (logDirHandle == INVALID_HANDLE_VALUE)
         {
             status = GetLastError();
-            elapsedTime += WAIT_INTERVAL;
+            elapsedTime += Utility::WAIT_INTERVAL;
         }
         else
         {
@@ -205,33 +205,6 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
     }
 
     return logDirHandle;
-}
-
-// Converts the time to wait to a large integer
-LARGE_INTEGER FileMonitorUtilities::_ConvertWaitIntervalToLargeInt(int timeInterval)
-{
-    LARGE_INTEGER liDueTime{};
-
-    int millisecondsToWait = timeInterval * 1000;
-    liDueTime.QuadPart = -millisecondsToWait * 10000LL; // wait time in 100 nanoseconds
-    return liDueTime;
-}
-
-// Returns the time (in seconds) to wait based on the specified waitInSeconds
-int FileMonitorUtilities::_GetWaitInterval(std::double_t waitInSeconds, int elapsedTime)
-{
-    if (isinf(waitInSeconds))
-    {
-        return int(WAIT_INTERVAL);
-    }
-
-    if (waitInSeconds < WAIT_INTERVAL)
-    {
-        return int(waitInSeconds);
-    }
-
-    const auto remainingTime = int(waitInSeconds - elapsedTime);
-    return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
 }
 
 bool FileMonitorUtilities::_IsFileErrorStatus(DWORD status)

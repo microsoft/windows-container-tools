@@ -21,6 +21,9 @@ typedef std::map<std::wstring, void*, CaseInsensitiveWideString> AttributesMap;
 class Utility final
 {
 public:
+
+    static const int WAIT_INTERVAL = 15;
+
     static std::wstring SystemTimeToString(
         SYSTEMTIME SystemTime
     );
@@ -58,9 +61,18 @@ public:
         _In_ const std::wstring& To
     );
 
-    static bool isJsonNumber(_In_ std::wstring& str);
+    static bool isJsonNumber(
+        _In_ std::wstring& str);
 
-    static void SanitizeJson(_Inout_ std::wstring &str);
+    static void SanitizeJson(
+        _Inout_ std::wstring &str);
+
+    static bool ConfigAttributeExists(
+        _In_ AttributesMap& Attributes,
+        _In_ std::wstring attributeName);
+
+    static LARGE_INTEGER ConvertWaitIntervalToLargeInt(
+        _In_ int timeInterval);
 
     static bool CompareWStrings(
         _In_ std::wstring stringA,
@@ -71,5 +83,7 @@ public:
 
     static bool isCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
 
-    static bool ConfigAttributeExists(_In_ AttributesMap& Attributes, _In_ std::wstring attributeName);
+    static int GetWaitInterval(
+        _In_ std::double_t waitInSeconds,
+        _In_ int elapsedTime);
 };
