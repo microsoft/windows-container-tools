@@ -8,6 +8,7 @@
 class EventMonitor final
 {
 public:
+
     EventMonitor() = delete;
 
     EventMonitor(
@@ -56,7 +57,9 @@ private:
         _In_ const HANDLE& EventHandle
         );
 
+
     void EnableEventLogChannels();
 
-    static void EnableEventLogChannel(_In_ LPCWSTR ChannelPath);
+    static DWORD EnableEventLogChannel(
+        _In_ LPCWSTR ChannelPath);
 };
