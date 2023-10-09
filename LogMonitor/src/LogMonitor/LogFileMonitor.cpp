@@ -4,6 +4,7 @@
 //
 
 #include "pch.h"
+#include <regex>
 
 using namespace std;
 
@@ -36,6 +37,7 @@ using namespace std;
 /// \param LogDirectory:        The log directory to be monitored
 /// \param Filter:              The filter to apply when looking fr log files
 /// \param IncludeSubfolders:   TRUE if subdirectories also needs to be monitored
+/// \param WaitInSeconds:       Waiting time in seconds to retry if folder/file to be monitored does not exist
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
@@ -57,26 +59,26 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
 
     InitializeSRWLock(&m_eventQueueLock);
 
-    while (!m_logDirectory.empty() && m_logDirectory[ m_logDirectory.size() - 1 ] == L'\\')
-    {
-        m_logDirectory.resize(m_logDirectory.size() - 1);
-    }
-    m_logDirectory = PREFIX_EXTENDED_PATH + m_logDirectory;
+    // By default, the name is limited to MAX_PATH characters. To extend this limit to 32,767 wide characters,
+    // we prepend "\?" to the path. Prepending the string "\?" does not allow access to the root directory
+    // We, therefore, do not prepend for the root directory
+    bool isRootFolder = CheckIsRootFolder(m_logDirectory);
+    m_logDirectory = isRootFolder ? m_logDirectory : PREFIX_EXTENDED_PATH + m_logDirectory;
 
     if (m_filter.empty())
     {
         m_filter = L"*";
     }
 
-    m_stopEvent = CreateFileMonitorEvent(TRUE, FALSE);
+    m_stopEvent = FileMonitorUtilities::CreateFileMonitorEvent(TRUE, FALSE);
 
-    m_overlappedEvent = CreateFileMonitorEvent(TRUE, TRUE);
+    m_overlappedEvent = FileMonitorUtilities::CreateFileMonitorEvent(TRUE, TRUE);
 
     m_overlapped.hEvent = m_overlappedEvent;
 
-    m_workerThreadEvent = CreateFileMonitorEvent(TRUE, TRUE);
+    m_workerThreadEvent = FileMonitorUtilities::CreateFileMonitorEvent(TRUE, TRUE);
 
-    m_dirMonitorStartedEvent = CreateFileMonitorEvent(TRUE, FALSE);
+    m_dirMonitorStartedEvent = FileMonitorUtilities::CreateFileMonitorEvent(TRUE, FALSE);
 
     m_readLogFilesFromStart = false;
 
@@ -316,7 +318,7 @@ LogFileMonitor::StartLogFileMonitor()
     dirMonitorStartedEventSignalled = true;
 
     // Get Log Dir Handle
-    HANDLE logDirHandle = GetLogDirHandle(m_logDirectory, m_stopEvent, m_waitInSeconds);
+    HANDLE logDirHandle = FileMonitorUtilities::GetLogDirHandle(m_logDirectory, m_stopEvent, m_waitInSeconds);
 
     if(logDirHandle == INVALID_HANDLE_VALUE) {
         status = GetLastError();
@@ -338,7 +340,7 @@ LogFileMonitor::StartLogFileMonitor()
     {
         m_readLogFilesFromStart = true;
     }
-
+ 
     m_logDirHandle = logDirHandle;
 
     //
@@ -810,7 +812,7 @@ LogFileMonitor::LogFilesChangeHandler()
     const DWORD eventsCount = 3;
 
     LARGE_INTEGER liDueTime;
-    INT64 millisecondsToWait = 30000LL;
+    INT64 millisecondsToWait = 1000LL;
     liDueTime.QuadPart = -millisecondsToWait*10000LL; // wait time in 100 nanoseconds
 
     HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
@@ -1008,6 +1010,8 @@ LogFileMonitor::LogFilesChangeHandler()
             break;
         }
     }
+
+    CloseHandle(timerEvent);
 
     return status;
 }
@@ -2038,4 +2042,13 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
+}
+
+bool
+LogFileMonitor::CheckIsRootFolder(_In_ std::wstring dirPath)
+{
+    std::wregex pattern(L"^\\w:?$");
+
+    std::wsmatch matches;
+    return std::regex_search(dirPath, matches, pattern);
 }

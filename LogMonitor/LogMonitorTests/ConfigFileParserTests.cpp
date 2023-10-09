@@ -1337,6 +1337,65 @@ namespace LogMonitorTests
             }
         }
 
+        TEST_METHOD(TestRootDirectoryConfigurations)
+        {
+
+            const std::wstring directory = L"C:\\";
+            bool includeSubdirectories = false;
+
+            std::wstring configFileStr;
+            std::wstring configFileStrFormat =
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"File\",\
+                                \"directory\": \"%s\",\
+                                \"includeSubdirectories\": %s\
+                            }\
+                        ]\
+                    }\
+                }";
+
+            // Valid: Root dir and includeSubdirectories = false
+            {
+                configFileStr = Utility::FormatString(
+                    configFileStrFormat.c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    includeSubdirectories ? L"true" : L"false");
+
+                JsonFileParser jsonParser(configFileStr);
+                LoggerSettings settings;
+
+                bool success = ReadConfigFile(jsonParser, settings);
+                Assert::IsTrue(success);
+
+                std::wstring output = RecoverOuput();
+                Assert::AreEqual(L"", output.c_str());
+            }
+
+            // Invalid: Root dir and includeSubdirectories = true
+            {
+                includeSubdirectories = true;
+                configFileStr = Utility::FormatString(
+                    configFileStrFormat.c_str(),
+                    Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                    includeSubdirectories ? L"true" : L"false");
+
+                fflush(stdout);
+                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+                JsonFileParser jsonParser(configFileStr);
+                LoggerSettings settings;
+
+                bool success = ReadConfigFile(jsonParser, settings);
+                Assert::IsTrue(success);
+
+                std::wstring output = RecoverOuput();
+                Assert::IsTrue(output.find(L"WARNING") != std::wstring::npos);
+            }
+        }
+
         ///
         /// Check that invalid ETW sources are not returned by ReadConfigFile.
         ///
@@ -1557,28 +1616,12 @@ namespace LogMonitorTests
 
         TEST_METHOD(TestInvalidWaitInSeconds) {
             std::wstring directory = L"C:\\LogMonitor\\logs";
-
-            std::wstring configFileStrFormat =
-                L"{    \
-                    \"LogConfig\": {    \
-                        \"sources\": [ \
-                            {\
-                                \"type\": \"File\",\
-                                \"directory\": \"%s\",\
-                                \"waitInSeconds\": %f\
-                            }\
-                        ]\
-                    }\
-                }";
-
             TestInvalidWaitInSecondsValues(L"-10", false);
             TestInvalidWaitInSecondsValues(L"-Inf", true);
         }
 
     private:
-
         void TestWaitInSecondsValues(std::wstring waitInSeconds, bool asString = false) {
-            std::wstring configFileStrFormat;
             std::wstring directory = L"C:\\LogMonitor\\logs";
             std::wstring configFileStr = GetConfigFileStrFormat(directory, waitInSeconds, asString);
 

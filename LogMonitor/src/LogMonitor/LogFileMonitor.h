@@ -224,4 +224,6 @@ private:
         _Out_ FILE_ID_INFO& FileId,
         _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE
         );
+
+    static bool CheckIsRootFolder(_In_ std::wstring dirPath);
 };
