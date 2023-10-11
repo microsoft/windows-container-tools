@@ -1,5 +1,6 @@
 {
   "LogConfig": {
+    "logFormat": "custom",
     "sources": [
       {
         "type": "EventLog",
@@ -14,13 +15,15 @@
             "name": "application",
             "level": "Error"
           }
-        ]
+        ],
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'Message':'%Message%'}|json"
       },
       {
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
-        "includeSubdirectories": true
+        "includeSubdirectories": true,
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'FileName':'%FileName%', 'Message':'%Message%'}|json"
       },
       {
         "type": "ETW",
@@ -35,8 +38,19 @@
             "providerName": "Microsoft-Windows-IIS-Logging",
             "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
             "level": "Information"
+          },
+          {
+             "providerName": "Microsoft-Windows-PowerShell",
+             "providerGuid": "A0C1853B-5C40-4B15-8766-3CF1C58F985A",
+             "level": "Information"
+          },
+          {
+             "providerName": "Microsoft-Windows-WLAN-Driver",
+             "providerGuid": "DAA6A96B-F3E7-4D4D-A0D6-31A350E6A445",
+             "level": "Information"
           }
-        ]
+        ],
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderName':'%ProviderName%', 'EventData':'%eventdata%'}|json"
       }
     ]
   }
