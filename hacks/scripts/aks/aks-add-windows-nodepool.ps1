@@ -9,7 +9,7 @@ Foreach ($i in $(Get-Content vars.txt)){Set-Variable -Name $i.split("=")[0] -Val
 $tenantId = (az account show | ConvertFrom-Json).tenantId
 Write-Host "Subscription Id: $subscriptionId, Tenant Id: $tenantId" -ForegroundColor Green
 
-Write-Host "Adding Windows Server containers node pool" -ForegroundColor Yellow
+Write-Host "Adding Windows Server node pool: sku=$osSKU, count=$windowsNodeCount, size=$nodeVmSize" -ForegroundColor Yellow
 
 az aks nodepool add `
     --resource-group $resourceGroup `
