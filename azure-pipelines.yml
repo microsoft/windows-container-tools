@@ -78,6 +78,7 @@ jobs:
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
+          codeCoverageEnabled: true
       
       - task: PublishPipelineArtifact@1
         inputs:
