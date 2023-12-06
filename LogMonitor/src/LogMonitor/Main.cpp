@@ -5,8 +5,6 @@
 
 #include "pch.h"
 #include "Version.h"
-#include <csignal>
-#include <cstdlib>
 
 using namespace std;
 
