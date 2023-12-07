@@ -311,6 +311,12 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     }
 }
 
+bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
+{
+    auto it = Attributes.find(attributeName);
+    return it != Attributes.end() && it->second != nullptr;
+}
+
 /// <summary>
 /// Comparing wstrings with ignoring the case
 /// </summary>
@@ -328,7 +334,7 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
             [](wstring::value_type l1, wstring::value_type r1) {
                 return towupper(l1) == towupper(r1);
             }
-        );
+    );
 }
 
 std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
@@ -342,7 +348,8 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
 
         if (sub[0] != '%' && sub[sub_length - 1] != '%') {
             j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
+        }
+        else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
             //valid field name found in custom log format
             wstring fieldValue;
             if (sourceType == L"ETW") {
@@ -358,17 +365,18 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
             customLogFormat.replace(i, sub_length, fieldValue);
 
             i = i + fieldValue.length(), j = i + 1;
-        } else {
+        }
+        else {
             j++;
         }
     }
 
-    if(customJsonFormat)
+    if (customJsonFormat)
         SanitizeJson(customLogFormat);
 
     return customLogFormat;
 }
- 
+
 /// <summary>
 /// check if custom format specified in config is JSON for sanitization purposes
 /// </summary>
@@ -392,4 +400,35 @@ bool Utility::isCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
         customLogFormat = customLogFormat.substr(0, customLogFormat.find_last_of(L"|"));
     }
     return isCustomJSONFormat;
+}
+
+///
+// Converts the time to wait to a large integer
+///
+LARGE_INTEGER Utility::ConvertWaitIntervalToLargeInt(_In_ int timeInterval)
+{
+    LARGE_INTEGER liDueTime{};
+
+    int millisecondsToWait = timeInterval * 1000;
+    liDueTime.QuadPart = -millisecondsToWait * 10000LL;  // wait time in 100 nanoseconds
+    return liDueTime;
+}
+
+///
+/// Returns the time (in seconds) to wait based on the specified waitInSeconds
+///
+int Utility::GetWaitInterval(_In_ std::double_t waitInSeconds, _In_ int elapsedTime)
+{
+    if (isinf(waitInSeconds))
+    {
+        return static_cast<int>(WAIT_INTERVAL);
+    }
+
+    if (waitInSeconds < WAIT_INTERVAL)
+    {
+        return static_cast<int>(waitInSeconds);
+    }
+
+    const auto remainingTime = static_cast<int>(waitInSeconds - elapsedTime);
+    return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
 }

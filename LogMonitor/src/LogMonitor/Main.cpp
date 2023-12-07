@@ -117,6 +117,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
+                        sourceFile->WaitInSeconds,
                         logFormat,
                         sourceFile->CustomLogFormat
                     );
