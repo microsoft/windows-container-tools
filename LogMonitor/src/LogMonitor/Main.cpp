@@ -25,6 +25,27 @@ std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 
+/// Handle signals.
+///
+/// \return None
+///
+void signalHandler(int signum) {
+    logWriter.TraceError(
+        Utility::FormatString(L"Catastrophic failure! Signal received: %d", signum).c_str()
+    );
+
+    // Terminate the program
+    std::exit(signum);
+}
+
+/// Set up a signal handler
+///
+/// \return None
+///
+void setSignalHandler(int signum, void (*handler)(int)) {
+    std::signal(signum, handler);
+}
+
 BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
@@ -248,6 +269,14 @@ int __cdecl wmain(int argc, WCHAR *argv[])
     } else {
         logWriter.TraceError(L"Invalid configuration file.");
     }
+
+    //
+    // Set up a signal handler for common catastrophic failure signals
+    //
+    setSignalHandler(SIGSEGV, signalHandler); // Segmentation fault
+    setSignalHandler(SIGFPE, signalHandler);  // Floating point exception
+    setSignalHandler(SIGILL, signalHandler);  // Illegal instruction
+    setSignalHandler(SIGABRT, signalHandler); // Abort
 
     //
     // Set the Ctrl handler function, that propagates the Ctrl events to the child process.

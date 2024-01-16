@@ -23,6 +23,8 @@
 #include <queue>
 #include <map>
 #include <stdexcept>
+#include <csignal>
+#include <cstdlib>
 #include <Windows.h>
 #include <cctype>
 #include <sal.h>
