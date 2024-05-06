@@ -13,7 +13,8 @@ FUZZ_EXPORT int __cdecl LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     HRESULT hr = S_OK;
     const wchar_t* wideData = reinterpret_cast<const wchar_t*>(data);
     size_t wideSize = size / sizeof(wchar_t);
-    hr = jsonParser.Initialize(wideData, wideSize, CJsonParser::JSON_ENABLECOMMENTS | CJsonParser::JSON_ENABLE_RESJSON_CHECKS);
+    hr = jsonParser.Initialize(wideData, wideSize, CJsonParser::JSON_ENABLECOMMENTS 
+        | CJsonParser::JSON_ENABLE_RESJSON_CHECKS);
 
     if (FAILED(hr))
     {
