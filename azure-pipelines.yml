@@ -53,7 +53,7 @@ jobs:
       inputs:
         onefuzzOSes: 'Windows'
       env:
-        onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\fuzz\'
+        onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\OneFuzzArtifacts\'
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - job: x86_build
@@ -95,5 +95,5 @@ jobs:
         inputs:
           onefuzzOSes: 'Windows'
         env:
-          onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\fuzz\'
+          onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\OneFuzzArtifacts\'
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
