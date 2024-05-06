@@ -1,0 +1,26 @@
+{
+  "ConfigVersion": 3,
+  "Entries": [
+    {
+      "JobNotificationEmail": "coss@microsoft.com",
+      "Skip": false,
+      "Fuzzer": {
+        "$type": "libfuzzer",
+        "FuzzingHarnessExecutableName": "onefuzz-sample-fuzzer.exe"
+      },
+      "OneFuzzJobs": [
+        {
+          "ProjectName": "OneFuzz-Samples",
+          "TargetName": "sample-fuzzer"
+        }
+      ],
+      "AdoTemplate": {
+        "Org": "microsoft",
+        "Project": "OS",
+        "AssignedTo": "ckathure@microsoft.com",
+        "AreaPath": "OS\\Core\\SPARC\\Server Containers\\Containers and OSS Tooling",
+        "IterationPath": "Next/Future"
+      }
+    }
+  ]
+}
