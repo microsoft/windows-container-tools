@@ -49,6 +49,13 @@ jobs:
         artifactType: 'pipeline'
         artifactName: '64-bit'
     
+    - task: onefuzz-task@0
+      inputs:
+        onefuzzOSes: 'Windows'
+      env:
+        onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\fuzz\'
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
   - job: x86_build
     steps:
       - task: VSBuild@1
@@ -83,3 +90,10 @@ jobs:
           targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
           artifactType: 'pipeline'
           artifactName: '32-bit'
+
+      - task: onefuzz-task@0
+        inputs:
+          onefuzzOSes: 'Windows'
+        env:
+          onefuzzDropDirectory: '$(Build.SourcesDirectory)\LogMonitor\fuzz\'
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
