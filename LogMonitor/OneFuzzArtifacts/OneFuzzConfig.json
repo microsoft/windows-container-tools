@@ -6,7 +6,7 @@
       "Skip": false,
       "Fuzzer": {
         "$type": "libfuzzer",
-        "FuzzingHarnessExecutableName": "onefuzz-sample-fuzzer.exe"
+        "FuzzingHarnessExecutableName": "onefuzz-fuzzer.exe"
       },
       "OneFuzzJobs": [
         {
