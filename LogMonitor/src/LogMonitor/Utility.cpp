@@ -265,43 +265,25 @@ bool Utility::isJsonNumber(_In_ std::wstring& str)
 ///
 void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
-    size_t i = 0;
-    while (i < str.size()) {
+    size_t num_esc = 0;
+    for (size_t i = 0; i < str.size(); i++) {
         auto sub = str.substr(i, 1);
-        if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\\"");
-                i++;
-            }
+        if (sub == L"\"" || sub == L"\\" || sub == L"\n" || sub == L"\r") {
+            num_esc++;
         }
-        else if (sub == L"\\") {
-            if ((i < str.size() - 1 && str.substr(i + 1, 1) != L"\\")
-                || i == str.size() - 1)
-            {
-                str.replace(i, 1, L"\\\\");
-                i++;
-            }
-            else {
-                i += 2;
-            }
-        }
-        else if (sub == L"\n") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\n");
-                i++;
-            }
-        }
-        else if (sub == L"\r") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\r");
-                i++;
-            }
+    }
+
+    str.reserve(str.size() + num_esc);
+    for (size_t i = 0; i < str.size(); i++) {
+        auto sub = str.substr(i, 1);
+        if (sub == L"\n") {
+            str.replace(i, 1, L"\\n");
+        } else if (sub == L"\r") {
+            str.replace(i, 1, L"\\r");
+        } else if (sub == L"\"" || sub == L"\\") {
+            str.insert(i, L"\\");
+        } else {
+            continue;
         }
         i++;
     }
