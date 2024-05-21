@@ -214,6 +214,33 @@ This will monitor any changes in log files matching a specified filter, given th
 
 - `type` (required): `"File"`
 - `directory` (required): set to the directory containing the files to be monitored.
+     > :grey_exclamation:**NOTE:** Only works with absolute paths.
+     > 
+     > To support *long file name* functionality, we prepend "\\?\" to the path. This approach extends the MAX_PATH limit from 260 characters to 32,767 wide characters. For more details, see [Maximum Path Length Limitation](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation).
+     > 
+     > Due to this modification, the path **must** be an [absolute path](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths), beginning with a disk designator with a backslash, for example "C:\" or "d:\".
+     > 
+     > [UNC paths](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#unc-paths) and [DOS device paths](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths) are not supported.
+     > 
+     >  Ensure you [identify the type of path](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#identify-the-path) and the path is correctly formatted to avoid issues.
+     >
+     > | Example                                                    | Path Type        | Allowed            |
+     > |-------------------------------------------------------     |------------------|--------------------|
+     > | "c:"                                                       | Absolute         | :white_check_mark: |
+     > | "c:\\"                                                     | Absolute         | :white_check_mark: |
+     > | "c:\temp"                                                  | Absolute         | :white_check_mark: |
+     > | "\tempdir"                                                 | Absolute         | :x:                |
+     > | "C:tempdir"                                                | Relative         | :x:                |
+     > | "\\\\.\Volume\{b75e2c83-0000-0000-0000-602f00000000}\Test" | Volume GUID path | :x:                |
+     > | "\\\\.\c:\temp"                                            | DOS Device Path  | :x:                |
+     > | "\\\\?\c:\temp"                                            | DOS Device Path  | :x:                |
+     > | "\\\\127.0.0.1\c$\temp"                                    | UNC              | :x:                |
+     > | "\\\\LOCALHOST\c$\temp"                                    | UNC              | :x:                |
+     > | "\\\\.\UNC\LOCALHOST\c$\temp"                              | UNC              | :x:                |
+     > | "."                                                        | Relative         | :x:                |
+     > | ".\"                                                       | Relative         | :x:                |
+     > | "..\temp"                                                  | Relative         | :x:                |
+     
 - `filter` (optional): uses [MS-DOS wildcard match type](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/indexsrv/ms-dos-and-windows-wildcard-characters) i.e.. `*, ?`. Can be set to empty, which will be default to `"*"`.
 - `includeSubdirectories` (optional) : `"true|false"`, specify if sub-directories also need to be monitored. Defaults to `false`.
 - `includeFileNames` (optional): `"true|false"`, specifies whether to include file names in the logline, eg. `sample.log: xxxxx`. Defaults to `false`.
@@ -231,10 +258,10 @@ This will monitor any changes in log files matching a specified filter, given th
 
     In this case, LogMonitor will wait forever for the folder to be created. 
       
-    **NOTE:**
-    - This field is case insensitive
-    - When "INFINITY" is passed, it must be passed as a string.
-    - The infinity symbol, ∞, is also allowed as a string or the symbol itself.
+    > :grey_exclamation:**NOTE**
+    > - This field is case insensitive
+    > - When "INFINITY" is passed, it must be passed as a string.
+    > - The infinity symbol, ∞, is also allowed as a string or the symbol itself.
 
   <br />
 
@@ -254,7 +281,10 @@ This will monitor any changes in log files matching a specified filter, given th
   WARNING: Failed to parse configuration file. Error retrieving source attributes. Invalid source
   ```
 
-### Examples
+### Sample FileMonitor *LogMonitorConfig.json*
+#### Example 1
+
+LogMonitor will monitor log files in the directory "c:\inetpub\logs" along with its subfolders. If the directory does not exist, it will wait for up to 10 seconds for the directory to be created.
 
 ```json
 {
@@ -273,7 +303,13 @@ This will monitor any changes in log files matching a specified filter, given th
 }
 ```
 
-**Note:** When the directory is the root directory (e.g. C:\\ ) we can only monitor a file that is in the root directory, not a subfolder. This is due to access issues (even when running LogMonitor as an Admin) for some of the folders in the root directory. Therefore, `includeSubdirectories` must be `false` for the root directory. See example below:
+#### Example 2
+
+LogMonitor will monitor log files in the root directory, "C:\".
+
+ > When the directory is the root directory (e.g. "C:\\" ) we can only monitor a file that is in the root directory, not a subfolder. This is due to access issues (even when running LogMonitor as an Admin) for some of the folders in the root directory. Therefore, `includeSubdirectories` must be `false` for the root directory. 
+
+See sample valid *LogMonitorConfig.json* below:
 
 ```json
 {
@@ -289,7 +325,28 @@ This will monitor any changes in log files matching a specified filter, given th
   }
 }
 ```
+
+#### Example 3
+
+This example shows an invalid file monitor configuration:
+
+```json
+{
+  "LogConfig": {
+      "sources": [
+          {
+              "type": "File",
+              "directory": "C:",
+              "filter": "*.log",
+              "includeSubdirectories": true
+          }
+      ]
+  }
+}
+```
+
 When the root directory is passed and `includeSubdirectories = true`, we get an error:
+
 ```
 ERROR: LoggerSettings: Invalid Source File atrribute 'directory' (C:) and 'includeSubdirectories' (true).'includeSubdirectories' attribute cannot be 'true' for the root directory
 WARNING: Failed to parse configuration file. Error retrieving source attributes. Invalid source
