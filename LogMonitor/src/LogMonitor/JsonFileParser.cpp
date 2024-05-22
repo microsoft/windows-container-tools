@@ -250,7 +250,6 @@ JsonFileParser::ParseNumber()
             //
             // End of string.
             //
-            offset++;
             AdvanceBufferPointer(offset);
 
             m_doubleValue = negativeValue ? -parsedValue : parsedValue;
