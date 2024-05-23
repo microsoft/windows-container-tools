@@ -36,4 +36,7 @@ class FileMonitorUtilities final
         static std::wstring _GetWaitLogMessage(
             std::wstring logDirectory,
             std::double_t waitInSeconds);
+
+        static std::wstring _GetParentDir(
+            std::wstring dirPath);
 };
