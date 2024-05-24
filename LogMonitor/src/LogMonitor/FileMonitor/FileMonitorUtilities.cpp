@@ -74,7 +74,8 @@ HANDLE FileMonitorUtilities::GetLogDirHandle(
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to create timer object. Log directory %ws will not be monitored for log entries. Error=%d",
-                    logDirectory.c_str(), status).c_str());
+                    logDirectory.c_str(), status)
+                    .c_str());
             return INVALID_HANDLE_VALUE;
         }
 
@@ -90,6 +91,10 @@ HANDLE FileMonitorUtilities::GetLogDirHandle(
 
 void FileMonitorUtilities::ParseDirectoryValue(_Inout_ std::wstring &directory)
 {
+    // Replace all occurrences of forward slashes (/) with backslashes (\).
+    std::replace(directory.begin(), directory.end(), L'/', L'\\');
+
+    // Remove trailing backslashes
     while (!directory.empty() && directory[directory.size() - 1] == L'\\')
     {
         directory.resize(directory.size() - 1);
@@ -113,6 +118,33 @@ bool FileMonitorUtilities::CheckIsRootFolder(_In_ std::wstring dirPath)
     return std::regex_search(dirPath, matches, pattern);
 }
 
+std::wstring FileMonitorUtilities::_GetParentDir(std::wstring dirPath)
+{
+    if (CheckIsRootFolder(dirPath))
+    {
+        return dirPath;
+    }
+
+    size_t pos = dirPath.find_last_of(L"/\\");
+    std::wstring parentdir = L"";
+    if (pos != std::wstring::npos)
+    {
+        parentdir = dirPath.substr(0, pos);
+    }
+
+    // Check if it is an empty string
+    if (parentdir.empty())
+    {
+        std::wstring pathError = Utility::FormatString(
+            L"Directory cannot be a relative path or an empty string %s.",
+            dirPath.c_str());
+        std::string strPathError(pathError.begin(), pathError.end());
+        throw std::invalid_argument(strPathError);
+    }
+
+    return parentdir;
+}
+
 HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
     std::wstring logDirectory,
     std::double_t waitInSeconds,
@@ -123,11 +155,64 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
     DWORD status = ERROR_FILE_NOT_FOUND;
     int elapsedTime = 0;
 
-    const int eventsCount = 2;
-    HANDLE dirOpenEvents[eventsCount] = {stopEvent, timerEvent};
+    const int eventsCount = 3;
+
+    HANDLE dirOpenEvents[eventsCount]{};
+    dirOpenEvents[0] = stopEvent;
+    dirOpenEvents[1] = timerEvent;
+
+    // Start monitoring the parent directory for changes
+    // NOTE: For nested directories, the parent dir must exist. If it does not, this will raise an error
+    // ERROR_FILE_NOT_FOUND (STATUS: 2) - The system cannot find the file specified
+    std::wstring parentdir = _GetParentDir(logDirectory);
+    HANDLE dirChangesHandle = FindFirstChangeNotification(
+        parentdir.c_str(),            // directory to watch
+        TRUE,                         // watch the subtree
+        FILE_NOTIFY_CHANGE_DIR_NAME); // watch dir name changes
+    dirOpenEvents[2] = dirChangesHandle;
+
+    if (dirChangesHandle == INVALID_HANDLE_VALUE)
+    {
+        status = GetLastError();
+        if (status == ERROR_FILE_NOT_FOUND)
+        {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"The parent directory '%s' does not exist for the specified path: '%s'. Error: %lu",
+                    parentdir.c_str(),
+                    logDirectory.c_str(),
+                    status)
+                    .c_str());
+            return INVALID_HANDLE_VALUE;
+        }
+        else
+        {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Failed to monitor changes in directory %s. Error: %lu",
+                    logDirectory.c_str(),
+                    status)
+                    .c_str());
+            return INVALID_HANDLE_VALUE;
+        }
+    }
+
+    if (dirChangesHandle == NULL)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Failed to monitor changes in directory %s.",
+                logDirectory.c_str())
+                .c_str());
+        return INVALID_HANDLE_VALUE;
+    }
+
+    // Get the starting tick count
+    ULONGLONG startTick = GetTickCount64();
 
     while (FileMonitorUtilities::_IsFileErrorStatus(status) && elapsedTime < waitInSeconds)
     {
+        // Calculate the wait interval
         int waitInterval = Utility::GetWaitInterval(waitInSeconds, elapsedTime);
         LARGE_INTEGER timeToWait = Utility::ConvertWaitIntervalToLargeInt(waitInterval);
 
@@ -147,7 +232,7 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
         DWORD wait = WaitForMultipleObjects(eventsCount, dirOpenEvents, FALSE, INFINITE);
         switch (wait)
         {
-        case WAIT_OBJECT_0:
+        case WAIT_OBJECT_0: // stopEvent
         {
             //
             // The process is exiting. Stop the timer and return.
@@ -157,11 +242,29 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
             return INVALID_HANDLE_VALUE;
         }
 
-        case WAIT_OBJECT_0 + 1:
+        case WAIT_OBJECT_0 + 1: // timerEvent
         {
-            //
             // Timer event. Retry opening directory handle.
-            //
+            break;
+        }
+
+        case WAIT_OBJECT_0 + 2: // Directory change notification
+        {
+            if (FindNextChangeNotification(dirChangesHandle) == FALSE)
+            {
+                status = GetLastError();
+                logWriter.TraceError(
+                    Utility::FormatString(
+                        L"Failed to request change notification in directory %s. Error: %lu",
+                        parentdir.c_str(),
+                        status)
+                        .c_str());
+                CancelWaitableTimer(timerEvent);
+                CloseHandle(timerEvent);
+                return INVALID_HANDLE_VALUE;
+            }
+
+            elapsedTime = static_cast<int>((GetTickCount64() - startTick) / 1000);
             break;
         }
 
@@ -171,10 +274,14 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
             // Wait failed, return the failure.
             //
             status = GetLastError();
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Unexpected error when waiting for directory: %lu. Error: %lu.",
+                    wait, status)
+                    .c_str());
 
             CancelWaitableTimer(timerEvent);
             CloseHandle(timerEvent);
-
             return INVALID_HANDLE_VALUE;
         }
         }
@@ -202,6 +309,12 @@ HANDLE FileMonitorUtilities::_RetryOpenDirectoryWithInterval(
             status = ERROR_SUCCESS;
             break;
         }
+    }
+
+    // Close the change notification handle if it was successfully created
+    if (dirChangesHandle != INVALID_HANDLE_VALUE)
+    {
+        FindCloseChangeNotification(dirChangesHandle);
     }
 
     return logDirHandle;

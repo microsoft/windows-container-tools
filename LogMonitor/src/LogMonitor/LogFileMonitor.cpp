@@ -62,7 +62,7 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
     // By default, the name is limited to MAX_PATH characters. To extend this limit to 32,767 wide characters,
     // we prepend "\?" to the path. Prepending the string "\?" does not allow access to the root directory
     // We, therefore, do not prepend for the root directory
-    bool isRootFolder = CheckIsRootFolder(m_logDirectory);
+    bool isRootFolder = FileMonitorUtilities::CheckIsRootFolder(m_logDirectory);
     m_logDirectory = isRootFolder ? m_logDirectory : PREFIX_EXTENDED_PATH + m_logDirectory;
 
     if (m_filter.empty())
@@ -215,7 +215,8 @@ LogFileMonitor::StartLogFileMonitorStatic(
         {
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"Failed to start log file monitor. Log files in a directory %s will not be monitored. Error: %lu",
+                    L"Failed to start log file monitor. Log files in a directory "
+                    "'%s' will not be monitored. Error: %lu",
                     pThis->m_logDirectory.c_str(),
                     status
                 ).c_str()
@@ -227,7 +228,8 @@ LogFileMonitor::StartLogFileMonitorStatic(
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Failed to start log file monitor. Log files in a directory %s will not be monitored. %S",
+                L"Failed to start log file monitor. Log files in a directory "
+                "'%s' will not be monitored. %S",
                 pThis->m_logDirectory.c_str(),
                 ex.what()
             ).c_str()
@@ -238,7 +240,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Failed to start log file monitor. Log files in a directory %s will not be monitored.",
+                L"Failed to start log file monitor. Log files in a directory '%s' will not be monitored.",
                 pThis->m_logDirectory.c_str()
             ).c_str()
         );
@@ -2042,13 +2044,4 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
-}
-
-bool
-LogFileMonitor::CheckIsRootFolder(_In_ std::wstring dirPath)
-{
-    std::wregex pattern(L"^\\w:?$");
-
-    std::wsmatch matches;
-    return std::regex_search(dirPath, matches, pattern);
 }
