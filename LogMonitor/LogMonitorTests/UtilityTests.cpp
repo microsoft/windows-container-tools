@@ -82,6 +82,12 @@ namespace UtilityTests
             expect = L"C:\\\\Drive\\\\XX";
             Utility::SanitizeJson(str);
             Assert::IsTrue(str == expect, L"should escape \\");
+
+            str = L"{\"foo\":\"bar\",\"json_in_json\":\"{\\\"key_inner\\\":\\\"value_inner\\\"}\"}";
+            expect = L"{\\\"foo\\\":\\\"bar\\\",\\\"json_in_json\\\":\\\"{\\\\\\\"key_inner\\\\\\\":\\\\\\\"value_inner\\\\\\\"}\\\"}";
+            Utility::SanitizeJson(str);
+            Assert::IsTrue(str == expect, L"should properly escape json inside json");
+
         }
     };
 }
