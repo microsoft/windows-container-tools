@@ -238,7 +238,7 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 size_t formatProcessLog(char* chBuf)
 {
     const char* prefix;
-    const char* suffix;  
+    const char* suffix;
     if (Utility::CompareWStrings(settings.LogFormat, L"XML"))
     {
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
@@ -248,7 +248,6 @@ size_t formatProcessLog(char* chBuf)
         prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
-
     char chBufCpy[BUFSIZE] = "";
 
     //
