@@ -239,16 +239,15 @@ size_t formatProcessLog(char* chBuf)
 {
     const char* prefix;
     const char* suffix;
-    if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
+    if (Utility::CompareWStrings(settings.LogFormat, L"XML"))
     {
-        // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
-        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
-        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
-    } else {
-        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
-    }    
+    }
+    else {
+        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
+        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
     char chBufCpy[BUFSIZE] = "";
 
     //
@@ -268,11 +267,12 @@ size_t formatProcessLog(char* chBuf)
     // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
-        if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
+        if (Utility::CompareWStrings(settings.LogFormat, L"XML"))
         {
-            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
-        } else {
             suffix = "...\</Logline></LogEntry></Log>\n";
+        }
+        else {
+            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         }
     }
 
