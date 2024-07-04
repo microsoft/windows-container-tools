@@ -40,6 +40,10 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config)
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
+    // ADD ONTO THIS //
+    std::wstring logFormat = settings.LogFormat;
+    std::wstring processCustomLogFormat;
+
     //
     // Create a pipe for the child process's STDOUT.
     //
@@ -239,6 +243,17 @@ size_t formatProcessLog(char* chBuf)
 {
     const char* prefix;
     const char* suffix;
+    if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+        
+        //provided format
+
+        //generate custom logs using provide format
+        //formattedFileEntry = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+    }
+    else {
+        //hard coded
+    }
+
     if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
     {
         // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
@@ -389,4 +404,17 @@ DWORD ReadFromPipe(LPVOID Param)
     }
 
     return ERROR_SUCCESS;
+}
+
+std::wstring ProcessFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
+{
+    std::wostringstream oss;
+    FileLogEntry* pLogEntry = (FileLogEntry*)pLogEntryData;
+
+    if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
+    if (Utility::CompareWStrings(fileFields, L"FileName")) oss << pLogEntry->fileName;
+    if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
+
+    return oss.str();
 }

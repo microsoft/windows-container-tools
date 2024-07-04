@@ -86,7 +86,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     std::wstring logFormat = settings.LogFormat;
     std::wstring eventCustomLogFormat;
     std::wstring etwCustomLogFormat;
-    std::wstring processCustomLogFormat;
+    //CLEAN UP: std::wstring processCustomLgFormat;
 
     for (auto source : settings.Sources)
     {
@@ -159,14 +159,16 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 break;
             }
-            case LogSourceType::Process:
+            //CLEAN UP: 
+            
+            /*case LogSourceType::Process:
             {
                 std::shared_ptr<SourceProcess> sourceProcess = std::reinterpret_pointer_cast<SourceProcess>(source);
 
                 processCustomLogFormat = sourceProcess->CustomLogFormat;
 
                 break;
-            }
+            }*/ 
         } // Switch
     }
 

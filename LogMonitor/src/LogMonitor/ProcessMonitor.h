@@ -6,6 +6,7 @@
 #pragma once
 
 DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config);
+std::wstring m_logFormat;
 
 class ProcessMonitor final
 {
