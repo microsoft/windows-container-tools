@@ -438,7 +438,7 @@ public:
 class SourceProcess : LogSource
 {
 public:
-    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%FileName%] %Message%";
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%LogEntry%]";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,

@@ -620,6 +620,21 @@ AddNewSource(
 
             break;
         }
+
+        case LogSourceType::Process:
+        {
+            std::shared_ptr<SourceProcess> sourceProcess = std::make_shared< SourceProcess>();
+
+            if (!SourceProcess::Unwrap(Attributes, *sourceProcess))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid Process source)");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceProcess)));
+
+            break;
+        }
     }
     return true;
 }

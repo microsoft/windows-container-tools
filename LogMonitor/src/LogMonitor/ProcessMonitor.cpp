@@ -14,11 +14,11 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 
 DWORD g_processId = 0;
 wstring g_processName = L"";
-LoggerSettings settings;
+
+wstring loggingformat, processCustomLogFormat;
 
 
-DWORD CreateChildProcess(std::wstring& Cmdline);
-DWORD ReadFromPipe(LPVOID Param);
+ProcessMonitor::ProcessMonitor(){}
 
 ///
 /// Creates a new process, and link its STDIN and STDOUT to the LogMonitor proccess' ones.
@@ -27,9 +27,11 @@ DWORD ReadFromPipe(LPVOID Param);
 ///
 /// \return Status
 ///
-DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config)
+DWORD CreateAndMonitorProcess(std::wstring& Cmdline, std::wstring LogFormat, std::wstring ProcessCustomLogFormat)
 {
-    settings = Config;
+    loggingformat = LogFormat;
+    processCustomLogFormat = ProcessCustomLogFormat;
+
     SECURITY_ATTRIBUTES saAttr;
     DWORD status = ERROR_SUCCESS;
 
@@ -39,10 +41,6 @@ DWORD CreateAndMonitorProcess(std::wstring& Cmdline, LoggerSettings& Config)
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
-
-    // ADD ONTO THIS //
-    std::wstring logFormat = settings.LogFormat;
-    std::wstring processCustomLogFormat;
 
     //
     // Create a pipe for the child process's STDOUT.
@@ -146,7 +144,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
         );
     }
     else
-    {
+    {      
         CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReadFromPipe, NULL, 0, NULL);
         WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 
@@ -235,35 +233,61 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 }
 
 ///
-/// Helper function to formats the stdout buffer to include the other
+/// Helper function to format the stdout buffer to include additional
 /// details from the JSON schema.
 /// Returns the number of bytes written to the buffer.
 ///
-size_t formatProcessLog(char* chBuf)
-{
-    const char* prefix;
-    const char* suffix;
-    if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
-        
-        //provided format
-
-        //generate custom logs using provide format
-        //formattedFileEntry = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+size_t formatProcessLog(char* chBuf) {
+    if (Utility::CompareWStrings(loggingformat, L"Custom")) {
+        return formatCustomLog(chBuf);
     }
     else {
-        //hard coded
+        return formatStandardLog(chBuf);
     }
+}
 
-    if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
-    {
-        // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
-        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
-        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
-    } else {
-        // <Log><Source>Process</Source><LogEntry><Logline><chBuf>Z</Logline></LogEntry></Log>
+///
+/// Helper function to format the custom log.
+///
+size_t formatCustomLog(char* chBuf) {
+    ProcessLogEntry logEntry;
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    char chBufCpy[BUFSIZE] = "";
+
+    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
+       
+
+    logEntry.source = L"Process";
+    logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesconverter;
+    logEntry.logLine = fromBytesconverter.from_bytes(chBufCpy);
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
+    std::string str = toBytesconverter.to_bytes(Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source));
+
+    const char* logLine = str.c_str();
+    size_t logLineLen = strlen(logLine);
+
+    return bufferCopy(chBuf, const_cast<char*>(logLine), 0, logLineLen);
+}
+
+///
+/// Helper function to format the standard log (JSON or XML).
+///
+size_t formatStandardLog(char* chBuf) {
+    const char* prefix;
+    const char* suffix;
+
+    if (Utility::CompareWStrings(loggingformat, L"XML")) {
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
-    }    
+    }
+    else {
+        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
+        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
     char chBufCpy[BUFSIZE] = "";
 
     //
@@ -274,26 +298,23 @@ size_t formatProcessLog(char* chBuf)
     size_t suffixLen = strlen(suffix);
     size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
 
-    // copy over the logline after prefix
-    // index increments from the previous index within bufferCopy
     index = bufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-    // leave at least 36 slots for JSON or 21 slots for XML
-    // reset the start index
+        // leave at least 36 slots for JSON or 21 slots for XML
+        // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
-        if (Utility::CompareWStrings(settings.LogFormat, L"JSON"))
+        if (Utility::CompareWStrings(loggingformat, L"XML"))
         {
-            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
-        } else {
             suffix = "...\</Logline></LogEntry></Log>\n";
+        }
+        else {
+            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         }
     }
 
-    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
-
-    return index; // same as the number of bytes read
+    return bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
 }
 
 /// 
@@ -367,6 +388,7 @@ DWORD ReadFromPipe(LPVOID Param)
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
                     size_t sz = formatProcessLog(chBufOut);
+
                     DWORD dwRead = static_cast<DWORD>(sz);
 
                     bSuccess = logWriter.WriteLog(
@@ -406,15 +428,14 @@ DWORD ReadFromPipe(LPVOID Param)
     return ERROR_SUCCESS;
 }
 
-std::wstring ProcessFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
+std::wstring ProcessMonitor::ProcessFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
 {
     std::wostringstream oss;
-    FileLogEntry* pLogEntry = (FileLogEntry*)pLogEntryData;
+    ProcessLogEntry* pLogEntry = (ProcessLogEntry*)pLogEntryData;
 
     if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
-    if (Utility::CompareWStrings(fileFields, L"FileName")) oss << pLogEntry->fileName;
     if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
-    if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
+    if (Utility::CompareWStrings(fileFields, L"logLine") || Utility::CompareWStrings(fileFields, L"logEntry")) oss << pLogEntry->logLine;
 
     return oss.str();
 }

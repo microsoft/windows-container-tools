@@ -24,6 +24,8 @@ HANDLE g_hStopEvent = INVALID_HANDLE_VALUE;
 std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
+std::wstring logFormat, processMonitorCustomFormat;
+
 
 BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 {
@@ -83,10 +85,10 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
-    std::wstring logFormat = settings.LogFormat;
+    logFormat = settings.LogFormat;
     std::wstring eventCustomLogFormat;
     std::wstring etwCustomLogFormat;
-    //CLEAN UP: std::wstring processCustomLgFormat;
+    std::wstring processCustomLogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -161,14 +163,25 @@ void StartMonitors(_In_ LoggerSettings& settings)
             }
             //CLEAN UP: 
             
-            /*case LogSourceType::Process:
+            case LogSourceType::Process:
             {
                 std::shared_ptr<SourceProcess> sourceProcess = std::reinterpret_pointer_cast<SourceProcess>(source);
 
-                processCustomLogFormat = sourceProcess->CustomLogFormat;
+                try
+                {
+                    processMonitorCustomFormat = sourceProcess->CustomLogFormat;
+                }
+                catch (std::exception& ex)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Instantiation of a ProcessMonitor object failed. %S", ex.what()
+                        ).c_str()
+                    );
+                }
 
                 break;
-            }*/ 
+            } 
         } // Switch
     }
 
@@ -284,7 +297,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             cmdline += argv[i];
         }
 
-        exitcode = CreateAndMonitorProcess(cmdline, settings);
+        exitcode = CreateAndMonitorProcess(cmdline, logFormat, processMonitorCustomFormat);
     }
     else
     {
