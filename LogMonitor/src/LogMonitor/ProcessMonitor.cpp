@@ -144,7 +144,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
         );
     }
     else
-    {      
+    {
         CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReadFromPipe, NULL, 0, NULL);
         WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 
@@ -301,8 +301,8 @@ size_t formatStandardLog(char* chBuf) {
     index = bufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-        // leave at least 36 slots for JSON or 21 slots for XML
-        // reset the start index
+    // leave at least 36 slots for JSON or 21 slots for XML
+    // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
         if (Utility::CompareWStrings(loggingformat, L"XML"))
@@ -388,7 +388,6 @@ DWORD ReadFromPipe(LPVOID Param)
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
                     size_t sz = formatProcessLog(chBufOut);
-
                     DWORD dwRead = static_cast<DWORD>(sz);
 
                     bSuccess = logWriter.WriteLog(

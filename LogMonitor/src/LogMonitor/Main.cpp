@@ -26,7 +26,6 @@ std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
 std::wstring logFormat, processMonitorCustomFormat;
 
-
 BOOL WINAPI ControlHandle(_In_ DWORD dwCtrlType)
 {
     switch (dwCtrlType)
@@ -161,7 +160,6 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 break;
             }
-            //CLEAN UP: 
             
             case LogSourceType::Process:
             {
