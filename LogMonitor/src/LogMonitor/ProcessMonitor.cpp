@@ -265,7 +265,7 @@ size_t formatCustomLog(char* chBuf) {
     logEntry.logLine = fromBytesconverter.from_bytes(chBufCpy);
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
-    std::string str = toBytesconverter.to_bytes(Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source));
+    std::string str = toBytesconverter.to_bytes(Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source)) + "\n";
 
     const char* logLine = str.c_str();
     size_t logLineLen = strlen(logLine);
