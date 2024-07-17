@@ -354,6 +354,9 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
             if (sourceType == L"File") {
                 fieldValue = LogFileMonitor::FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
             }
+            if (sourceType == L"Process") {
+                fieldValue = ProcessMonitor::ProcessFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+            }
             //substitute the field name with value
             customLogFormat.replace(i, sub_length, fieldValue);
 

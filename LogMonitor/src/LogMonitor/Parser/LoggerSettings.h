@@ -145,7 +145,8 @@ enum class LogSourceType
 {
     EventLog = 0,
     File,
-    ETW
+    ETW,
+    Process
 };
 
 ///
@@ -154,7 +155,8 @@ enum class LogSourceType
 const LPCWSTR LogSourceTypeNames[] = {
     L"EventLog",
     L"File",
-    L"ETW"
+    L"ETW",
+    L"Process"
 };
 
 ///
@@ -425,6 +427,33 @@ public:
             NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
         }
 
+
+        return true;
+    }
+};
+
+///
+/// Represents a Source if Proccess type
+///
+class SourceProcess : LogSource
+{
+public:
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%LogEntry%]";
+
+    static bool Unwrap(
+        _In_ AttributesMap& Attributes,
+        _Out_ SourceProcess& NewSource)
+    {
+        NewSource.Type = LogSourceType::Process;
+
+        //
+        // lineLogFormat is an optional value
+        //
+        if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
+            && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
+        {
+            NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
+        }
 
         return true;
     }
