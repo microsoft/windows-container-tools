@@ -23,6 +23,8 @@
 #include <queue>
 #include <map>
 #include <stdexcept>
+#include <csignal>
+#include <cstdlib>
 #include <Windows.h>
 #include <cctype>
 #include <sal.h>
@@ -52,7 +54,7 @@
 #include "LogWriter.h"
 #include "EtwMonitor.h"
 #include "EventMonitor.h"
-#include "FileMonitor/Utilities.h"
+#include "FileMonitor/FileMonitorUtilities.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
 

@@ -5,18 +5,22 @@
 
 #pragma once
 
-#define REVERSE_BYTE_ORDER_MARK 0xFFFE
-#define BYTE_ORDER_MARK         0xFEFF
+#include <vector>
+#include <memory>
 
-#define BOM_UTF8_HALF           0xBBEF
-#define BOM_UTF8_2HALF          0xBF
+#define REVERSE_BYTE_ORDER_MARK 0xFFFE
+#define BYTE_ORDER_MARK 0xFEFF
+
+#define BOM_UTF8_HALF 0xBBEF
+#define BOM_UTF8_2HALF 0xBF
 
 #define PREFIX_EXTENDED_PATH L"\\\\?\\"
 
 ///
 /// LogMonitor filetype
 ///
-enum LM_FILETYPE {
+enum LM_FILETYPE
+{
     FileTypeUnknown,
     ANSI,
     UTF16LE,
@@ -43,7 +47,6 @@ enum class EventAction
     Unknown = 5,
 };
 
-
 struct DirChangeNotificationEvent
 {
     std::wstring FileName;
@@ -51,19 +54,18 @@ struct DirChangeNotificationEvent
     UINT64 Timestamp;
 };
 
-
 class LogFileMonitor final
 {
 public:
     LogFileMonitor() = delete;
 
     LogFileMonitor(
-        _In_ const std::wstring& LogDirectory,
-        _In_ const std::wstring& Filter,
+        _In_ const std::wstring &LogDirectory,
+        _In_ const std::wstring &Filter,
         _In_ bool IncludeSubfolders,
+        _In_ const std::double_t &WaitInSeconds,
         _In_ std::wstring LogFormat,
-        _In_ std::wstring CustomLogFormat
-        );
+        _In_ std::wstring CustomLogFormat);
 
     ~LogFileMonitor();
 
@@ -76,6 +78,7 @@ private:
     std::wstring m_logDirectory;
     std::wstring m_shortLogDirectory;
     std::wstring m_filter;
+    std::double_t m_waitInSeconds;
     bool m_includeSubfolders;
     std::wstring m_logFormat;
     std::wstring m_customLogFormat;
@@ -123,7 +126,7 @@ private:
     //
     struct ci_less
     {
-        bool operator() (const std::wstring & s1, const std::wstring & s2) const
+        bool operator()(const std::wstring &s1, const std::wstring &s2) const
         {
             return _wcsicmp(s1.c_str(), s2.c_str()) < 0;
         }
@@ -140,11 +143,11 @@ private:
     //
     struct file_id_less
     {
-        bool operator() (const FILE_ID_INFO& id1, const FILE_ID_INFO& id2) const
+        bool operator()(const FILE_ID_INFO &id1, const FILE_ID_INFO &id2) const
         {
             return id1.VolumeSerialNumber < id2.VolumeSerialNumber ||
-                (id1.VolumeSerialNumber == id2.VolumeSerialNumber
-                    && memcmp(id1.FileId.Identifier, id2.FileId.Identifier, sizeof(id1.FileId.Identifier)) < 0);
+                   (id1.VolumeSerialNumber == id2.VolumeSerialNumber &&
+                    memcmp(id1.FileId.Identifier, id2.FileId.Identifier, sizeof(id1.FileId.Identifier)) < 0);
         }
     };
 
@@ -159,80 +162,69 @@ private:
     DWORD StartLogFileMonitor();
 
     static DWORD StartLogFileMonitorStatic(
-        _In_ LPVOID Context
-        );
+        _In_ LPVOID Context);
 
     static inline BOOL FileMatchesFilter(
         _In_ LPCWSTR FileName,
-        _In_ LPCWSTR SearchPattern
-        );
+        _In_ LPCWSTR SearchPattern);
 
     DWORD InitializeMonitoredFilesInfo();
 
     DWORD LogDirectoryChangeNotificationHandler();
 
     static DWORD LogFilesChangeHandlerStatic(
-        _In_ LPVOID Context
-        );
+        _In_ LPVOID Context);
 
     DWORD LogFilesChangeHandler();
 
     DWORD InitializeDirectoryChangeEventsQueue();
 
     static DWORD GetFilesInDirectory(
-        _In_ const std::wstring& FolderPath,
-        _In_ const std::wstring& SearchPattern,
-        _Out_ std::vector<std::pair<std::wstring, FILE_ID_INFO>>& Files,
-        _In_ bool ShouldLookInSubfolders
-        );
+        _In_ const std::wstring &FolderPath,
+        _In_ const std::wstring &SearchPattern,
+        _Out_ std::vector<std::pair<std::wstring, FILE_ID_INFO>> &Files,
+        _In_ bool ShouldLookInSubfolders);
 
-    DWORD LogFileAddEventHandler(DirChangeNotificationEvent& Event);
+    DWORD LogFileAddEventHandler(DirChangeNotificationEvent &Event);
 
-    DWORD LogFileRemoveEventHandler(DirChangeNotificationEvent& Event);
+    DWORD LogFileRemoveEventHandler(DirChangeNotificationEvent &Event);
 
-    DWORD LogFileModifyEventHandler(DirChangeNotificationEvent& Event);
+    DWORD LogFileModifyEventHandler(DirChangeNotificationEvent &Event);
 
-    DWORD LogFileRenameNewEventHandler(DirChangeNotificationEvent& Event);
+    DWORD LogFileRenameNewEventHandler(DirChangeNotificationEvent &Event);
 
     void RenameFileInMaps(
-        _In_ const std::wstring& NewFullName,
-        _In_ const std::wstring& OldName,
-        _In_ const FILE_ID_INFO& FileId
-        );
+        _In_ const std::wstring &NewFullName,
+        _In_ const std::wstring &OldName,
+        _In_ const FILE_ID_INFO &FileId);
 
-    DWORD LogFileReInitEventHandler(DirChangeNotificationEvent& Event);
+    DWORD LogFileReInitEventHandler(DirChangeNotificationEvent &Event);
 
     DWORD ReadLogFile(
-        _Inout_ std::shared_ptr<LogFileInformation> LogFileInfo
-        );
+        _Inout_ std::shared_ptr<LogFileInformation> LogFileInfo);
 
     void WriteToConsole(
         _In_ std::wstring Message,
-        _In_ std::wstring FileName
-    );
+        _In_ std::wstring FileName);
 
     LM_FILETYPE FileTypeFromBuffer(
         _In_reads_bytes_(ContentSize) LPBYTE FileContents,
         _In_ UINT ContentSize,
         _In_reads_bytes_(BomSize) LPBYTE Bom,
         _In_ UINT BomSize,
-        _Out_ UINT& FoundBomSize
-        );
+        _Out_ UINT &FoundBomSize);
 
     std::wstring ConvertStringToUTF16(
         _In_reads_bytes_(StringSize) LPBYTE StringPtr,
         _In_ UINT StringSize,
-        _In_ LM_FILETYPE EncodingType
-        );
+        _In_ LM_FILETYPE EncodingType);
 
     LogFileInfoMap::iterator GetLogFilesInformationIt(
-        _In_ const std::wstring& Key,
-        _Out_opt_ bool* IsShortPath = NULL
-        );
+        _In_ const std::wstring &Key,
+        _Out_opt_ bool *IsShortPath = NULL);
 
     static DWORD GetFileId(
-        _In_ const std::wstring& FullLongPath,
-        _Out_ FILE_ID_INFO& FileId,
-        _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE
-        );
+        _In_ const std::wstring &FullLongPath,
+        _Out_ FILE_ID_INFO &FileId,
+        _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE);
 };
