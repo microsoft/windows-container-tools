@@ -723,9 +723,10 @@ EtwMonitor::OnRecordEvent(
 ///
 /// Format ETW eventlog into a JSON output
 ///
-std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
+std::wstring EtwJsonFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
+
     // construct the JSON output
     oss << L"{\"Source\":\"" << pLogEntry->source << L"\",\"LogEntry\":{";
     oss << L"\"Time\":\"" << pLogEntry->Time << L"\",";
@@ -739,8 +740,8 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
     oss << L"\"Level\":\"" << pLogEntry->Level << L"\",";
     oss << L"\"Keyword\":\"" << pLogEntry->Keyword << L"\",";
     oss << L"\"EventId\":\"" << pLogEntry->EventId << "\",";
-
     oss << L"\"EventData\":{";
+
     bool firstEntry = true;
     for (auto evtData : pLogEntry->EventData) {
         oss << (firstEntry ? "" : ",");
@@ -750,34 +751,16 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
         Utility::SanitizeJson(key);
         oss << "\"" << key << "\":";
 
-        //
-        // format (JSON) numbers without quotation marks, e.g.
-        /*
-        "EventData": {
-                "FrameUniqueID": 403787,
-                "PortNumber" : 0,
-                "TID" : 0,
-                "PeerID" : 0,
-                "PayloadLength" : 68,
-                "QueueLength" : 0,
-                "QueueState" : "false",
-                "CustomData1" : 24,
-                "CustomData2" : 0,
-                "CustomData3" : 0
-        }
-        */
-        //
         if (Utility::isJsonNumber(evtData.second)) {
             oss << evtData.second;
-        }
-        else {
+        } else {
             wstring value = evtData.second;
             Utility::SanitizeJson(value);
             oss << L"\"" << value << L"\"";
         }
     }
-    oss << L"}";
 
+    oss << L"}";
     oss << L"},\"SchemaVersion\":\"1.0.0\"}";
 
     return oss.str();
@@ -786,7 +769,7 @@ std::wstring etwJsonFormat(EtwLogEntry* pLogEntry)
 ///
 /// Format ETW eventlog into a XML output
 ///
-std::wstring etwXMLFormat(EtwLogEntry* pLogEntry)
+std::wstring EtwXMLFormat(EtwLogEntry* pLogEntry)
 {
     std::wostringstream oss;
 
@@ -861,11 +844,11 @@ EtwMonitor::PrintEvent(
 
         std::wstring formattedEvent;
         if (Utility::CompareWStrings(m_logFormat, L"XML")) {
-            formattedEvent = etwXMLFormat(pLogEntry);
+            formattedEvent = EtwXMLFormat(pLogEntry);
         } else if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
             formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
         } else {
-            formattedEvent = etwJsonFormat(pLogEntry);
+            formattedEvent = EtwJsonFormat(pLogEntry);
         }
 
         logWriter.WriteConsoleLog(formattedEvent);

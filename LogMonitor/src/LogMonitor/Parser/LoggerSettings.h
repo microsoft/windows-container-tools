@@ -392,7 +392,9 @@ class SourceETW : LogSource
 public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
-    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] [%ProviderId%] [%ProviderName%] [%EventId%] %EventData%";
+    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] "
+        L"[%ProviderId%] [%ProviderName%] "
+        L"[%EventId%] %EventData%";
 
     static bool Unwrap(
         _In_ AttributesMap& Attributes,
@@ -442,26 +444,26 @@ public:
 ///
 class SourceProcess : LogSource
 {
-public:
-    std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%LogEntry%]";
+    public:
+        std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%LogEntry%]";
 
-    static bool Unwrap(
-        _In_ AttributesMap& Attributes,
-        _Out_ SourceProcess& NewSource)
-    {
-        NewSource.Type = LogSourceType::Process;
-
-        //
-        // lineLogFormat is an optional value
-        //
-        if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
-            && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
+        static bool Unwrap(
+            _In_ AttributesMap& Attributes,
+            _Out_ SourceProcess& NewSource)
         {
-            NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
-        }
+            NewSource.Type = LogSourceType::Process;
 
-        return true;
-    }
+            //
+            // lineLogFormat is an optional value
+            //
+            if (Attributes.find(JSON_TAG_CUSTOM_LOG_FORMAT) != Attributes.end()
+                && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
+            {
+                NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
+            }
+
+            return true;
+        }
 };
 
 ///

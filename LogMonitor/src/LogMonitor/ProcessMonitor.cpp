@@ -178,7 +178,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 /// Helper function for making a copy of the buffer.
 /// returns the index after the last copied byte.
 /// 
-size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
+size_t BufferCopy(char* dst, char* src, size_t start, size_t end = 0)
 {
     char* ptr = src;
     size_t i = start;
@@ -199,7 +199,7 @@ size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
 /// For optimization, the function also "sanitizes" the string for JSON.
 /// returns the index after the last copied byte.
 /// 
-size_t bufferCopyAndSanitize(char* dst, char* src)
+size_t BufferCopyAndSanitize(char* dst, char* src)
 {
     char* ptr = src;
     size_t i = 0;
@@ -237,26 +237,24 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 /// details from the JSON schema.
 /// Returns the number of bytes written to the buffer.
 ///
-size_t formatProcessLog(char* chBuf) {
+size_t FormatProcessLog(char* chBuf) {
     if (Utility::CompareWStrings(loggingformat, L"Custom")) {
-        return formatCustomLog(chBuf);
-    }
-    else {
-        return formatStandardLog(chBuf);
+        return FormatCustomLog(chBuf);
+    } else {
+        return FormatStandardLog(chBuf);
     }
 }
 
 ///
 /// Helper function to format the custom log.
 ///
-size_t formatCustomLog(char* chBuf) {
+size_t FormatCustomLog(char* chBuf) {
     ProcessLogEntry logEntry;
     SYSTEMTIME st;
     GetSystemTime(&st);
-    char chBufCpy[BUFSIZE] = "";
 
-    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
-       
+    char chBufCpy[BUFSIZE] = "";
+    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
 
     logEntry.source = L"Process";
     logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
@@ -265,26 +263,27 @@ size_t formatCustomLog(char* chBuf) {
     logEntry.logLine = fromBytesconverter.from_bytes(chBufCpy);
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
-    std::string str = toBytesconverter.to_bytes(Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source)) + "\n";
+    std::wstring formattedLog = Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source);
+    std::string convertedLog = toBytesconverter.to_bytes(formattedLog);
+    std::string str = convertedLog + "\n";
 
     const char* logLine = str.c_str();
     size_t logLineLen = strlen(logLine);
 
-    return bufferCopy(chBuf, const_cast<char*>(logLine), 0, logLineLen);
+    return BufferCopy(chBuf, const_cast<char*>(logLine), 0, logLineLen);
 }
 
 ///
 /// Helper function to format the standard log (JSON or XML).
 ///
-size_t formatStandardLog(char* chBuf) {
+size_t FormatStandardLog(char* chBuf) {
     const char* prefix;
     const char* suffix;
 
     if (Utility::CompareWStrings(loggingformat, L"XML")) {
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
-    }
-    else {
+    } else {
         prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
@@ -293,12 +292,12 @@ size_t formatStandardLog(char* chBuf) {
     //
     // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
     //
-    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
+    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
     size_t prefixLen = strlen(prefix);
     size_t suffixLen = strlen(suffix);
-    size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
+    size_t index = BufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
 
-    index = bufferCopy(chBuf, chBufCpy, index);
+    index = BufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
     // leave at least 36 slots for JSON or 21 slots for XML
@@ -308,20 +307,19 @@ size_t formatStandardLog(char* chBuf) {
         if (Utility::CompareWStrings(loggingformat, L"XML"))
         {
             suffix = "...\</Logline></LogEntry></Log>\n";
-        }
-        else {
+        } else {
             suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         }
     }
 
-    return bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
+    return BufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
 }
 
 /// 
 /// Helper function to clear the stdout buffer
 /// return number of bytes cleared
 /// 
-size_t clearBuffer(char* chBuf) {
+size_t ClearBuffer(char* chBuf) {
     size_t count = 0;
     char* ptr = chBuf;
 
@@ -355,7 +353,7 @@ DWORD ReadFromPipe(LPVOID Param)
     for (;;)
     {
         // clear buffer ready for read
-        clearBuffer(chBuf);
+        ClearBuffer(chBuf);
         // move valid chars from remainder buffer to chBuf
         // then ReadFile starts from the end position (chBuf + cnt)
         char* ptrRem = chBufRem;
@@ -367,7 +365,7 @@ DWORD ReadFromPipe(LPVOID Param)
 
         bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf + cnt, BUFSIZE - cnt, &dwRead, NULL);
         // clear remainder buffer for the next read
-        clearBuffer(chBufRem);
+        ClearBuffer(chBufRem);
 
         if (!bSuccess || dwRead == 0)
         {
@@ -379,7 +377,7 @@ DWORD ReadFromPipe(LPVOID Param)
         size_t outSz = 0;
         size_t count = 0;
         size_t lastNewline = 0;
-        clearBuffer(chBufOut);
+        ClearBuffer(chBufOut);
         while (*ptr != '\0' && count < BUFSIZE) {
             // copy over to chBufOut till \r\n
             // the remaining will be reserved to be completed
@@ -387,7 +385,7 @@ DWORD ReadFromPipe(LPVOID Param)
             if (*ptr == '\r' || *ptr == '\n') {
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
-                    size_t sz = formatProcessLog(chBufOut);
+                    size_t sz = FormatProcessLog(chBufOut);
                     DWORD dwRead = static_cast<DWORD>(sz);
 
                     bSuccess = logWriter.WriteLog(
@@ -398,7 +396,7 @@ DWORD ReadFromPipe(LPVOID Param)
                         NULL);
                     // reset
                     outSz = 0;
-                    clearBuffer(chBufOut);
+                    ClearBuffer(chBufOut);
                     lastNewline = count;
                 }
             }
@@ -434,7 +432,8 @@ std::wstring ProcessMonitor::ProcessFieldsMapping(_In_ std::wstring fileFields, 
 
     if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
     if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
-    if (Utility::CompareWStrings(fileFields, L"logLine") || Utility::CompareWStrings(fileFields, L"logEntry")) oss << pLogEntry->logLine;
+    if (Utility::CompareWStrings(fileFields, L"logLine")
+        || Utility::CompareWStrings(fileFields, L"logEntry")) oss << pLogEntry->logLine;
 
     return oss.str();
 }

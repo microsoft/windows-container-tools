@@ -347,7 +347,6 @@ int Utility::GetWaitInterval(_In_ std::double_t waitInSeconds, _In_ int elapsedT
     const auto remainingTime = static_cast<int>(waitInSeconds - elapsedTime);
     return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
 }
-}
 
 /// <summary>
 /// Comparing wstrings with ignoring the case
@@ -369,36 +368,42 @@ bool Utility::CompareWStrings(wstring stringA, wstring stringB)
         );
 }
 
-std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType)
+std::wstring Utility::FormatEventLineLog(
+    _In_ std::wstring customLogFormat,
+    _In_ void* pLogEntry,
+    _In_ std::wstring sourceType
+)
 {
-    bool customJsonFormat = isCustomJsonFormat(customLogFormat);
+    bool customJsonFormat = IsCustomJsonFormat(customLogFormat);
 
     size_t i = 0, j = 1;
     while (i < customLogFormat.size()) {
         auto sub = customLogFormat.substr(i, j - i);
         auto sub_length = sub.size();
 
-        if (sub[0] != '%' && sub[sub_length - 1] != '%') {
+        bool startsWithPercent = sub[0] == '%';
+        bool endsWithPercent = sub[sub_length - 1] == '%';
+
+        if (!startsWithPercent && !endsWithPercent) {
             j++, i++;
-        } else if (sub[0] == '%' && sub[sub_length - 1] == '%' && sub_length != 1) {
-            //valid field name found in custom log format
+        } else if (startsWithPercent && endsWithPercent && sub_length > 1) {
+            // Valid field name found in custom log format
             wstring fieldValue;
+            auto fieldName = sub.substr(1, sub_length - 2);
             if (sourceType == L"ETW") {
-                fieldValue = EtwMonitor::EtwFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
+                fieldValue = EtwMonitor::EtwFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"EventLog") {
+                fieldValue = EventMonitor::EventFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"File") {
+                fieldValue = LogFileMonitor::FileFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"Process") {
+                fieldValue = ProcessMonitor::ProcessFieldsMapping(fieldName, pLogEntry);
             }
-            if (sourceType == L"EventLog") {
-                fieldValue = EventMonitor::EventFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            }
-            if (sourceType == L"File") {
-                fieldValue = LogFileMonitor::FileFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            }
-            if (sourceType == L"Process") {
-                fieldValue = ProcessMonitor::ProcessFieldsMapping(sub.substr(1, sub_length - 2), pLogEntry);
-            }
-            //substitute the field name with value
+            // Substitute the field name with value
             customLogFormat.replace(i, sub_length, fieldValue);
 
-            i = i + fieldValue.length(), j = i + 1;
+            i += fieldValue.length();
+            j = i + 1;
         } else {
             j++;
         }
@@ -409,13 +414,13 @@ std::wstring Utility::FormatEventLineLog(_In_ std::wstring customLogFormat, _In_
 
     return customLogFormat;
 }
- 
+
 /// <summary>
 /// check if custom format specified in config is JSON for sanitization purposes
 /// </summary>
 /// <param name="customLogFormat"></param>
 /// <returns></returns>
-bool Utility::isCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
+bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
 {
     bool isCustomJSONFormat = false;
 

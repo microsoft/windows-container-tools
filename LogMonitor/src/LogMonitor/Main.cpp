@@ -182,7 +182,6 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 break;
             }
-            
             case LogSourceType::Process:
             {
                 std::shared_ptr<SourceProcess> sourceProcess = std::reinterpret_pointer_cast<SourceProcess>(source);
@@ -202,14 +201,20 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 break;
             } 
-        } // Switch
+        }// Switch
     }
 
     if (!eventChannels.empty())
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat, eventCustomLogFormat);
+            g_eventMon = make_unique<EventMonitor>(
+                eventChannels,
+                eventMonMultiLine,
+                eventMonStartAtOldestRecord,
+                logFormat,
+                eventCustomLogFormat
+            );
         }
         catch (std::exception& ex)
         {

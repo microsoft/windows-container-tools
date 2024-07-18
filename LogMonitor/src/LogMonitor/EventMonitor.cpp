@@ -572,9 +572,20 @@ EventMonitor::PrintEvent(
                 } else {
                     std::wstring logFmt;
                     if (Utility::CompareWStrings(m_logFormat, L"XML")) {
-                        logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time><Channel>%s</Channel><Level>%s</Level><EventId>%u</EventId><Message>%s</Message></LogEntry></Log>";
+                        logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time>"
+                                 L"<Channel>%s</Channel><Level>%s</Level>"
+                                 L"<EventId>%u</EventId><Message>%s</Message>"
+                                 L"</LogEntry></Log>";
                     } else {
-                        logFmt = L"{\"Source\": \"%s\",\"LogEntry\": {\"Time\": \"%s\",\"Channel\": \"%s\",\"Level\": \"%s\",\"EventId\": %u,\"Message\": \"%s\"}}";;
+                        logFmt = L"{\"Source\": \"%s\","
+                                 L"\"LogEntry\": {"
+                                 L"\"Time\": \"%s\","
+                                 L"\"Channel\": \"%s\","
+                                 L"\"Level\": \"%s\","
+                                 L"\"EventId\": %u,"
+                                 L"\"Message\": \"%s\""
+                                 L"}}";
+
                         // sanitize message
                         std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
                         Utility::SanitizeJson(msg);

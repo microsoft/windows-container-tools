@@ -17,17 +17,17 @@ DWORD CreateChildProcess(std::wstring& Cmdline);
 
 static DWORD ReadFromPipe(LPVOID Param);
 
-static size_t clearBuffer(char* chBuf);
+static size_t ClearBuffer(char* chBuf);
 
-size_t formatProcessLog(char* chBuf);
+size_t FormatProcessLog(char* chBuf);
 
-size_t formatCustomLog(char* chBuf);
+size_t FormatCustomLog(char* chBuf);
 
-size_t formatStandardLog(char* chBuf);
+size_t FormatStandardLog(char* chBuf);
 
-static size_t bufferCopy(char* dst, char* src, size_t start, size_t end);
+static size_t BufferCopy(char* dst, char* src, size_t start, size_t end);
 
-static size_t bufferCopyAndSanitize(char* dst, char* src);
+static size_t BufferCopyAndSanitize(char* dst, char* src);
 
 class ProcessMonitor final
 {
@@ -35,5 +35,4 @@ public:
     ProcessMonitor();
 
     static std::wstring ProcessFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
-
 };

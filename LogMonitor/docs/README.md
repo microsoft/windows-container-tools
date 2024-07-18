@@ -381,7 +381,7 @@ To ensure the different field values are correctly displayed in the customized l
 
 For example: `%Message%, %TimeStamp%`<br>
 
-Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> has log field names specific to them:
+Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process Monitor logs)</em> has log field names specific to them:
 
 <strong>Event Logs:</strong>
   - `Source`: The log source (Event Log)
@@ -409,6 +409,11 @@ Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> h
   - `FileName`: Name of the file that the log entry is read from.
   - `Message`: The line/change added in the monitored file.
 
+<strong>Process Monitor:</strong>
+  - `Source`: The log source (Process Monitor)
+  - `TimeStamp`: Time at which the process was executed
+  - `Logline` or `logEntry` : The output of the process/command executed
+
 ### Sample Custom Log Configuration
 
 ```json
@@ -434,6 +439,10 @@ Each log source tracked by log monitor <em>(ETW, Log File and Event logs)</em> h
         "filter": "*.log",
         "includeSubdirectories": true,
         "customLogFormat": "{'message':%Message%,'source':%Source%,'fileName':%FileName%}"
+      },
+      {
+        "type": "Process",
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}" 
       }
     ]
   }
@@ -460,7 +469,11 @@ For example:
                    }
                  ],
                 "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
-	      }
+	      },
+          {
+            "type": "Process",
+            "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}|JSON" 
+          }
         ]
   }
 }

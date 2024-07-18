@@ -83,8 +83,11 @@ public:
         _In_ std::wstring stringB
     );
 
-    static std::wstring FormatEventLineLog(_In_ std::wstring customLogFormat, _In_ void* pLogEntry, _In_ std::wstring sourceType);
-
-    static bool isCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
-
+    static std::wstring FormatEventLineLog(
+        _In_ std::wstring customLogFormat,
+        _In_ void* pLogEntry,
+        _In_ std::wstring sourceType
+    );
+    
+    static bool IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
 };
