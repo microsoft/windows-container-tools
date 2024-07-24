@@ -63,9 +63,13 @@ public:
         _In_ const std::wstring &LogDirectory,
         _In_ const std::wstring &Filter,
         _In_ bool IncludeSubfolders,
-        _In_ const std::double_t &WaitInSeconds);
+        _In_ const std::double_t &WaitInSeconds,
+        _In_ std::wstring LogFormat,
+        _In_ std::wstring CustomLogFormat);
 
     ~LogFileMonitor();
+
+    static std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
 
 private:
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
@@ -76,6 +80,15 @@ private:
     std::wstring m_filter;
     std::double_t m_waitInSeconds;
     bool m_includeSubfolders;
+    std::wstring m_logFormat;
+    std::wstring m_customLogFormat;
+
+    struct FileLogEntry {
+        std::wstring source;
+        std::wstring currentTime;
+        std::wstring fileName;
+        std::wstring message;
+    };
 
     //
     // Signaled by destructor to request the spawned thread to stop.

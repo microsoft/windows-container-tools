@@ -77,4 +77,17 @@ public:
     static int GetWaitInterval(
         _In_ std::double_t waitInSeconds,
         _In_ int elapsedTime);
+
+    static bool CompareWStrings(
+        _In_ std::wstring stringA,
+        _In_ std::wstring stringB
+    );
+
+    static std::wstring FormatEventLineLog(
+        _In_ std::wstring customLogFormat,
+        _In_ void* pLogEntry,
+        _In_ std::wstring sourceType
+    );
+    
+    static bool IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
 };

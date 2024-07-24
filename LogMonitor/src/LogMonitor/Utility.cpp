@@ -268,12 +268,16 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     size_t i = 0;
     while (i < str.size()) {
         auto sub = str.substr(i, 1);
+        auto s = str.substr(0, i + 1);
         if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
+            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
                 || i == 0)
             {
                 str.replace(i, 1, L"\\\"");
                 i++;
+            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
+                str.replace(i - 1, 1, L"");
+                i--;
             }
         }
         else if (sub == L"\\") {
@@ -343,3 +347,96 @@ int Utility::GetWaitInterval(_In_ std::double_t waitInSeconds, _In_ int elapsedT
     const auto remainingTime = static_cast<int>(waitInSeconds - elapsedTime);
     return remainingTime <= WAIT_INTERVAL ? remainingTime : WAIT_INTERVAL;
 }
+
+/// <summary>
+/// Comparing wstrings with ignoring the case
+/// </summary>
+/// <param name="stringA"></param>
+/// <param name="stringB"></param>
+/// <returns></returns>
+///
+bool Utility::CompareWStrings(wstring stringA, wstring stringB)
+{
+    return stringA.size() == stringB.size() &&
+        equal(
+            stringA.cbegin(),
+            stringA.cend(),
+            stringB.cbegin(),
+            [](wstring::value_type l1, wstring::value_type r1) {
+                return towupper(l1) == towupper(r1);
+            }
+        );
+}
+
+std::wstring Utility::FormatEventLineLog(
+    _In_ std::wstring customLogFormat,
+    _In_ void* pLogEntry,
+    _In_ std::wstring sourceType
+)
+{
+    bool customJsonFormat = IsCustomJsonFormat(customLogFormat);
+
+    size_t i = 0, j = 1;
+    while (i < customLogFormat.size()) {
+        auto sub = customLogFormat.substr(i, j - i);
+        auto sub_length = sub.size();
+
+        bool startsWithPercent = sub[0] == '%';
+        bool endsWithPercent = sub[sub_length - 1] == '%';
+
+        if (!startsWithPercent && !endsWithPercent) {
+            j++, i++;
+        } else if (startsWithPercent && endsWithPercent && sub_length > 1) {
+            // Valid field name found in custom log format
+            wstring fieldValue;
+            auto fieldName = sub.substr(1, sub_length - 2);
+            if (sourceType == L"ETW") {
+                fieldValue = EtwMonitor::EtwFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"EventLog") {
+                fieldValue = EventMonitor::EventFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"File") {
+                fieldValue = LogFileMonitor::FileFieldsMapping(fieldName, pLogEntry);
+            } else if (sourceType == L"Process") {
+                fieldValue = ProcessMonitor::ProcessFieldsMapping(fieldName, pLogEntry);
+            }
+            // Substitute the field name with value
+            customLogFormat.replace(i, sub_length, fieldValue);
+
+            i += fieldValue.length();
+            j = i + 1;
+        } else {
+            j++;
+        }
+    }
+
+    if(customJsonFormat)
+        SanitizeJson(customLogFormat);
+
+    return customLogFormat;
+}
+
+/// <summary>
+/// check if custom format specified in config is JSON for sanitization purposes
+/// </summary>
+/// <param name="customLogFormat"></param>
+/// <returns></returns>
+bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
+{
+    bool isCustomJSONFormat = false;
+
+    auto npos = customLogFormat.find_last_of(L"|");
+    std::wstring substr;
+    if (npos != std::string::npos) {
+        substr = customLogFormat.substr(npos + 1);
+        substr.erase(std::remove(substr.begin(), substr.end(), ' '), substr.end());
+
+        if (!substr.empty() && CompareWStrings(substr, L"JSON")) {
+            customLogFormat = ReplaceAll(customLogFormat, L"'", L"~\"");
+            isCustomJSONFormat = true;
+        }
+
+        customLogFormat = customLogFormat.substr(0, customLogFormat.find_last_of(L"|"));
+    }
+    return isCustomJSONFormat;
+}
+

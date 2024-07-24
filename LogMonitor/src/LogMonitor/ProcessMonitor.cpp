@@ -15,9 +15,10 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 DWORD g_processId = 0;
 wstring g_processName = L"";
 
+wstring loggingformat, processCustomLogFormat;
 
-DWORD CreateChildProcess(std::wstring& Cmdline);
-DWORD ReadFromPipe(LPVOID Param);
+
+ProcessMonitor::ProcessMonitor(){}
 
 ///
 /// Creates a new process, and link its STDIN and STDOUT to the LogMonitor proccess' ones.
@@ -26,8 +27,11 @@ DWORD ReadFromPipe(LPVOID Param);
 ///
 /// \return Status
 ///
-DWORD CreateAndMonitorProcess(std::wstring& Cmdline)
+DWORD CreateAndMonitorProcess(std::wstring& Cmdline, std::wstring LogFormat, std::wstring ProcessCustomLogFormat)
 {
+    loggingformat = LogFormat;
+    processCustomLogFormat = ProcessCustomLogFormat;
+
     SECURITY_ATTRIBUTES saAttr;
     DWORD status = ERROR_SUCCESS;
 
@@ -174,7 +178,7 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 /// Helper function for making a copy of the buffer.
 /// returns the index after the last copied byte.
 /// 
-size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
+size_t BufferCopy(char* dst, char* src, size_t start, size_t end = 0)
 {
     char* ptr = src;
     size_t i = start;
@@ -195,7 +199,7 @@ size_t bufferCopy(char* dst, char* src, size_t start, size_t end = 0)
 /// For optimization, the function also "sanitizes" the string for JSON.
 /// returns the index after the last copied byte.
 /// 
-size_t bufferCopyAndSanitize(char* dst, char* src)
+size_t BufferCopyAndSanitize(char* dst, char* src)
 {
     char* ptr = src;
     size_t i = 0;
@@ -229,47 +233,93 @@ size_t bufferCopyAndSanitize(char* dst, char* src)
 }
 
 ///
-/// Helper function to formats the stdout buffer to include the other
+/// Helper function to format the stdout buffer to include additional
 /// details from the JSON schema.
 /// Returns the number of bytes written to the buffer.
 ///
-size_t formatProcessLog(char* chBuf)
-{
-    // {"Source":"Process","LogEntry":{"Logline":"<chBuf>"},"SchemaVersion":"1.0.0"}
-    const char* prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
-    const char* suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+size_t FormatProcessLog(char* chBuf) {
+    if (Utility::CompareWStrings(loggingformat, L"Custom")) {
+        return FormatCustomLog(chBuf);
+    } else {
+        return FormatStandardLog(chBuf);
+    }
+}
+
+///
+/// Helper function to format the custom log.
+///
+size_t FormatCustomLog(char* chBuf) {
+    ProcessLogEntry logEntry;
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+
+    char chBufCpy[BUFSIZE] = "";
+    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
+
+    logEntry.source = L"Process";
+    logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesconverter;
+    logEntry.logLine = fromBytesconverter.from_bytes(chBufCpy);
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
+    std::wstring formattedLog = Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source);
+    std::string convertedLog = toBytesconverter.to_bytes(formattedLog);
+    std::string str = convertedLog + "\n";
+
+    const char* logLine = str.c_str();
+    size_t logLineLen = strlen(logLine);
+
+    return BufferCopy(chBuf, const_cast<char*>(logLine), 0, logLineLen);
+}
+
+///
+/// Helper function to format the standard log (JSON or XML).
+///
+size_t FormatStandardLog(char* chBuf) {
+    const char* prefix;
+    const char* suffix;
+
+    if (Utility::CompareWStrings(loggingformat, L"XML")) {
+        prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
+        suffix = "</Logline></LogEntry></Log>\n";
+    } else {
+        prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
+        suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
+    }
     char chBufCpy[BUFSIZE] = "";
 
     //
     // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
     //
-    size_t chBufLen = bufferCopyAndSanitize(chBufCpy, chBuf);
+    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
     size_t prefixLen = strlen(prefix);
     size_t suffixLen = strlen(suffix);
-    size_t index = bufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
+    size_t index = BufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
 
-    // copy over the logline after prefix
-    // index increments from the previous index within bufferCopy
-    index = bufferCopy(chBuf, chBufCpy, index);
+    index = BufferCopy(chBuf, chBufCpy, index);
 
     // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-    // leave at least 36 slots to close the JSON with `..."},\"SchemaVersion\":\"1.0.0\"}\n`
+    // leave at least 36 slots for JSON or 21 slots for XML
     // reset the start index
     if ((index + suffixLen) > BUFSIZE - 5) {
         index = BUFSIZE - 5 - suffixLen;
-        suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+        if (Utility::CompareWStrings(loggingformat, L"XML"))
+        {
+            suffix = "...\</Logline></LogEntry></Log>\n";
+        } else {
+            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
+        }
     }
 
-    index = bufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
-
-    return index; // same as the number of bytes read
+    return BufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
 }
 
 /// 
 /// Helper function to clear the stdout buffer
 /// return number of bytes cleared
 /// 
-size_t clearBuffer(char* chBuf) {
+size_t ClearBuffer(char* chBuf) {
     size_t count = 0;
     char* ptr = chBuf;
 
@@ -303,7 +353,7 @@ DWORD ReadFromPipe(LPVOID Param)
     for (;;)
     {
         // clear buffer ready for read
-        clearBuffer(chBuf);
+        ClearBuffer(chBuf);
         // move valid chars from remainder buffer to chBuf
         // then ReadFile starts from the end position (chBuf + cnt)
         char* ptrRem = chBufRem;
@@ -315,7 +365,7 @@ DWORD ReadFromPipe(LPVOID Param)
 
         bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf + cnt, BUFSIZE - cnt, &dwRead, NULL);
         // clear remainder buffer for the next read
-        clearBuffer(chBufRem);
+        ClearBuffer(chBufRem);
 
         if (!bSuccess || dwRead == 0)
         {
@@ -327,7 +377,7 @@ DWORD ReadFromPipe(LPVOID Param)
         size_t outSz = 0;
         size_t count = 0;
         size_t lastNewline = 0;
-        clearBuffer(chBufOut);
+        ClearBuffer(chBufOut);
         while (*ptr != '\0' && count < BUFSIZE) {
             // copy over to chBufOut till \r\n
             // the remaining will be reserved to be completed
@@ -335,7 +385,7 @@ DWORD ReadFromPipe(LPVOID Param)
             if (*ptr == '\r' || *ptr == '\n') {
                 if (outSz > 0) {
                     // print out and reset chBufOut and outSz
-                    size_t sz = formatProcessLog(chBufOut);
+                    size_t sz = FormatProcessLog(chBufOut);
                     DWORD dwRead = static_cast<DWORD>(sz);
 
                     bSuccess = logWriter.WriteLog(
@@ -346,7 +396,7 @@ DWORD ReadFromPipe(LPVOID Param)
                         NULL);
                     // reset
                     outSz = 0;
-                    clearBuffer(chBufOut);
+                    ClearBuffer(chBufOut);
                     lastNewline = count;
                 }
             }
@@ -373,4 +423,17 @@ DWORD ReadFromPipe(LPVOID Param)
     }
 
     return ERROR_SUCCESS;
+}
+
+std::wstring ProcessMonitor::ProcessFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
+{
+    std::wostringstream oss;
+    ProcessLogEntry* pLogEntry = (ProcessLogEntry*)pLogEntryData;
+
+    if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
+    if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(fileFields, L"logLine")
+        || Utility::CompareWStrings(fileFields, L"logEntry")) oss << pLogEntry->logLine;
+
+    return oss.str();
 }

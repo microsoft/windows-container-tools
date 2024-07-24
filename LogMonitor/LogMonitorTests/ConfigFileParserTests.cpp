@@ -1712,5 +1712,48 @@ namespace LogMonitorTests
                 );
             }
         }
+
+        TEST_METHOD(TestSourceProcess)
+        {
+            //
+            // Template of a valid configuration string, with a process source.
+            //
+            std::wstring configFileStrFormat =
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"logFormat\": \"%s\",\
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"Process\",\
+                                \"customLogFormat\": \"%s\"\
+                            }\
+                        ]\
+                    }\
+                }";
+
+            std::wstring logFormat = L"custom";
+            std::wstring customLogFormat = L"{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}";
+            {
+                std::wstring configFileStr = Utility::FormatString(
+                    configFileStrFormat.c_str(),
+                    logFormat.c_str(),
+                    customLogFormat.c_str()
+                );
+
+                JsonFileParser jsonParser(configFileStr);
+                LoggerSettings settings;
+
+                bool success = ReadConfigFile(jsonParser, settings);
+
+                std::wstring output = RecoverOuput();
+
+                //
+                // The config string was valid
+                //
+                Assert::IsTrue(success);
+                Assert::AreEqual(L"", output.c_str());
+            }
+        }
+
     };
 }

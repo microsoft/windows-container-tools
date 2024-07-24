@@ -42,12 +42,16 @@ using namespace std;
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
-                               _In_ const std::double_t& WaitInSeconds
+                               _In_ const std::double_t& WaitInSeconds,
+                               _In_ std::wstring LogFormat,
+                               _In_ std::wstring CustomLogFormat = L""
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
                                m_includeSubfolders(IncludeSubfolders),
-                               m_waitInSeconds(WaitInSeconds)
+                               m_waitInSeconds(WaitInSeconds),
+                               m_logFormat(LogFormat),
+                               m_customLogFormat(CustomLogFormat)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1680,10 +1684,19 @@ LogFileMonitor::ReadLogFile(
 }
 
 void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstring FileName) {
-    auto logFmt = L"{\"Source\":\"File\",\"LogEntry\":{\"Logline\":\"%s\",\"FileName\":\"%s\"},\"SchemaVersion\":\"1.0.0\"}";
     size_t start = 0;
     size_t i = 0;
     wstring msg;
+
+    // struct to hold the File log entry and later format print
+    FileLogEntry logEntry;
+    FileLogEntry* pLogEntry = &logEntry;
+
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+
+    pLogEntry->source = L"File";
+    pLogEntry->currentTime = Utility::SystemTimeToString(st).c_str();
 
     while (true) {
         i = Message.find(L"\n", start);
@@ -1704,12 +1717,43 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
         if (msg.size() > 0) {
             // escape backslashes in FileName
             auto fmtFileName = Utility::ReplaceAll(FileName, L"\\", L"\\\\");
-            // sanitize msg
-            Utility::SanitizeJson(msg);
-            auto log = Utility::FormatString(logFmt, msg.c_str(), fmtFileName.c_str());
-            logWriter.WriteConsoleLog(log);
-        }
+            pLogEntry->fileName = fmtFileName;
+            pLogEntry->message = msg;
 
+            std::wstring formattedFileEntry;
+            if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+                formattedFileEntry = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
+            } else {
+                std::wstring logFmt;
+                if (Utility::CompareWStrings(m_logFormat, L"XML")) {
+                    logFmt = L"<Log><Source>File</Source>"
+                             L"<LogEntry>"
+                             L"<Logline>%s</Logline>"
+                             L"<FileName>%s</FileName>"
+                             L"</LogEntry>"
+                             L"</Log>";
+                } else {
+                    logFmt = L"{\"Source\": \"File\","
+                             L"\"LogEntry\": {"
+                             L"\"Logline\": \"%s\","
+                             L"\"FileName\": \"%s\""
+                             L"},"
+                             L"\"SchemaVersion\":\"1.0.0\""
+                             L"}";
+                    // sanitize message
+                    Utility::SanitizeJson(msg);
+                    pLogEntry->message = msg;
+                }
+
+                formattedFileEntry = Utility::FormatString(
+                    logFmt.c_str(),
+                    pLogEntry->message.c_str(),
+                    pLogEntry->fileName.c_str()
+                );
+            }
+
+            logWriter.WriteConsoleLog(formattedFileEntry);
+        }
         if (i >= Message.size()) break;
     }
 }
@@ -2044,4 +2088,17 @@ LogFileMonitor::GetFileId(
     }
 
     return status;
+}
+
+std::wstring LogFileMonitor::FileFieldsMapping(_In_ std::wstring fileFields, _In_ void* pLogEntryData)
+{
+    std::wostringstream oss;
+    FileLogEntry* pLogEntry = (FileLogEntry*)pLogEntryData;
+
+    if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
+    if (Utility::CompareWStrings(fileFields, L"FileName")) oss << pLogEntry->fileName;
+    if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
+
+    return oss.str();
 }

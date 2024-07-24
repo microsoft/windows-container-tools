@@ -140,9 +140,10 @@ ReadLogConfigObject(
     bool sourcesTagFound = false;
     if (Parser.BeginParseObject())
     {
+        std::wstring key;
         do
         {
-            const std::wstring key(Parser.GetKey());
+            key = Parser.GetKey();
 
             if (_wcsnicmp(key.c_str(), JSON_TAG_SOURCES, _countof(JSON_TAG_SOURCES)) == 0)
             {
@@ -187,6 +188,10 @@ ReadLogConfigObject(
                         }
                     }
                 } while (Parser.ParseNextArrayElement());
+            }
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_LOG_FORMAT, _countof(JSON_TAG_LOG_FORMAT)) == 0)
+            {
+                Config.LogFormat = std::wstring(Parser.ParseStringValue());
             }
             else
             {
@@ -306,6 +311,7 @@ ReadSourceAttributes(
             // These attributes are string type
             // * directory
             // * filter
+            // * lineLogFormat
             //
             else if (_wcsnicmp(key.c_str(), JSON_TAG_DIRECTORY, _countof(JSON_TAG_DIRECTORY)) == 0)
             {
@@ -313,7 +319,8 @@ ReadSourceAttributes(
                 FileMonitorUtilities::ParseDirectoryValue(directory);
                 Attributes[key] = new std::wstring(directory);
             }
-            else if (_wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0)
+            else if (_wcsnicmp(key.c_str(), JSON_TAG_FILTER, _countof(JSON_TAG_FILTER)) == 0
+                || _wcsnicmp(key.c_str(), JSON_TAG_CUSTOM_LOG_FORMAT, _countof(JSON_TAG_CUSTOM_LOG_FORMAT)) == 0)
             {
                 Attributes[key] = new std::wstring(Parser.ParseStringValue());
             }
@@ -645,6 +652,21 @@ AddNewSource(
             }
 
             Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
+
+            break;
+        }
+
+        case LogSourceType::Process:
+        {
+            std::shared_ptr<SourceProcess> sourceProcess = std::make_shared< SourceProcess>();
+
+            if (!SourceProcess::Unwrap(Attributes, *sourceProcess))
+            {
+                logWriter.TraceError(L"Error parsing configuration file. Invalid Process source)");
+                return false;
+            }
+
+            Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceProcess)));
 
             break;
         }

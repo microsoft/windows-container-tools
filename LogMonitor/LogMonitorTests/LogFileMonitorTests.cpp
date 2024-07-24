@@ -176,7 +176,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -224,7 +224,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -293,7 +293,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -396,7 +396,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -572,7 +572,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -678,7 +678,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -798,7 +798,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -989,7 +989,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds);
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //

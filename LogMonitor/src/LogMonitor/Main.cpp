@@ -24,6 +24,7 @@ HANDLE g_hStopEvent = INVALID_HANDLE_VALUE;
 std::unique_ptr<EventMonitor> g_eventMon(nullptr);
 std::vector<std::shared_ptr<LogFileMonitor>> g_logfileMonitors;
 std::unique_ptr<EtwMonitor> g_etwMon(nullptr);
+std::wstring logFormat, processMonitorCustomFormat;
 
 /// Handle signals.
 ///
@@ -104,6 +105,10 @@ void StartMonitors(_In_ LoggerSettings& settings)
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+    logFormat = settings.LogFormat;
+    std::wstring eventCustomLogFormat;
+    std::wstring etwCustomLogFormat;
+    std::wstring processCustomLogFormat;
 
     for (auto source : settings.Sources)
     {
@@ -121,6 +126,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
 
                 eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
                 eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
+                eventCustomLogFormat = sourceEventLog->CustomLogFormat;
 
                 break;
             }
@@ -134,7 +140,9 @@ void StartMonitors(_In_ LoggerSettings& settings)
                         sourceFile->Directory,
                         sourceFile->Filter,
                         sourceFile->IncludeSubdirectories,
-                        sourceFile->WaitInSeconds
+                        sourceFile->WaitInSeconds,
+                        logFormat,
+                        sourceFile->CustomLogFormat
                     );
                     g_logfileMonitors.push_back(std::move(logfileMon));
                 }
@@ -170,17 +178,43 @@ void StartMonitors(_In_ LoggerSettings& settings)
                 }
 
                 etwMonMultiLine = sourceETW->EventFormatMultiLine;
+                etwCustomLogFormat = sourceETW->CustomLogFormat;
 
                 break;
             }
-        } // Switch
+            case LogSourceType::Process:
+            {
+                std::shared_ptr<SourceProcess> sourceProcess = std::reinterpret_pointer_cast<SourceProcess>(source);
+
+                try
+                {
+                    processMonitorCustomFormat = sourceProcess->CustomLogFormat;
+                }
+                catch (std::exception& ex)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Instantiation of a ProcessMonitor object failed. %S", ex.what()
+                        ).c_str()
+                    );
+                }
+
+                break;
+            } 
+        }// Switch
     }
 
     if (!eventChannels.empty())
     {
         try
         {
-            g_eventMon = make_unique<EventMonitor>(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord);
+            g_eventMon = make_unique<EventMonitor>(
+                eventChannels,
+                eventMonMultiLine,
+                eventMonStartAtOldestRecord,
+                logFormat,
+                eventCustomLogFormat
+            );
         }
         catch (std::exception& ex)
         {
@@ -205,7 +239,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     {
         try
         {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, etwMonMultiLine);
+            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat, etwCustomLogFormat);
         }
         catch (...)
         {
@@ -296,7 +330,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             cmdline += argv[i];
         }
 
-        exitcode = CreateAndMonitorProcess(cmdline);
+        exitcode = CreateAndMonitorProcess(cmdline, logFormat, processMonitorCustomFormat);
     }
     else
     {

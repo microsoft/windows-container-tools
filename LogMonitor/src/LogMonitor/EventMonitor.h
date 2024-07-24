@@ -14,10 +14,14 @@ public:
     EventMonitor(
         _In_ const std::vector<EventLogChannel>& eventChannels,
         _In_ bool EventFormatMultiLine,
-        _In_ bool StartAtOldestRecord
+        _In_ bool StartAtOldestRecord,
+        _In_ std::wstring LogFormat,
+        _In_ std::wstring CustomLogFormat
         );
 
     ~EventMonitor();
+
+    static std::wstring EventFieldsMapping(_In_ std::wstring eventField, _In_ void* pLogEntryData);
 
 private:
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
@@ -26,6 +30,17 @@ private:
     const std::vector<EventLogChannel> m_eventChannels;
     bool m_eventFormatMultiLine;
     bool m_startAtOldestRecord;
+    std::wstring m_logFormat;
+    std::wstring m_customLogFormat;
+
+    struct EventLogEntry {
+        std::wstring source;
+        std::wstring eventTime;
+        std::wstring eventChannel;
+        std::wstring eventLevel;
+        UINT16 eventId;
+        std::wstring eventMessage;
+    };
 
     //
     // Signaled by destructor to request the spawned thread to stop.
