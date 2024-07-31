@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+# this is a minimal image based on nanoserver
+# mainly for the purpose of testing, e.g. integration
+# tests on moby/buildkit.
+
+# before building the image, run ./get_binaries.ps1
+# from the host. This dumps all the required binaries
+# in the ./bin directory that is later moved to
+# C:\Windows\system32 to be accessed within %PATH%
+
+COPY ./bin/* /Windows/System32/
