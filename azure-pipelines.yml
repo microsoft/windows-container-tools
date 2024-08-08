@@ -33,6 +33,23 @@ jobs:
         packageFeedSelector: 'nugetOrg'
         versionSelector: 'latestPreRelease'
 
+    - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@5 
+      displayName: 'ESRP CodeSigning' 
+      inputs: 
+        ConnectedServiceName: 'Log-Monitor' 
+        AppRegistrationClientId: '9c3f7d08-a539-4e8b-9363-89d759005698' 
+
+        AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47' 
+        AuthAKVName: 'Log-Monitor-KV' 
+        AuthCertName: 'LogMonitor2-SSL-Autorotation' 
+        AuthSignCertName: 'LogMonitor2'
+
+        FolderPath: MyApp 
+        Pattern: '*.dll' 
+        SessionTimeout: 90 
+        ServiceEndpointUrl: 'https://api.esrp.microsoft.com/api/v2' 
+        MaxConcurrency: 25
+
     - task: VSTest@2
       inputs:
         testSelector: 'testAssemblies'
