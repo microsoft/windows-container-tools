@@ -28,7 +28,7 @@ jobs:
     displayName: 'Running SDL Compliance Policy checks'
     continueOnError: true
     pool:
-      vmImage: parameters.vmImage
+      vmImage: ${{ parameters.vmImage }}
     steps:    
     # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/advanced-security-codeql-init-v1?view=azure-pipelines#remarks
     - task: AdvancedSecurity-Codeql-Init@1
