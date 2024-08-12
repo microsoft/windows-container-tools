@@ -16,9 +16,6 @@ parameters:
     - windows-latest
     - windows-2022
 
-pool:
-  vmImage: parameters.vmImage
-
 variables:
   LGTM.UploadSnapshot: true
   solution: '**/*.sln'
@@ -30,6 +27,8 @@ jobs:
   - job: SDLCompliance
     displayName: 'Running SDL Compliance Policy checks'
     continueOnError: true
+    pool:
+      vmImage: parameters.vmImage
     steps:    
     # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/advanced-security-codeql-init-v1?view=azure-pipelines#remarks
     - task: AdvancedSecurity-Codeql-Init@1
