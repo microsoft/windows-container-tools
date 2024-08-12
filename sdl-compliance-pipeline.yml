@@ -8,8 +8,16 @@ trigger:
     - '*README.md'
     - 'docs/*'
 
+parameters:
+  - name: 'vmImage'
+    type: string
+    default: 'windows-2022'
+    values:
+    - windows-latest
+    - windows-2022
+
 pool:
-  vmImage: 'windows-2022'
+  vmImage: parameters.vmImage
 
 variables:
   LGTM.UploadSnapshot: true
@@ -22,20 +30,44 @@ jobs:
   - job: SDLCompliance
     displayName: 'Running SDL Compliance Policy checks'
     continueOnError: true
-    steps:
-    - task: Semmle@1
-      displayName: 'Run CodeQL (Semmle)'
-      env:
-        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    steps:    
+    # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/advanced-security-codeql-init-v1?view=azure-pipelines#remarks
+    - task: AdvancedSecurity-Codeql-Init@1
+      displayName: "Initialize CodeQL"
       inputs:
-        sourceCodeDirectory: '$(Build.SourcesDirectory)\LogMonitor'
-        language: 'cpp'
-        buildCommands: '$(msbuildPath) $(BUILD.SourcesDirectory)\$(solution) /t:clean #
-                        $(msbuildPath) $(BUILD.SourcesDirectory)\$(solution) /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration)'
-        querySuite: 'Recommended'
-        timeout: '1800'
-        ram: '8192'
-        addProjectDirToScanningExclusionList: true
+        languages: 'cpp'
+        querysuite: 'code-scanning'
+        sourcesfolder: '$(Build.SourcesDirectory)\LogMonitor'
+        buildtype: Manual
+        ram: 8192
+
+    # # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/msbuild-v1?view=azure-pipelines#should-i-use-the-visual-studio-build-task-or-the-msbuild-task
+    # - task: MSBuild@1
+    #   displayName: Build LogMonitor project
+    #   inputs:
+    #     # msbuildLocationMethod: 'location'
+    #     # msbuildLocation: '$(msbuildPath)'
+    #     solution: '$(BUILD.SourcesDirectory)\$(solution)'
+    #     msbuildArchitecture: 'x64'
+    #     platform: '$(BuildPlatform)'
+    #     configuration: '$(BuildConfiguration)'
+    #     clean: true
+    #     createLogFile: true
+    #     logFileVerbosity: 'diagnostic'
+        
+    # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/msbuild-v1?view=azure-pipelines#should-i-use-the-visual-studio-build-task-or-the-msbuild-task
+    - task: VSBuild@1
+      displayName: Build LogMonitor project
+      inputs:
+        solution: '$(BUILD.SourcesDirectory)\$(solution)'
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
+        clean: true
+        createLogFile: true
+        logFileVerbosity: 'diagnostic'    
+      
+    - task: AdvancedSecurity-Codeql-Analyze@1
+      displayName: "Perform CodeQL Analysis"
 
     - task: PublishSecurityAnalysisLogs@3
       displayName: 'Publish Security Analysis Logs'
