@@ -505,7 +505,7 @@ EventMonitor::PrintEvent(
             // Extract the variant values for each queried property. If the variant failed to get a valid type
             // set a default value.
             //
-            std::wstring providerName = (EvtVarTypeString != variants[0].Type) ? L"" : variants[0].StringVal;
+            std::wstring providerName = (EvtVarTypeString != variants[EvtSystemProviderName].Type) ? L"" : variants[EvtSystemProviderName].StringVal;
             std::wstring channelName = (EvtVarTypeString != variants[1].Type) ? L"" : variants[1].StringVal;
             pLogEntry->eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
             UINT8 level = (EvtVarTypeByte != variants[3].Type) ? 0 : variants[3].ByteVal;
@@ -561,6 +561,7 @@ EventMonitor::PrintEvent(
             if (status == ERROR_SUCCESS)
             {
                 pLogEntry->source = L"EventLog";
+                pLogEntry->eventSource = providerName;
                 pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
                 pLogEntry->eventChannel = channelName;
                 pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
@@ -572,13 +573,14 @@ EventMonitor::PrintEvent(
                 } else {
                     std::wstring logFmt;
                     if (Utility::CompareWStrings(m_logFormat, L"XML")) {
-                        logFmt = L"<Log><Source>%s</Source><LogEntry><Time>%s</Time>"
+                        logFmt = L"<Log><Source>%s</Source><LogEntry><EventSource>%s</EventSource><Time>%s</Time>"
                                  L"<Channel>%s</Channel><Level>%s</Level>"
                                  L"<EventId>%u</EventId><Message>%s</Message>"
                                  L"</LogEntry></Log>";
                     } else {
                         logFmt = L"{\"Source\": \"%s\","
                                  L"\"LogEntry\": {"
+                                 L"\"EventSource\": \"%s\","
                                  L"\"Time\": \"%s\","
                                  L"\"Channel\": \"%s\","
                                  L"\"Level\": \"%s\","
@@ -595,6 +597,7 @@ EventMonitor::PrintEvent(
                     formattedEvent = Utility::FormatString(
                         logFmt.c_str(),
                         pLogEntry->source.c_str(),
+                        pLogEntry->eventSource.c_str(),
                         pLogEntry->eventTime.c_str(),
                         pLogEntry->eventChannel.c_str(),
                         pLogEntry->eventLevel.c_str(),
@@ -829,6 +832,7 @@ std::wstring EventMonitor::EventFieldsMapping(_In_ std::wstring eventField, _In_
     if (Utility::CompareWStrings(eventField, L"TimeStamp")) oss << pLogEntry->eventTime;
     if (Utility::CompareWStrings(eventField, L"Severity")) oss << pLogEntry->eventLevel;
     if (Utility::CompareWStrings(eventField, L"Source")) oss << pLogEntry->source;
+    if (Utility::CompareWStrings(eventField, L"EventSource")) oss << pLogEntry->eventSource;
     if (Utility::CompareWStrings(eventField, L"EventID")) oss << pLogEntry->eventId;
     if (Utility::CompareWStrings(eventField, L"Message")) oss << pLogEntry->eventMessage;
 
