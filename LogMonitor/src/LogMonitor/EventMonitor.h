@@ -35,6 +35,7 @@ private:
 
     struct EventLogEntry {
         std::wstring source;
+        std::wstring eventSource;
         std::wstring eventTime;
         std::wstring eventChannel;
         std::wstring eventLevel;
