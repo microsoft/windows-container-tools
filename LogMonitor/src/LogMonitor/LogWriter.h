@@ -19,8 +19,9 @@ public:
         {
             m_isConsole = false;
         }
-
-        m_isConsole = true;
+        else {
+            m_isConsole = true;
+        }
 
         _setmode(_fileno(stdout), _O_U8TEXT);
     };
@@ -67,7 +68,12 @@ public :
         AcquireSRWLockExclusive(&m_stdoutLock);
 
         std::wstring output = LogMessage + L"\n";
-        WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
+
+        if (m_isConsole) {
+            WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), output.c_str(), wcslen(output.c_str()), NULL, NULL);
+        } else {
+            wprintf(output.c_str());
+        }
 
         FlushStdOut();
 
@@ -81,7 +87,13 @@ public :
         AcquireSRWLockExclusive(&m_stdoutLock);
 
         std::wstring output = LogMessage + L"\n";
-        WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
+
+        if (m_isConsole) {
+            WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), output.c_str(), wcslen(output.c_str()), NULL, NULL);
+        } else {
+            wprintf(output.c_str());
+        }
+
         FlushStdOut();
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
