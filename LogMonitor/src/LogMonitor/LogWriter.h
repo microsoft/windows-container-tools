@@ -15,8 +15,7 @@ public:
         DWORD dwMode;
         hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-        if (!GetConsoleMode(hConsole, &dwMode))
-        {
+        if (!GetConsoleMode(hConsole, &dwMode)) {
             m_isConsole = false;
         }
         else {
@@ -70,7 +69,7 @@ public :
         std::wstring output = LogMessage + L"\n";
 
         if (m_isConsole) {
-            WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), output.c_str(), wcslen(output.c_str()), NULL, NULL);
+            WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
         } else {
             wprintf(output.c_str());
         }
@@ -89,7 +88,7 @@ public :
         std::wstring output = LogMessage + L"\n";
 
         if (m_isConsole) {
-            WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), output.c_str(), wcslen(output.c_str()), NULL, NULL);
+            WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
         } else {
             wprintf(output.c_str());
         }
