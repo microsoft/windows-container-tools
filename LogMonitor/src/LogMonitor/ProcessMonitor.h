@@ -8,7 +8,7 @@
 struct ProcessLogEntry {
     std::wstring source;
     std::wstring currentTime;
-    std::wstring logLine;
+    std::wstring message;
 };
 
 DWORD CreateAndMonitorProcess(std::wstring& Cmdline, std::wstring LogFormat, std::wstring ProcessCustomLogFormat);

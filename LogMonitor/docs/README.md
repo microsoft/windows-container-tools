@@ -412,7 +412,7 @@ Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process M
 <strong>Process Monitor:</strong>
   - `Source`: The log source (Process Monitor)
   - `TimeStamp`: Time at which the process was executed
-  - `Logline` or `logEntry` : The output of the process/command executed
+  - `Message` : The output of the process/command executed
 
 ### Sample Custom Log Configuration
 
@@ -431,18 +431,18 @@ Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process M
             "level": "Information"
           }
         ],
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}"
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}"
       },
       {
         "type": "File",
         "directory": "c:\\inetpub\\logs",
         "filter": "*.log",
         "includeSubdirectories": true,
-        "customLogFormat": "{'message':%Message%,'source':%Source%,'fileName':%FileName%}"
+        "customLogFormat": "{'Message':%Message%,'Source':%Source%,'fileName':%FileName%}"
       },
       {
         "type": "Process",
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}" 
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Logline':'%Logline%'}" 
       }
     ]
   }
@@ -468,11 +468,11 @@ For example:
                     "level": "Information"
                    }
                  ],
-                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
+                "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
 	      },
           {
             "type": "Process",
-            "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}|JSON" 
+            "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Message':'%Message%'}|JSON" 
           }
         ]
   }
