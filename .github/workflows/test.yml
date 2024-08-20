@@ -21,9 +21,13 @@ jobs:
 
         - name: Build solution
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x64
-
+        
         - name: Run tests
-          run: vstest.console.exe **\*test*.dll /Platform:x64 /Framework:Framework45
+          uses: microsoft/vstest-action@v1.0.0
+          with:
+            searchFolder: '.'
+            testAssembly: |
+                /**/*test*.dll
 
         - name: Publish artifact
           uses: actions/upload-artifact@v3
@@ -45,6 +49,7 @@ jobs:
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x86
 
         - name: Run tests
+        
           run: vstest.console.exe **\*test*.dll /Platform:x86 /Framework:Framework45
 
         - name: Publish artifact
