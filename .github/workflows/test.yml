@@ -14,19 +14,19 @@ jobs:
 
         steps:
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
 
         - name: Set up MSBuild
-          uses: microsoft/setup-msbuild@v1
+          uses: microsoft/setup-msbuild@v2
 
         - name: Build solution
-          run: msbuild /p:Configuration=Release /p:Platform=x64
+          run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x64
 
         - name: Run tests
           run: vstest.console.exe **\*test*.dll /Platform:x64 /Framework:Framework45
 
         - name: Publish artifact
-          uses: actions/upload-artifact@v2
+          uses: actions/upload-artifact@v3
           with:
             name: 64-bit
             path: LogMonitor\x64\Release
@@ -36,19 +36,19 @@ jobs:
 
         steps:
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
 
         - name: Set up MSBuild
-          uses: microsoft/setup-msbuild@v1
+          uses: microsoft/setup-msbuild@v2
 
         - name: Build solution
-          run: msbuild /p:Configuration=Release /p:Platform=x86
+          run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x86
 
         - name: Run tests
           run: vstest.console.exe **\*test*.dll /Platform:x86 /Framework:Framework45
 
         - name: Publish artifact
-          uses: actions/upload-artifact@v2
+          uses: actions/upload-artifact@v3
           with:
             name: 32-bit
             path: LogMonitor\Release
