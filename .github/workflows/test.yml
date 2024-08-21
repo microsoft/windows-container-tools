@@ -23,10 +23,12 @@ jobs:
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x64
 
         - name: Install VsTest
-          run: nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
+          run: |
+            nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
+            echo "$VSTEST_PATH=D:\a\_temp\VsTest\Microsoft.TestPlatform.17.11.0\tools\net462\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" >> $GITHUB_ENV
         
         - name: Run tests
-          run: vstest.console.exe **\*test*.dll /Platform:x64
+          run: $VSTEST_PATH **\*test*.dll /Platform:x64
 
         - name: Publish artifact
           uses: actions/upload-artifact@v3
@@ -48,7 +50,9 @@ jobs:
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x86
 
         - name: Install VsTest
-          run: nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
+          run: |
+            nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
+            echo "$VSTEST_PATH=D:\a\_temp\VsTest\Microsoft.TestPlatform.17.11.0\tools\net462\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" >> $GITHUB_ENV
 
         - name: Run tests
           run: vstest.console.exe **\*test*.dll /Platform:x86
