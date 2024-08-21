@@ -21,13 +21,12 @@ jobs:
 
         - name: Build solution
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x64
+
+        - name: Install VsTest
+          run: nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
         
         - name: Run tests
-          uses: microsoft/vstest-action@v1.0.0
-          with:
-            searchFolder: '.'
-            testAssembly: |
-                /**/*test*.dll
+          run: vstest.console.exe **\*test*.dll /Platform:x64
 
         - name: Publish artifact
           uses: actions/upload-artifact@v3
@@ -48,9 +47,11 @@ jobs:
         - name: Build solution
           run: msbuild LogMonitor\LogMonitor.sln /p:Configuration=Release /p:Platform=x86
 
+        - name: Install VsTest
+          run: nuget.exe install Microsoft.TestPlatform -Version 17.11.0 -Source https://api.nuget.org/v3/index.json -OutputDirectory D:\a\_temp\VsTest -NoCache -DirectDownload -NonInteractive
+
         - name: Run tests
-        
-          run: vstest.console.exe **\*test*.dll /Platform:x86 /Framework:Framework45
+          run: vstest.console.exe **\*test*.dll /Platform:x86
 
         - name: Publish artifact
           uses: actions/upload-artifact@v3
