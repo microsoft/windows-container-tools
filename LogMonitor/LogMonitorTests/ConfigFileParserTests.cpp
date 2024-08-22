@@ -1732,7 +1732,7 @@ namespace LogMonitorTests
                 }";
 
             std::wstring logFormat = L"custom";
-            std::wstring customLogFormat = L"{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Logline':'%Logline%'}";
+            std::wstring customLogFormat = L"{'TimeStamp':'%TimeStamp%', 'source':'%Source%', 'Message':'%Message%'}";
             {
                 std::wstring configFileStr = Utility::FormatString(
                     configFileStrFormat.c_str(),

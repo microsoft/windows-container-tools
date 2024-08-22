@@ -442,7 +442,7 @@ Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process M
       },
       {
         "type": "Process",
-        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Logline':'%Logline%'}" 
+        "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Message':'%Message%'}" 
       }
     ]
   }
