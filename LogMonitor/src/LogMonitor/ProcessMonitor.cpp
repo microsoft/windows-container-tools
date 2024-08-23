@@ -260,7 +260,7 @@ size_t FormatCustomLog(char* chBuf) {
     logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
 
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesconverter;
-    logEntry.logLine = fromBytesconverter.from_bytes(chBufCpy);
+    logEntry.message = fromBytesconverter.from_bytes(chBufCpy);
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
     std::wstring formattedLog = Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source);
@@ -432,8 +432,7 @@ std::wstring ProcessMonitor::ProcessFieldsMapping(_In_ std::wstring fileFields, 
 
     if (Utility::CompareWStrings(fileFields, L"TimeStamp")) oss << pLogEntry->currentTime;
     if (Utility::CompareWStrings(fileFields, L"Source")) oss << pLogEntry->source;
-    if (Utility::CompareWStrings(fileFields, L"logLine")
-        || Utility::CompareWStrings(fileFields, L"logEntry")) oss << pLogEntry->logLine;
+    if (Utility::CompareWStrings(fileFields, L"Message")) oss << pLogEntry->message;
 
     return oss.str();
 }
