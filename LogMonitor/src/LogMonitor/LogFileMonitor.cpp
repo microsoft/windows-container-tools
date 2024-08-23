@@ -1709,7 +1709,7 @@ void LogFileMonitor::WriteToConsole( _In_ std::wstring Message, _In_ std::wstrin
             msg = Message.substr(start, i - start);
             start = i + 1;
             // remove \r if any, usually before \n
-            if (msg.substr(msg.size() - 1) == L"\r") {
+            if (msg.size() > 0 && msg.substr(msg.size() - 1) == L"\r") {
                 msg.replace(msg.size() - 1, 1, L"");
             }
         }

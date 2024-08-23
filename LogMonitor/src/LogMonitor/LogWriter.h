@@ -13,13 +13,14 @@ public:
         InitializeSRWLock(&m_stdoutLock);
 
         DWORD dwMode;
+        hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-        if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &dwMode))
-        {
+        if (!GetConsoleMode(hConsole, &dwMode)) {
             m_isConsole = false;
         }
-
-        m_isConsole = true;
+        else {
+            m_isConsole = true;
+        }
 
         _setmode(_fileno(stdout), _O_U8TEXT);
     };
@@ -29,6 +30,7 @@ public:
 private:
     SRWLOCK m_stdoutLock;
     bool m_isConsole;
+    HANDLE hConsole;
 
     void FlushStdOut()
     {
@@ -64,7 +66,14 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        wprintf(L"%s\n", LogMessage.c_str());
+        std::wstring output = LogMessage + L"\n";
+
+        if (m_isConsole) {
+            WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
+        } else {
+            wprintf(output.c_str());
+        }
+
         FlushStdOut();
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
@@ -76,7 +85,14 @@ public :
     {
         AcquireSRWLockExclusive(&m_stdoutLock);
 
-        wprintf(L"%s\n", LogMessage.c_str());
+        std::wstring output = LogMessage + L"\n";
+
+        if (m_isConsole) {
+            WriteConsoleW(hConsole, output.c_str(), wcslen(output.c_str()), NULL, NULL);
+        } else {
+            wprintf(output.c_str());
+        }
+
         FlushStdOut();
 
         ReleaseSRWLockExclusive(&m_stdoutLock);
