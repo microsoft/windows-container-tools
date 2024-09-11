@@ -152,7 +152,8 @@ void InitializeFileMonitor(std::shared_ptr<SourceFile> sourceFile)
     {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred."
+                L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
+                sourceFile->Directory.c_str()
             ).c_str()
         );
     }
@@ -206,7 +207,6 @@ void CreateEventMonitor(
     std::vector<EventLogChannel>& eventChannels,
     bool eventMonMultiLine,
     bool eventMonStartAtOldestRecord,
-    const std::wstring& logFormat,
     const std::wstring& eventCustomLogFormat)
 {
     try
@@ -237,7 +237,6 @@ void CreateEventMonitor(
 /// <param name="etwProviders">The list of ETW providers</param>
 void CreateEtwMonitor(
     std::vector<ETWProvider>& etwProviders,
-    const std::wstring& logFormat,
     const std::wstring& etwCustomLogFormat)
 {
     try
@@ -302,9 +301,9 @@ void StartMonitors(_In_ LoggerSettings& settings)
             std::shared_ptr<SourceETW> sourceETW =
                 std::reinterpret_pointer_cast<SourceETW>(source);
             InitializeEtwMonitor(
-                sourceETW, 
-                etwProviders, 
-                etwMonMultiLine, 
+                sourceETW,
+                etwProviders,
+                etwMonMultiLine,
                 etwCustomLogFormat
             );
             break;
@@ -323,10 +322,9 @@ void StartMonitors(_In_ LoggerSettings& settings)
     if (!eventChannels.empty())
     {
         CreateEventMonitor(
-            eventChannels, 
-            eventMonMultiLine, 
-            eventMonStartAtOldestRecord, 
-            logFormat, 
+            eventChannels,
+            eventMonMultiLine,
+            eventMonStartAtOldestRecord,
             eventCustomLogFormat);
     }
 
@@ -334,8 +332,7 @@ void StartMonitors(_In_ LoggerSettings& settings)
     if (!etwProviders.empty())
     {
         CreateEtwMonitor(
-            etwProviders, 
-            logFormat, 
+            etwProviders,
             etwCustomLogFormat);
     }
 }
