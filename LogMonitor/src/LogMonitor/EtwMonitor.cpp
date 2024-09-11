@@ -658,11 +658,10 @@ EtwMonitor::OnRecordEvent(
             try
             {
                 eventBuffer.resize(bufferSize);
-                pInfo = (TRACE_EVENT_INFO*)&eventBuffer.at(0);
+                pInfo = reinterpret_cast<TRACE_EVENT_INFO*>(&eventBuffer.at(0));
                 status = ERROR_SUCCESS;
             }
-            catch (std::bad_alloc)
-            {
+            catch (std::bad_alloc& e) {
                 logWriter.TraceError(
                     Utility::FormatString(L"Failed to allocate memory for event info (size=%lu).", bufferSize).c_str()
                 );
@@ -695,7 +694,7 @@ EtwMonitor::OnRecordEvent(
 
             logWriter.TraceError(
                 Utility::FormatString(L"Failed to query ETW event information for ProviderGUID: %s Error: %lu",
-                guidString, status).c_str());
+                guidString.c_str(), status).c_str());
         }
 
 
@@ -1020,9 +1019,9 @@ EtwMonitor::FormatData(
         PBYTE pUserData = (PBYTE)EventRecord->UserData;
         PBYTE pEndOfUserData = (PBYTE)EventRecord->UserData + EventRecord->UserDataLength;
 
-        for (USHORT i = 0; i < EventInfo->TopLevelPropertyCount; i++)
+        for (ULONG i = 0; i < static_cast<ULONG>(EventInfo->TopLevelPropertyCount); i++)
         {
-            status = _FormatData(EventRecord, EventInfo, i, pUserData, pEndOfUserData, pLogEntry);
+            status = _FormatData(EventRecord, EventInfo, static_cast<USHORT>(i), pUserData, pEndOfUserData, pLogEntry);
             if (ERROR_SUCCESS != status)
             {
                 logWriter.TraceError(L"Failed to format ETW event user data..");
@@ -1096,9 +1095,11 @@ EtwMonitor::_FormatData(
             lastMember = EventInfo->EventPropertyInfoArray[Index].structType.StructStartIndex +
                 EventInfo->EventPropertyInfoArray[Index].structType.NumOfStructMembers;
 
-            for (USHORT j = EventInfo->EventPropertyInfoArray[Index].structType.StructStartIndex; j < lastMember; j++)
-            {
-                status = _FormatData(EventRecord, EventInfo, j, UserData, EndOfUserData, pLogEntry);
+            for (ULONG j = static_cast<ULONG>(EventInfo->EventPropertyInfoArray[Index].structType.StructStartIndex);
+                 j < static_cast<ULONG>(lastMember);
+                 j++) {
+                status = _FormatData(EventRecord, EventInfo, static_cast<USHORT>(j),
+                                     UserData, EndOfUserData, pLogEntry);
                 if (ERROR_SUCCESS != status || UserData == NULL)
                 {
                     logWriter.TraceError(L"Failed to format ETW event user data.");
@@ -1106,7 +1107,7 @@ EtwMonitor::_FormatData(
                 }
             }
         }
-        else if(propertyLength > 0 || (EndOfUserData - UserData) > 0)
+        else if (propertyLength > 0 || (EndOfUserData - UserData) > 0)
         {
             PEVENT_MAP_INFO pMapInfo = NULL;
 
