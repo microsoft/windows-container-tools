@@ -281,7 +281,13 @@ void StartMonitors(_In_ LoggerSettings& settings)
         {
             std::shared_ptr<SourceEventLog> sourceEventLog =
                 std::reinterpret_pointer_cast<SourceEventLog>(source);
-            InitializeEventLogMonitor(sourceEventLog, eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, eventCustomLogFormat);
+            InitializeEventLogMonitor(
+                sourceEventLog,
+                eventChannels,
+                eventMonMultiLine,
+                eventMonStartAtOldestRecord,
+                eventCustomLogFormat
+            );
             break;
         }
         case LogSourceType::File:
@@ -295,7 +301,12 @@ void StartMonitors(_In_ LoggerSettings& settings)
         {
             std::shared_ptr<SourceETW> sourceETW =
                 std::reinterpret_pointer_cast<SourceETW>(source);
-            InitializeEtwMonitor(sourceETW, etwProviders, etwMonMultiLine, etwCustomLogFormat);
+            InitializeEtwMonitor(
+                sourceETW, 
+                etwProviders, 
+                etwMonMultiLine, 
+                etwCustomLogFormat
+            );
             break;
         }
         case LogSourceType::Process:
@@ -311,13 +322,21 @@ void StartMonitors(_In_ LoggerSettings& settings)
     // Create and start EventMonitor if there are event channels
     if (!eventChannels.empty())
     {
-        CreateEventMonitor(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat, eventCustomLogFormat);
+        CreateEventMonitor(
+            eventChannels, 
+            eventMonMultiLine, 
+            eventMonStartAtOldestRecord, 
+            logFormat, 
+            eventCustomLogFormat);
     }
 
     // Create and start EtwMonitor if there are ETW providers
     if (!etwProviders.empty())
     {
-        CreateEtwMonitor(etwProviders, logFormat, etwCustomLogFormat);
+        CreateEtwMonitor(
+            etwProviders, 
+            logFormat, 
+            etwCustomLogFormat);
     }
 }
 
