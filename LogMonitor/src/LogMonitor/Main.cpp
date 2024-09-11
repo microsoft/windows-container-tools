@@ -98,157 +98,228 @@ void PrintUsage()
     wprintf(L"\tfile.\n\n");
 }
 
+/// <summary>
+/// Initialize the Event Log Monitor
+/// </summary>
+/// <param name="sourceEventLog">The EventLog source settings</param>
+/// <param name="eventChannels">The vector to store EventLog channels</param>
+void InitializeEventLogMonitor(
+    std::shared_ptr<SourceEventLog> sourceEventLog,
+    std::vector<EventLogChannel>& eventChannels,
+    bool& eventMonMultiLine,
+    bool& eventMonStartAtOldestRecord,
+    std::wstring& eventCustomLogFormat)
+{
+    for (auto channel : sourceEventLog->Channels)
+    {
+        eventChannels.push_back(channel);
+    }
+
+    eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
+    eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
+    eventCustomLogFormat = sourceEventLog->CustomLogFormat;
+}
+
+/// <summary>
+/// Initialize the File Monitor
+/// </summary>
+/// <param name="sourceFile">The File source settings</param>
+void InitializeFileMonitor(std::shared_ptr<SourceFile> sourceFile)
+{
+    try
+    {
+        std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
+            sourceFile->Directory,
+            sourceFile->Filter,
+            sourceFile->IncludeSubdirectories,
+            sourceFile->WaitInSeconds,
+            logFormat,
+            sourceFile->CustomLogFormat
+        );
+        g_logfileMonitors.push_back(std::move(logfileMon));
+    }
+    catch (std::exception& ex)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Instantiation of a LogFileMonitor object failed for directory %ws. %S",
+                sourceFile->Directory.c_str(),
+                ex.what()
+            ).c_str()
+        );
+    }
+    catch (...)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred."
+            ).c_str()
+        );
+    }
+}
+
+/// <summary>
+/// Initialize the ETW Monitor
+/// </summary>
+/// <param name="sourceETW">The ETW source settings</param>
+/// <param name="etwProviders">The vector to store ETW providers</param>
+void InitializeEtwMonitor(
+    std::shared_ptr<SourceETW> sourceETW,
+    std::vector<ETWProvider>& etwProviders,
+    bool& etwMonMultiLine,
+    std::wstring& etwCustomLogFormat)
+{
+    for (auto provider : sourceETW->Providers)
+    {
+        etwProviders.push_back(provider);
+    }
+
+    etwMonMultiLine = sourceETW->EventFormatMultiLine;
+    etwCustomLogFormat = sourceETW->CustomLogFormat;
+}
+
+/// <summary>
+/// Initialize the Process Monitor
+/// </summary>
+/// <param name="sourceProcess">The Process source settings</param>
+void InitializeProcessMonitor(std::shared_ptr<SourceProcess> sourceProcess)
+{
+    try
+    {
+        processMonitorCustomFormat = sourceProcess->CustomLogFormat;
+    }
+    catch (std::exception& ex)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Instantiation of a ProcessMonitor object failed. %S", ex.what()
+            ).c_str()
+        );
+    }
+}
+
+/// <summary>
+/// Instantiate the EventMonitor
+/// </summary>
+/// <param name="eventChannels">The list of EventLog channels</param>
+void CreateEventMonitor(
+    std::vector<EventLogChannel>& eventChannels,
+    bool eventMonMultiLine,
+    bool eventMonStartAtOldestRecord,
+    const std::wstring& logFormat,
+    const std::wstring& eventCustomLogFormat)
+{
+    try
+    {
+        g_eventMon = make_unique<EventMonitor>(
+            eventChannels,
+            eventMonMultiLine,
+            eventMonStartAtOldestRecord,
+            logFormat,
+            eventCustomLogFormat
+        );
+    }
+    catch (std::exception& ex)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Instantiation of an EventMonitor object failed. %S", ex.what()).c_str()
+        );
+    }
+    catch (...)
+    {
+        logWriter.TraceError(L"Instantiation of an EventMonitor object failed. Unknown error occurred.");
+    }
+}
+
+/// <summary>
+/// Instantiate the EtwMonitor
+/// </summary>
+/// <param name="etwProviders">The list of ETW providers</param>
+void CreateEtwMonitor(
+    std::vector<ETWProvider>& etwProviders,
+    const std::wstring& logFormat,
+    const std::wstring& etwCustomLogFormat)
+{
+    try
+    {
+        g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat, etwCustomLogFormat);
+    }
+    catch (...)
+    {
+        logWriter.TraceError(L"Invalid providers. Check them using 'logman query providers'");
+    }
+}
+
+/// <summary>
+/// Start the monitors by delegating to the helper functions based on log source type
+/// </summary>
+/// <param name="settings">The LoggerSettings object containing configuration</param>
 void StartMonitors(_In_ LoggerSettings& settings)
 {
+    // Vectors to store the event log channels and ETW providers
     std::vector<EventLogChannel> eventChannels;
     std::vector<ETWProvider> etwProviders;
+
     bool eventMonMultiLine;
     bool eventMonStartAtOldestRecord;
     bool etwMonMultiLine;
+
+    // Set the log format from settings
     logFormat = settings.LogFormat;
+
+    // Custom log formats for the different sources
     std::wstring eventCustomLogFormat;
     std::wstring etwCustomLogFormat;
     std::wstring processCustomLogFormat;
 
+    // Iterate through each log source defined in the settings
     for (auto source : settings.Sources)
     {
         switch (source->Type)
         {
-            case LogSourceType::EventLog:
-            {
-                std::shared_ptr<SourceEventLog> sourceEventLog =
-                    std::reinterpret_pointer_cast<SourceEventLog>(source);
-
-                for (auto channel : sourceEventLog->Channels)
-                {
-                    eventChannels.push_back(channel);
-                }
-
-                eventMonMultiLine = sourceEventLog->EventFormatMultiLine;
-                eventMonStartAtOldestRecord = sourceEventLog->StartAtOldestRecord;
-                eventCustomLogFormat = sourceEventLog->CustomLogFormat;
-
-                break;
-            }
-            case LogSourceType::File:
-            {
-                std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(source);
-
-                try
-                {
-                    std::shared_ptr<LogFileMonitor> logfileMon = make_shared<LogFileMonitor>(
-                        sourceFile->Directory,
-                        sourceFile->Filter,
-                        sourceFile->IncludeSubdirectories,
-                        sourceFile->WaitInSeconds,
-                        logFormat,
-                        sourceFile->CustomLogFormat
-                    );
-                    g_logfileMonitors.push_back(std::move(logfileMon));
-                }
-                catch (std::exception& ex)
-                {
-                    logWriter.TraceError(
-                        Utility::FormatString(
-                            L"Instantiation of a LogFileMonitor object failed for directory %ws. %S",
-                            sourceFile->Directory.c_str(),
-                            ex.what()
-                        ).c_str()
-                    );
-                }
-                catch (...)
-                {
-                    logWriter.TraceError(
-                        Utility::FormatString(
-                            L"Instantiation of a LogFileMonitor object failed for directory %ws. Unknown error occurred.",
-                            sourceFile->Directory.c_str()
-                        ).c_str()
-                    );
-                }
-
-                break;
-            }
-            case LogSourceType::ETW:
-            {
-                std::shared_ptr<SourceETW> sourceETW = std::reinterpret_pointer_cast<SourceETW>(source);
-
-                for (auto provider : sourceETW->Providers)
-                {
-                    etwProviders.push_back(provider);
-                }
-
-                etwMonMultiLine = sourceETW->EventFormatMultiLine;
-                etwCustomLogFormat = sourceETW->CustomLogFormat;
-
-                break;
-            }
-            case LogSourceType::Process:
-            {
-                std::shared_ptr<SourceProcess> sourceProcess = std::reinterpret_pointer_cast<SourceProcess>(source);
-
-                try
-                {
-                    processMonitorCustomFormat = sourceProcess->CustomLogFormat;
-                }
-                catch (std::exception& ex)
-                {
-                    logWriter.TraceError(
-                        Utility::FormatString(
-                            L"Instantiation of a ProcessMonitor object failed. %S", ex.what()
-                        ).c_str()
-                    );
-                }
-
-                break;
-            } 
-        }// Switch
+        case LogSourceType::EventLog:
+        {
+            std::shared_ptr<SourceEventLog> sourceEventLog =
+                std::reinterpret_pointer_cast<SourceEventLog>(source);
+            InitializeEventLogMonitor(sourceEventLog, eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, eventCustomLogFormat);
+            break;
+        }
+        case LogSourceType::File:
+        {
+            std::shared_ptr<SourceFile> sourceFile =
+                std::reinterpret_pointer_cast<SourceFile>(source);
+            InitializeFileMonitor(sourceFile);
+            break;
+        }
+        case LogSourceType::ETW:
+        {
+            std::shared_ptr<SourceETW> sourceETW =
+                std::reinterpret_pointer_cast<SourceETW>(source);
+            InitializeEtwMonitor(sourceETW, etwProviders, etwMonMultiLine, etwCustomLogFormat);
+            break;
+        }
+        case LogSourceType::Process:
+        {
+            std::shared_ptr<SourceProcess> sourceProcess =
+                std::reinterpret_pointer_cast<SourceProcess>(source);
+            InitializeProcessMonitor(sourceProcess);
+            break;
+        }
+        }
     }
 
+    // Create and start EventMonitor if there are event channels
     if (!eventChannels.empty())
     {
-        try
-        {
-            g_eventMon = make_unique<EventMonitor>(
-                eventChannels,
-                eventMonMultiLine,
-                eventMonStartAtOldestRecord,
-                logFormat,
-                eventCustomLogFormat
-            );
-        }
-        catch (std::exception& ex)
-        {
-            logWriter.TraceError(
-                Utility::FormatString(
-                    L"Instantiation of a EventMonitor object failed. %S",
-                    ex.what()
-                ).c_str()
-            );
-        }
-        catch (...)
-        {
-            logWriter.TraceError(
-                Utility::FormatString(
-                    L"Instantiation of a EventMonitor object failed. Unknown error occurred."
-                ).c_str()
-            );
-        }
+        CreateEventMonitor(eventChannels, eventMonMultiLine, eventMonStartAtOldestRecord, logFormat, eventCustomLogFormat);
     }
 
+    // Create and start EtwMonitor if there are ETW providers
     if (!etwProviders.empty())
     {
-        try
-        {
-            g_etwMon = make_unique<EtwMonitor>(etwProviders, logFormat, etwCustomLogFormat);
-        }
-        catch (...)
-        {
-            logWriter.TraceError(L"Invalid providers. Check them using 'logman query providers'");
-        }
+        CreateEtwMonitor(etwProviders, logFormat, etwCustomLogFormat);
     }
-
 }
-
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
