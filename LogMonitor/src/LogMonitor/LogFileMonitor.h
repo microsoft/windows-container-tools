@@ -227,4 +227,6 @@ private:
         _In_ const std::wstring &FullLongPath,
         _Out_ FILE_ID_INFO &FileId,
         _In_opt_ HANDLE Handle = INVALID_HANDLE_VALUE);
+
+    DWORD GetLogFileEventStatus(DirChangeNotificationEvent& event);
 };
