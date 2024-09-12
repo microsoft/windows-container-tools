@@ -85,12 +85,12 @@ Utility::FormatString(
 
         if (-1 == ::vswprintf_s(&result[0], length + 1, FormatString, vaList))
         {
-            //
-            // Ignore failure and continue
-            //
+            result.clear();
         }
     }
-    catch (...) {}
+    catch (...) {
+        result.clear();
+    }
 
     va_end(vaList);
 
@@ -292,9 +292,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
             }
         }
         else if (sub == L"\n") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
+            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
                 str.replace(i, 1, L"\\n");
                 i++;
             }
