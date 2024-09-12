@@ -292,7 +292,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
             }
         }
         else if (sub == L"\n") {
-            if (i == 0 || (i > 0 && str[i - 1] != L'\\')) {
+            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
                 str.replace(i, 1, L"\\n");
                 i++;
             }
