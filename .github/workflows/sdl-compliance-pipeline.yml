@@ -45,9 +45,6 @@ jobs:
           # a pull request then we can checkout the head.
           fetch-depth: 2
 
-      - run: git checkout HEAD^2
-        if: ${{ github.event_name == 'pull_request' }}
-
       # https://github.com/marketplace/actions/setup-msbuild#specifying-msbuild-architecture-optional
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
