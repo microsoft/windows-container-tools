@@ -7,6 +7,7 @@
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
 - [Log Format Customization](#log-format-customization)
+- [Security Advisory for Config File](#security-advisory-for-config-file)
 
 ## Sample Config File
 
@@ -478,3 +479,18 @@ For example:
   }
 }
 ```
+
+## Security Advisory for Config File
+
+For extra security for cases where you have low privilege users for your container,
+you can restrict modification for the config file to only administrators. You
+can do this by running this in the container or adding it in your _dockerfile_.
+
+```powershell
+# update the path if not using default
+icacls C:/LogMonitor/LogMonitorConfig.json /grant Administrators:F /deny Users:W
+```
+
+This grants full access (`F`) to `Administrators` group and denies Write (`W`)
+permission to the `Users` group, which includes standard users (such as
+`ContainerUser` in the container).
