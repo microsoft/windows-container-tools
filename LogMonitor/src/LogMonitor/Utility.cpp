@@ -438,3 +438,22 @@ bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
     return isCustomJSONFormat;
 }
 
+/// <summary>
+/// Function to convert wstring to string (UTF-8)
+/// </summary>
+/// <param name="wstr"></param>
+/// <returns></returns>
+std::string Utility::wstring_to_string(_In_ const std::wstring& wstr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wstr);
+}
+
+/// <summary>
+/// Function to convert string to wstring (UTF-8)
+/// </summary>
+/// <param name="str">The input string to be converted</param>
+/// <returns>A wide string representation of the input string</returns>
+std::wstring Utility::string_to_wstring(_In_ const std::string& str) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(str);
+}

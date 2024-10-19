@@ -24,9 +24,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
-          # Learn more about CodeQL language support at https://git.io/codeql-language-support
-          # Analyzes C and C++ code using the commands in `Build C and C++ code`
           - language: "cpp"
             build-mode: manual # Or autobuild
             build-config: Release
@@ -36,21 +33,21 @@ jobs:
       BuildConfiguration: Release
       SolutionPath: 'LogMonitor\LogMonitor.sln'
       CodeQLResultsDir: "../codeql-results"
+      BOOST_ROOT: "C:\\local\\boost_1_85_0"
+      BOOST_INCLUDE: "$env:BOOST_ROOT\\include"
+      BOOST_LIB: "$env:BOOST_ROOT\\lib"
 
     steps: 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # We must fetch at least the immediate parents so that if this is
-          # a pull request then we can checkout the head.
           fetch-depth: 2
 
-      # https://github.com/marketplace/actions/setup-msbuild#specifying-msbuild-architecture-optional
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
-          msbuild-architecture: ${{ matrix.build-platform }} # Default is x86. Options are x86, x64, and arm64
-      
+          msbuild-architecture: ${{ matrix.build-platform }}
+
       - name: Check solution path
         run: |
           if (-not (Test-Path -Path "${{ env.SolutionPath }}" -ErrorAction Continue)) {
@@ -60,28 +57,41 @@ jobs:
           Write-Host "Solution path: ${{ env.SolutionPath }}"
           Get-ChildItem "${{ env.SolutionPath }}" -ErrorAction Continue
 
-      # https://github.blog/changelog/2024-01-12-code-scanning-deprecation-of-codeql-action-v2/
-      # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
-      # https://github.com/github/codeql-action/blob/main/init/action.yml
+      # Check if local directory exists; if not, create it
+      - name: Ensure Boost Directory Exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -Path "C:\local")) {
+            New-Item -ItemType Directory -Path "C:\local"
+            Write-Host "Created directory: C:\local"
+          }
+          if (-not (Test-Path -Path "${{ env.BOOST_ROOT }}")) {
+            New-Item -ItemType Directory -Path "${{ env.BOOST_ROOT }}"
+            Write-Host "Created directory: ${{ env.BOOST_ROOT }}"
+          }
+
+      # Download and Install Boost Library
+      - name: Install Boost Library (Prebuilt for Visual Studio)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.85.0/binaries/boost_1_85_0-msvc-14.3-64.exe -OutFile boost_installer.exe
+          Start-Process .\boost_installer.exe -ArgumentList "/S /D=${{ env.BOOST_ROOT }}" -NoNewWindow -Wait
+          Remove-Item boost_installer.exe -Force # Clean up the installer
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          queries: security-and-quality # Default is "security-extended"
+          queries: security-and-quality
           build-mode: ${{ matrix.build-mode }}
 
-     # https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2022#arguments
       - name: Build LogMonitor
-        run:  |
+        run: |
           msbuild.exe "${{ env.SolutionPath }}" /t:clean
-          msbuild.exe "${{ env.SolutionPath }}" /p:platform="${{ matrix.build-platform }}" /p:configuration="${{ env.BuildConfiguration }}"
+          msbuild.exe "${{ env.SolutionPath }}" /p:platform="${{ matrix.build-platform }}" /p:configuration="${{ env.BuildConfiguration }}" /p:IncludePath="${{ env.BOOST_INCLUDE }}" /p:LibraryPath="${{ env.BOOST_LIB }}"
 
-      # https://github.com/github/codeql-action/blob/main/analyze/action.yml
-      # Performs code analysis and uploads results to provided output path.
-      # We therefore do not need to use github/codeql-action/upload-sarif@v3
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          # The path of the directory in which to save the SARIF results (../results/cpp.sarif)
           output: ${{ env.CodeQLResultsDir }}
-          upload: "always" # Options: 'always', 'failure-only', 'never'
+          upload: "always"
