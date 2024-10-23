@@ -60,6 +60,20 @@ jobs:
           Write-Host "Solution path: ${{ env.SolutionPath }}"
           Get-ChildItem "${{ env.SolutionPath }}" -ErrorAction Continue
 
+      # Download and Install Boost
+      - name: Install Boost Library (Prebuilt for Visual Studio)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.85.0/binaries/boost_1_85_0-msvc-14.3-64.exe -OutFile boost_installer.exe
+          Start-Process .\boost_installer.exe -ArgumentList "/S /D=C:\local\boost_1_85_0" -NoNewWindow -Wait
+
+      - name: Set Boost Environment Variables
+        shell: pwsh
+        run: |
+          $env:BOOST_ROOT = "C:\local\boost_1_85_0"
+          $env:BOOST_INCLUDE = "$env:BOOST_ROOT\include"
+          $env:BOOST_LIB = "$env:BOOST_ROOT\lib"
+
       # https://github.blog/changelog/2024-01-12-code-scanning-deprecation-of-codeql-action-v2/
       # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
       # https://github.com/github/codeql-action/blob/main/init/action.yml
