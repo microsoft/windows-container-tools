@@ -170,11 +170,9 @@ typedef struct _EventLogChannel
     std::wstring Name;
     EventChannelLogLevel Level = EventChannelLogLevel::Error;
 
-    // Default constructor
     _EventLogChannel()
-        : Name(L""), Level(EventChannelLogLevel::Error) {} // Default to empty name and Error level
+        : Name(L""), Level(EventChannelLogLevel::Error) {}
 
-    // Parameterized constructor
     _EventLogChannel(const std::wstring& name, EventChannelLogLevel level = EventChannelLogLevel::Error)
         : Name(name), Level(level) {}
 
