@@ -2,66 +2,112 @@ trigger:
 - main
 
 pool:
-    vmImage: 'windows-2022'  # name of the pool to run this job in
-    demands: 
-      - msbuild
-      - visualstudio
-      - vstest
+  vmImage: 'windows-2022'
+  demands:
+    - msbuild
+    - visualstudio
+    - vstest
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'x86|x64|ARM'
+  buildPlatform: 'x64|ARM'
   buildConfiguration: 'Release'
+  VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
+  VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
+  SDKVersion: ''
 
 jobs:
-  - job: x64_build
+  - job: build
     steps:
-    - task: VSBuild@1
-      inputs:
-        platform: 'x64'
-        solution: '$(solution)'
-        configuration: '$(buildConfiguration)'
-
-    - task: ComponentGovernanceComponentDetection@0
-      inputs:
-        scanType: 'Register'
-        verbosity: 'Verbose'
-        alertWarningLevel: 'Low'
-
-    - task: VisualStudioTestPlatformInstaller@1
-      inputs:
-        packageFeedSelector: 'nugetOrg'
-        versionSelector: 'latestPreRelease'
-
-    - task: VSTest@2
-      inputs:
-        testSelector: 'testAssemblies'
-        testAssemblyVer2: '**\*test*.dll'
-        searchFolder: '$(System.DefaultWorkingDirectory)' 
-        runOnlyImpactedTests: false
-        runInParallel: false
-        rerunFailedTests: true
-        rerunMaxAttempts: 3
-    
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
-        artifactType: 'pipeline'
-        artifactName: '64-bit'
-    
-  - job: x86_build
-    steps:
-      - task: VSBuild@1
+      - task: PowerShell@2
+        displayName: 'Install vcpkg'
         inputs:
-          platform: 'x86'
-          solution: '$(solution)'
-          configuration: '$(buildConfiguration)'
+          targetType: 'inline'
+          script: |
+            echo "Cloning and bootstrapping vcpkg"
+            git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
+            cd $(VCPKG_ROOT)
+            .\bootstrap-vcpkg.bat
+            .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
 
+      # Install Boost JSON
+      - task: PowerShell@2
+        displayName: 'Install Boost JSON'
+        inputs:
+          targetType: 'inline'
+          script: |
+            if (!(Test-Path "$(VCPKG_ROOT)\vcpkg.exe")) {
+                Write-Error "vcpkg.exe not found. Exiting..."
+                exit 1
+            }
+            Write-Host "Installing Boost JSON..."
+            & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows
+
+      # Verify vcpkg integration
+      - task: PowerShell@2
+        displayName: 'Verify vcpkg Integration'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "Verifying vcpkg integration..."
+            $(VCPKG_ROOT)\vcpkg.exe integrate install
+            if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
+                Write-Error "Boost JSON header not found. Exiting..."
+                exit 1
+            }
+            Write-Output "vcpkg integration verified."
+
+      # Get installed Windows SDK version
+      - task: PowerShell@2
+        displayName: 'Check Installed Windows SDK Version'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
+            $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
+            
+            function Get-SdkVersion {
+                param ($sdkPath)
+                
+                $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
+                
+                return $sdkVersion
+            }
+
+            $sdkFolder = $null
+            if (Test-Path $x64SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
+            } elseif (Test-Path $x86SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
+            }
+            
+            if ($sdkFolder) {
+                Write-Host "Installed Windows SDK version: $($sdkFolder.Name)"
+                Write-Host "##vso[task.setvariable variable=SDKVersion]$($sdkFolder.Name)"
+            } else {
+                Write-Host "Windows SDK not found!"
+                exit 1
+            }
+
+      # Configure CMake
+      - task: CMake@1
+        displayName: 'Configure CMake'
+        inputs:
+          workingDirectory: '$(Build.SourcesDirectory)\LogMonitor'
+          cmakeArgs: |
+            -A x64 -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\x64
+
+      - task: CMake@1
+        displayName: 'Build with CMake'
+        inputs:
+          workingDirectory: '$(Build.BinariesDirectory)\LogMonitor\x64'
+          cmakeArgs: '--build . --config $(buildConfiguration) --parallel'
+          
       - task: ComponentGovernanceComponentDetection@0
         inputs:
-          scanType: 'LogOnly'
+          scanType: 'Register'
           verbosity: 'Verbose'
-          alertWarningLevel: 'High'
+          alertWarningLevel: 'Low'
 
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
@@ -72,14 +118,15 @@ jobs:
         inputs:
           testSelector: 'testAssemblies'
           testAssemblyVer2: '**\*test*.dll'
-          searchFolder: '$(System.DefaultWorkingDirectory)' 
+          searchFolder: '$(Build.BinariesDirectory)\LogMonitor\x64\Release\'
           runOnlyImpactedTests: false
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
       
+      # Publish build artifacts
       - task: PublishPipelineArtifact@1
         inputs:
-          targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
+          targetPath: '$(Build.BinariesDirectory)\LogMonitor\x64\Release\'
           artifactType: 'pipeline'
-          artifactName: '32-bit'
+          artifactName: '64-bit'

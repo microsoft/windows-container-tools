@@ -663,7 +663,7 @@ EtwMonitor::OnRecordEvent(
             }
             catch (std::bad_alloc& e) {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to allocate memory for event info (size=%lu).", bufferSize).c_str()
+                    Utility::FormatString(L"Failed to allocate memory for event info (size=%lu): %s", bufferSize, e.what()).c_str()
                 );
                 status = ERROR_OUTOFMEMORY;
             }

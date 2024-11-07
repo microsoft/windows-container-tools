@@ -90,4 +90,8 @@ public:
     );
     
     static bool IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
+
+    static std::string wstring_to_string(_In_ const std::wstring& wstr);
+
+    static std::wstring string_to_wstring(_In_ const std::string& str);
 };
