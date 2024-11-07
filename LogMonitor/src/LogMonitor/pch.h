@@ -47,6 +47,7 @@
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
+#include <boost/json.hpp>
 #include "Utility.h"
 #include "Parser/ConfigFileParser.h"
 #include "Parser/LoggerSettings.h"
@@ -57,5 +58,6 @@
 #include "FileMonitor/FileMonitorUtilities.h"
 #include "LogFileMonitor.h"
 #include "ProcessMonitor.h"
+#include "JsonProcessor.h"
 
 #endif //PCH_H

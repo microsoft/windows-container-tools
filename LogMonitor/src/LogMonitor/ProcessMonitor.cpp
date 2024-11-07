@@ -306,7 +306,7 @@ size_t FormatStandardLog(char* chBuf) {
         index = BUFSIZE - 5 - suffixLen;
         if (Utility::CompareWStrings(loggingformat, L"XML"))
         {
-            suffix = "...\</Logline></LogEntry></Log>\n";
+            suffix = "...</Logline></LogEntry></Log>\n";
         } else {
             suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
         }

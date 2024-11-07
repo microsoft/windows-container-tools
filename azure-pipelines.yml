@@ -12,50 +12,229 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'x86|x64|ARM'
   buildConfiguration: 'Release'
+  VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
+  VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
+  SDKVersion: ''  # Initialize SDKVersion variable
 
 jobs:
   - job: x64_build
     steps:
-    - task: VSBuild@1
-      inputs:
-        platform: 'x64'
-        solution: '$(solution)'
-        configuration: '$(buildConfiguration)'
+      # Install and integrate vcpkg
+      - task: PowerShell@2
+        displayName: 'Install and Integrate vcpkg'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "Cloning and bootstrapping vcpkg"
+            git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
+            cd $(VCPKG_ROOT)
+            .\bootstrap-vcpkg.bat
+            .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
 
-    - task: ComponentGovernanceComponentDetection@0
-      inputs:
-        scanType: 'Register'
-        verbosity: 'Verbose'
-        alertWarningLevel: 'Low'
+      # Install Boost JSON for x64
+      - task: PowerShell@2
+        displayName: 'Install Boost JSON for x64'
+        inputs:
+          targetType: 'inline'
+          script: |
+            if (!(Test-Path "$(VCPKG_ROOT)\vcpkg.exe")) {
+                Write-Error "vcpkg.exe not found. Exiting..."
+                exit 1
+            }
+            Write-Output "Installing Boost JSON for x64..."
+            $(VCPKG_ROOT)\vcpkg.exe install boost-json:x64-windows
 
-    - task: VisualStudioTestPlatformInstaller@1
-      inputs:
-        packageFeedSelector: 'nugetOrg'
-        versionSelector: 'latestPreRelease'
+      # Verify vcpkg integration for x64
+      - task: PowerShell@2
+        displayName: 'Verify vcpkg Integration for x64'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "Verifying vcpkg integration for x64..."
+            $(VCPKG_ROOT)\vcpkg.exe integrate install
+            if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
+                Write-Error "Boost JSON header not found in x64-vcpkg integration. Exiting..."
+                exit 1
+            }
+            Write-Output "vcpkg integration verified for x64."
 
-    - task: VSTest@2
-      inputs:
-        testSelector: 'testAssemblies'
-        testAssemblyVer2: '**\*test*.dll'
-        searchFolder: '$(System.DefaultWorkingDirectory)' 
-        runOnlyImpactedTests: false
-        runInParallel: false
-        rerunFailedTests: true
-        rerunMaxAttempts: 3
+      - task: PowerShell@2
+        displayName: 'Get vcpkg.cmake contents'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $filePath = "C:\vcpkg\scripts\buildsystems\vcpkg.cmake"
+            if (Test-Path $filePath) {
+                $fileContents = Get-Content $filePath -Raw
+                Write-Host "Contents of vcpkg.cmake:"
+                Write-Host $fileContents
+            } else {
+                Write-Host "File not found: $filePath"
+            }
+
+      # Get installed Windows SDK version
+      - task: PowerShell@2
+        displayName: 'Check Installed Windows SDK Version'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
+            $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
+            
+            function Get-SdkVersion {
+                param ($sdkPath)
+                
+                $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
+                
+                return $sdkVersion
+            }
+
+            $sdkFolder = $null
+            if (Test-Path $x64SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
+            } elseif (Test-Path $x86SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
+            }
+            
+            if ($sdkFolder) {
+                Write-Host "Installed Windows SDK version: $($sdkFolder.Name)"
+                Write-Host "##vso[task.setvariable variable=SDKVersion]$($sdkFolder.Name)"
+            } else {
+                Write-Host "Windows SDK not found!"
+                exit 1
+            }
+
+      # Build x64 solution
+      - task: VSBuild@1
+        inputs:
+          platform: 'x64'
+          solution: '$(solution)'
+          configuration: '$(buildConfiguration)'
+          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x64-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
+
+
+      - task: ComponentGovernanceComponentDetection@0
+        inputs:
+          scanType: 'Register'
+          verbosity: 'Verbose'
+          alertWarningLevel: 'Low'
+
+      - task: VisualStudioTestPlatformInstaller@1
+        inputs:
+          packageFeedSelector: 'nugetOrg'
+          versionSelector: 'latestPreRelease'
+
+      - task: VSTest@2
+        inputs:
+          testSelector: 'testAssemblies'
+          testAssemblyVer2: '**\*test*.dll'
+          searchFolder: '$(System.DefaultWorkingDirectory)' 
+          runOnlyImpactedTests: false
+          runInParallel: false
+          rerunFailedTests: true
+          rerunMaxAttempts: 3
     
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
-        artifactType: 'pipeline'
-        artifactName: '64-bit'
-    
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
+          artifactType: 'pipeline'
+          artifactName: '64-bit'
+
   - job: x86_build
     steps:
+      # Install and integrate vcpkg
+      - task: PowerShell@2
+        displayName: 'Install and Integrate vcpkg'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "Cloning and bootstrapping vcpkg"
+            git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
+            cd $(VCPKG_ROOT)
+            .\bootstrap-vcpkg.bat
+            .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
+
+      # Install Boost JSON for x86
+      - task: PowerShell@2
+        displayName: 'Install Boost JSON for x86'
+        inputs:
+          targetType: 'inline'
+          script: |
+            if (!(Test-Path "$(VCPKG_ROOT)\vcpkg.exe")) {
+                Write-Error "vcpkg.exe not found. Exiting..."
+                exit 1
+            }
+            Write-Output "Installing Boost JSON for x86..."
+            $(VCPKG_ROOT)\vcpkg.exe install boost-json:x86-windows
+
+      # Verify vcpkg integration for x86
+      - task: PowerShell@2
+        displayName: 'Verify vcpkg Integration for x86'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "Verifying vcpkg integration for x86..."
+            $(VCPKG_ROOT)\vcpkg.exe integrate install
+            if (!(Test-Path "$(VCPKG_ROOT)\installed\x86-windows\include\boost\json.hpp")) {
+                Write-Error "Boost JSON header not found in x86-vcpkg integration. Exiting..."
+                exit 1
+            }
+            Write-Output "vcpkg integration verified for x86."
+
+      - task: PowerShell@2
+        displayName: 'Get vcpkg.cmake contents'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $filePath = "C:\vcpkg\scripts\buildsystems\vcpkg.cmake"
+            if (Test-Path $filePath) {
+                $fileContents = Get-Content $filePath -Raw
+                Write-Host "Contents of vcpkg.cmake:"
+                Write-Host $fileContents
+            } else {
+                Write-Host "File not found: $filePath"
+            }
+
+      # Get installed Windows SDK version
+      - task: PowerShell@2
+        displayName: 'Check Installed Windows SDK Version'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
+            $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
+            
+            function Get-SdkVersion {
+                param ($sdkPath)
+                
+                $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
+                
+                return $sdkVersion
+            }
+
+            $sdkFolder = $null
+            if (Test-Path $x64SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
+            } elseif (Test-Path $x86SdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
+            }
+            
+            if ($sdkFolder) {
+                Write-Host "Installed Windows SDK version: $($sdkFolder.Name)"
+                Write-Host "##vso[task.setvariable variable=SDKVersion]$($sdkFolder.Name)"
+            } else {
+                Write-Host "Windows SDK not found!"
+                exit 1
+            }
+
+      # Build x86 solution
       - task: VSBuild@1
         inputs:
           platform: 'x86'
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
+          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x86-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
+
 
       - task: ComponentGovernanceComponentDetection@0
         inputs:
@@ -77,7 +256,7 @@ jobs:
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
-      
+    
       - task: PublishPipelineArtifact@1
         inputs:
           targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
