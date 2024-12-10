@@ -1,58 +1,52 @@
 trigger:
-- main  # Trigger the pipeline for changes in the 'main' branch
+  branches:
+    include:
+    - main
+    - feature/*  # Optional: Trigger for feature branches
 
 pool:
-  vmImage: 'windows-latest'  # Use a Windows-based build agent
+  vmImage: 'windows-latest'
 
 variables:
-  BOOST_ROOT: '$(System.DefaultWorkingDirectory)/boost'
+  VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
   BUILD_DIR: '$(Build.BinariesDirectory)'
 
 steps:
 # Step 1: Checkout the repository
 - checkout: self
-  clean: true  # Ensures a clean workspace before checkout
-  fetchDepth: 1  # Shallow clone for performance
+  clean: true
+  fetchDepth: 1
   displayName: 'Checkout Source Code'
 
-# Step 2: Download and extract Boost source code
+# Step 2: Install vcpkg if not already available
 - script: |
-    curl -L https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/boost_1_83_0.zip -o boost.zip
-    tar -xf boost.zip -C $(System.DefaultWorkingDirectory)
-    rename boost_1_83_0 boost
-  displayName: 'Download Boost Source Code'
+    git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
+    .\vcpkg\bootstrap-vcpkg.bat || exit 1
+  displayName: 'Install vcpkg'
 
-# Step 3: Prepare Build Directory
+# Step 3: Install Boost.JSON via vcpkg
 - script: |
-    if exist "$(BUILD_DIR)" (
-      rmdir /s /q "$(BUILD_DIR)"
-    )
-    mkdir "$(BUILD_DIR)"
-  displayName: 'Prepare Build Directory'
+    .\vcpkg\vcpkg.exe install boost-json:x86-windows || exit 1
+  displayName: 'Install Boost.JSON dependency'
 
-# Step 4: Build Boost.JSON
+# Step 4: Prepare project for building with MSBuild
 - script: |
-    cd $(BOOST_ROOT)
-    bootstrap.bat
-    b2 --with-json address-model=32 variant=release link=static runtime-link=shared
-  displayName: 'Build Boost Libraries'
+    mkdir $(BUILD_DIR)
+    cd $(BUILD_DIR)
+    # Assuming the main project file is 'SampleBoostApp.sln'
+    echo 'Visual Studio solution preparation complete.'
+  displayName: 'Prepare project with MSBuild'
 
-# Step 5: Configure Build with CMake
+# Step 5: Build the project with MSBuild
 - script: |
     cd $(BUILD_DIR)
-    cmake -G "Visual Studio 17 2022" -A Win32 -DBOOST_ROOT=$(BOOST_ROOT) "$(System.DefaultWorkingDirectory)"
-  displayName: 'Configure Build with CMake'
+    .\$(VCPKG_ROOT)\x64\Release\MSBuild.exe SampleBoostApp.sln /p:Configuration=Release || exit 1
+  displayName: 'Build the project with MSBuild'
 
-# Step 6: Build the Application
-- script: |
-    cd $(BUILD_DIR)
-    cmake --build . --config Release
-  displayName: 'Build the Application'
-
-# Step 7: Publish build artifacts (optional)
+# Step 6: Publish build artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     pathToPublish: '$(BUILD_DIR)'
-    artifactName: 'drop'
+    artifactName: 'build-output-$(Build.BuildId)'
     publishLocation: 'Container'
   displayName: 'Publish Build Artifacts'
