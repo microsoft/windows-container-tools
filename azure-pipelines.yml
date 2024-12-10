@@ -12,7 +12,7 @@ steps:
 # Step 1: Checkout the repository
 - checkout: self
   clean: true  # Ensures a clean workspace before checkout
-  fetchDepth: 1  # Shallow clone to improve performance
+  fetchDepth: 1  # Shallow clone for performance
   displayName: 'Checkout Source Code'
 
 # Step 2: Download and extract Boost source code
@@ -22,27 +22,34 @@ steps:
     rename boost_1_83_0 boost
   displayName: 'Download Boost Source Code'
 
-# Step 3: Build Boost.JSON
+# Step 3: Prepare Build Directory
+- script: |
+    if exist "$(BUILD_DIR)" (
+      rmdir /s /q "$(BUILD_DIR)"
+    )
+    mkdir "$(BUILD_DIR)"
+  displayName: 'Prepare Build Directory'
+
+# Step 4: Build Boost.JSON
 - script: |
     cd $(BOOST_ROOT)
     bootstrap.bat
     b2 --with-json address-model=32 variant=release link=static runtime-link=shared
   displayName: 'Build Boost Libraries'
 
-# Step 4: Configure the build with CMake
+# Step 5: Configure Build with CMake
 - script: |
-    mkdir $(BUILD_DIR)
     cd $(BUILD_DIR)
-    cmake -G "Visual Studio 17 2022" -A Win32 -DBOOST_ROOT=$(BOOST_ROOT) ..
+    cmake -G "Visual Studio 17 2022" -A Win32 -DBOOST_ROOT=$(BOOST_ROOT) "$(System.DefaultWorkingDirectory)"
   displayName: 'Configure Build with CMake'
 
-# Step 5: Build the application
+# Step 6: Build the Application
 - script: |
     cd $(BUILD_DIR)
     cmake --build . --config Release
   displayName: 'Build the Application'
 
-# Step 6: Publish build artifacts (optional)
+# Step 7: Publish build artifacts (optional)
 - task: PublishBuildArtifacts@1
   inputs:
     pathToPublish: '$(BUILD_DIR)'
