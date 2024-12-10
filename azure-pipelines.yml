@@ -33,9 +33,9 @@ steps:
 - script: |
     mkdir $(BUILD_DIR)
     cd $(BUILD_DIR)
-    # Assuming the main project file is 'SampleBoostApp.sln'
     echo 'Visual Studio solution preparation complete.'
   displayName: 'Prepare project with MSBuild'
+  continueOnError: true  # This step should continue even if errors occur
 
 # Step 5: Build the project with MSBuild
 - script: |
