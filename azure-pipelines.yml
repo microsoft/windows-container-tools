@@ -110,9 +110,11 @@ jobs:
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
           msbuildArgs: |
-            /p:VcpkgTriplet=x64-windows 
+            /p:VcpkgRoot=$(VCPKG_ROOT)
+            /p:VcpkgTriplet=x64-windows
+            /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake
             /p:PlatformToolset=v143
-            /p:TargetPlatformVersion=10.0.22621.0
+            /p:TargetPlatformVersion=$(SDKVersion)
 
       - task: ComponentGovernanceComponentDetection@0
         inputs:
