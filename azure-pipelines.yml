@@ -109,7 +109,7 @@ jobs:
           platform: 'x64'
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
-          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x64-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake /p:PlatformToolset=v143 /p:TargetPlatformVersion=$(SDKVersion)'
+          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x64-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake /p:PlatformToolset=v143 /p:VCToolsVersion=14.41.34120 /p:TargetPlatformVersion=$(SDKVersion)'
 
 
 
