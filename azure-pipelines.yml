@@ -19,7 +19,6 @@ variables:
 jobs:
   - job: x64_build
     steps:
-      # Install and integrate vcpkg
       - task: PowerShell@2
         displayName: 'Install and Integrate vcpkg'
         inputs:
@@ -110,8 +109,7 @@ jobs:
           platform: 'x64'
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
-          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x64-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
-
+          msbuildArgs: '/p:VcpkgTriplet=x64-windows /p:PlatformToolset=v143 /p:TargetPlatformVersion=$(SDKVersion)'
 
       - task: ComponentGovernanceComponentDetection@0
         inputs:
@@ -233,8 +231,7 @@ jobs:
           platform: 'x86'
           solution: '$(solution)'
           configuration: '$(buildConfiguration)'
-          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x86-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
-
+          msbuildArgs: '/p:VcpkgRoot=$(VCPKG_ROOT) /p:VcpkgTriplet=x86-windows /p:VcpkgToolchainFile=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake /p:PlatformToolset=v143 /p:TargetPlatformVersion=$(SDKVersion)'
 
       - task: ComponentGovernanceComponentDetection@0
         inputs:
