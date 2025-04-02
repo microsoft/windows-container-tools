@@ -10,7 +10,7 @@ pool:
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'x64|ARM'
+  buildPlatform: 'x64'  # Set to x64 or ARM64 depending on the build you want
   buildConfiguration: 'Release'
   VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
   VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
@@ -30,7 +30,7 @@ jobs:
             .\bootstrap-vcpkg.bat
             .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
 
-      # Install Boost JSON
+      # Install Boost JSON for the selected platform (x64 or ARM64)
       - task: PowerShell@2
         displayName: 'Install Boost JSON'
         inputs:
@@ -40,8 +40,15 @@ jobs:
                 Write-Error "vcpkg.exe not found. Exiting..."
                 exit 1
             }
-            Write-Host "Installing Boost JSON..."
-            & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows
+            Write-Host "Installing Boost JSON for platform: $(buildPlatform)..."
+            if ('$(buildPlatform)' -eq 'x64') {
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows
+            } elseif ('$(buildPlatform)' -eq 'ARM64') {
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows
+            } else {
+              Write-Error "Unsupported build platform: $(buildPlatform)"
+              exit 1
+            }
 
       # Verify vcpkg integration
       - task: PowerShell@2
@@ -49,11 +56,18 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            echo "Verifying vcpkg integration..."
-            $(VCPKG_ROOT)\vcpkg.exe integrate install
-            if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
-                Write-Error "Boost JSON header not found. Exiting..."
-                exit 1
+            echo "Verifying vcpkg integration for platform: $(buildPlatform)..."
+            & "$(VCPKG_ROOT)\vcpkg.exe" integrate install
+            if ('$(buildPlatform)' -eq 'x64') {
+                if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
+                    Write-Error "Boost JSON header not found for x64. Exiting..."
+                    exit 1
+                }
+            } elseif ('$(buildPlatform)' -eq 'ARM64') {
+                if (!(Test-Path "$(VCPKG_ROOT)\installed\arm64-windows\include\boost\json.hpp")) {
+                    Write-Error "Boost JSON header not found for ARM64. Exiting..."
+                    exit 1
+                }
             }
             Write-Output "vcpkg integration verified."
 
@@ -65,12 +79,11 @@ jobs:
           script: |
             $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
             $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
-            
+            $armSdkPath = "C:\Program Files\Windows Kits\10\Include\arm64"
+
             function Get-SdkVersion {
                 param ($sdkPath)
-                
                 $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
-                
                 return $sdkVersion
             }
 
@@ -79,6 +92,8 @@ jobs:
                 $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
             } elseif (Test-Path $x86SdkPath) {
                 $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
+            } elseif (Test-Path $armSdkPath) {
+                $sdkFolder = Get-SdkVersion -sdkPath $armSdkPath
             }
             
             if ($sdkFolder) {
@@ -89,44 +104,47 @@ jobs:
                 exit 1
             }
 
-      # Configure CMake
+      # Configure CMake based on selected platform
       - task: CMake@1
         displayName: 'Configure CMake'
         inputs:
           workingDirectory: '$(Build.SourcesDirectory)\LogMonitor'
           cmakeArgs: |
-            -A x64 -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\x64
+            -A $(buildPlatform) -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)
 
       - task: CMake@1
         displayName: 'Build with CMake'
         inputs:
-          workingDirectory: '$(Build.BinariesDirectory)\LogMonitor\x64'
+          workingDirectory: '$(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)'
           cmakeArgs: '--build . --config $(buildConfiguration) --parallel'
-          
+
+      # Component Governance
       - task: ComponentGovernanceComponentDetection@0
         inputs:
           scanType: 'Register'
           verbosity: 'Verbose'
           alertWarningLevel: 'Low'
 
+      # Install Visual Studio Test Platform
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
           packageFeedSelector: 'nugetOrg'
           versionSelector: 'latestPreRelease'
 
+      # Run Tests
       - task: VSTest@2
         inputs:
           testSelector: 'testAssemblies'
           testAssemblyVer2: '**\*test*.dll'
-          searchFolder: '$(Build.BinariesDirectory)\LogMonitor\x64\Release\'
+          searchFolder: '$(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)\$(buildConfiguration)\'
           runOnlyImpactedTests: false
           runInParallel: false
           rerunFailedTests: true
           rerunMaxAttempts: 3
-      
+
       # Publish build artifacts
       - task: PublishPipelineArtifact@1
         inputs:
-          targetPath: '$(Build.BinariesDirectory)\LogMonitor\x64\Release\'
+          targetPath: '$(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)\$(buildConfiguration)\'
           artifactType: 'pipeline'
-          artifactName: '64-bit'
+          artifactName: '$(buildPlatform)-$(buildConfiguration)'

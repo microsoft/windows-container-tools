@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(LogMonitorTests)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS json)
 
 # Automatically gather all test source files
 file(GLOB_RECURSE TEST_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
@@ -33,8 +33,8 @@ set_target_properties(LogMonitorTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-# Link with LogMonitor and Boost
-target_link_libraries(LogMonitorTests PRIVATE LogMonitor ${Boost_LIBRARIES})
+# Link LogMonitor and Boost.JSON
+target_link_libraries(LogMonitorTests PRIVATE LogMonitor Boost::json)
 
 # Enable testing
 enable_testing()
