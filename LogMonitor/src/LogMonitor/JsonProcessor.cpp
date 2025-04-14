@@ -129,11 +129,11 @@ bool handleEventLog(
                 if (!eventChannel.SetLevelByString(Utility::string_to_wstring(levelString))) {
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"Skipping channel due to invalid level string: %S",
+                            L"Invalid level string: %S",
                             Utility::string_to_wstring(levelString).c_str()
                         ).c_str()
                     );
-                    continue;
+                    return false;
                 }
 
                 channels->push_back(eventChannel); // Add to the vector
