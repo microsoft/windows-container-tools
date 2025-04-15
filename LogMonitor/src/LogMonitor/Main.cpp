@@ -381,7 +381,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
 
     LoggerSettings settings;
     //read the config file
-    bool configFileReadSuccess = OpenConfigFile(configFileName, settings);
+    bool configFileReadSuccess = ReadConfigFile(configFileName, settings);
 
     //start the monitors
     if (configFileReadSuccess)
