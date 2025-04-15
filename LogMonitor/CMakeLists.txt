@@ -18,9 +18,6 @@ if (DEFINED ENV{VCPKG_ROOT})
 	# Set Boost paths
     set(BOOST_ROOT "${VCPKG_ROOT}/installed/x64-windows" CACHE PATH "Boost installation root")
     set(Boost_INCLUDE_DIR "${VCPKG_ROOT}/installed/x64-windows/include" CACHE PATH "Boost include directory")
-	
-	# Set Google Test paths
-    set(GTest_INCLUDE_DIRS "${VCPKG_ROOT}/installed/x64-windows/include" CACHE PATH "Google Test include directory")
 endif()
 
 # Set Windows SDK version if available

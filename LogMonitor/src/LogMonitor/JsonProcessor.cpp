@@ -125,12 +125,13 @@ bool handleEventLog(
 
                 EventLogChannel eventChannel(Utility::string_to_wstring(name), EventChannelLogLevel::Error);
 
+                std::wstring level = Utility::string_to_wstring(levelString);
                 // Set the level based on the levelString, logging an error if invalid
-                if (!eventChannel.SetLevelByString(Utility::string_to_wstring(levelString))) {
+                if (!eventChannel.SetLevelByString(level)) {
                     logWriter.TraceError(
                         Utility::FormatString(
                             L"Invalid level string: %S",
-                            Utility::string_to_wstring(levelString).c_str()
+                            level.c_str()
                         ).c_str()
                     );
                     return false;
