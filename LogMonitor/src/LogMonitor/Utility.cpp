@@ -4,7 +4,8 @@
 //
 
 #include "pch.h"
-#include <regex>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
 
@@ -254,8 +255,8 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
 /// 
 bool Utility::isJsonNumber(_In_ std::wstring& str)
 {
-    wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+)$");
-    return regex_search(str, isNumber);
+    boost::wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+$)");
+    return boost::regex_search(str, isNumber);
 }
 
 ///
@@ -265,48 +266,16 @@ bool Utility::isJsonNumber(_In_ std::wstring& str)
 ///
 void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
-    size_t i = 0;
-    while (i < str.size()) {
-        auto sub = str.substr(i, 1);
-        auto s = str.substr(0, i + 1);
-        if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\\"");
-                i++;
-            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
-                str.replace(i - 1, 1, L"");
-                i--;
-            }
-        }
-        else if (sub == L"\\") {
-            if ((i < str.size() - 1 && str.substr(i + 1, 1) != L"\\")
-                || i == str.size() - 1)
-            {
-                str.replace(i, 1, L"\\\\");
-                i++;
-            }
-            else {
-                i += 2;
-            }
-        }
-        else if (sub == L"\n") {
-            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
-                str.replace(i, 1, L"\\n");
-                i++;
-            }
-        }
-        else if (sub == L"\r") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\r");
-                i++;
-            }
-        }
-        i++;
-    }
+    std::string sanitizedJson = Utility::wstring_to_string(str);
+
+    // Escape newline and carriage return characters
+    boost::algorithm::replace_all(sanitizedJson, "\n", "\\n");
+    boost::algorithm::replace_all(sanitizedJson, "\r", "\\r");
+
+    // Remove `~` characters
+    boost::algorithm::replace_all(sanitizedJson, "~", "");
+
+    str = Utility::string_to_wstring(sanitizedJson);
 }
 
 bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
