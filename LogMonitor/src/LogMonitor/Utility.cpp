@@ -4,7 +4,7 @@
 //
 
 #include "pch.h"
-#include <regex>
+#include <boost/regex.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
@@ -255,8 +255,8 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
 /// 
 bool Utility::isJsonNumber(_In_ std::wstring& str)
 {
-    wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+)$");
-    return regex_search(str, isNumber);
+    boost::wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+$)");
+    return boost::regex_search(str, isNumber);
 }
 
 ///
