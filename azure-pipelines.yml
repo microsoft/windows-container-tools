@@ -30,9 +30,9 @@ jobs:
             .\bootstrap-vcpkg.bat
             .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
 
-      # Install Boost JSON for the selected platform (x64 or ARM64)
+      # Install Boost libraries: JSON, Regex, Algorithm
       - task: PowerShell@2
-        displayName: 'Install Boost JSON'
+        displayName: 'Install Boost Dependencies (JSON, Regex, Algorithm)'
         inputs:
           targetType: 'inline'
           script: |
@@ -40,11 +40,11 @@ jobs:
                 Write-Error "vcpkg.exe not found. Exiting..."
                 exit 1
             }
-            Write-Host "Installing Boost JSON for platform: $(buildPlatform)..."
+            Write-Host "Installing Boost libraries for platform: $(buildPlatform)..."
             if ('$(buildPlatform)' -eq 'x64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows boost-regex:x64-windows boost-algorithm:x64-windows
             } elseif ('$(buildPlatform)' -eq 'ARM64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows boost-regex:arm64-windows boost-algorithm:arm64-windows
             } else {
               Write-Error "Unsupported build platform: $(buildPlatform)"
               exit 1
@@ -58,18 +58,21 @@ jobs:
           script: |
             echo "Verifying vcpkg integration for platform: $(buildPlatform)..."
             & "$(VCPKG_ROOT)\vcpkg.exe" integrate install
-            if ('$(buildPlatform)' -eq 'x64') {
-                if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
-                    Write-Error "Boost JSON header not found for x64. Exiting..."
-                    exit 1
-                }
-            } elseif ('$(buildPlatform)' -eq 'ARM64') {
-                if (!(Test-Path "$(VCPKG_ROOT)\installed\arm64-windows\include\boost\json.hpp")) {
-                    Write-Error "Boost JSON header not found for ARM64. Exiting..."
-                    exit 1
-                }
+
+            $basePath = "$(VCPKG_ROOT)\installed\$(buildPlatform)-windows\include"
+            $checks = @(
+              "boost\json.hpp",
+              "boost\regex.hpp",
+              "boost\algorithm\string\replace.hpp"
+            )
+            foreach ($header in $checks) {
+              $path = Join-Path $basePath $header
+              if (!(Test-Path $path)) {
+                Write-Error "Missing header: $path"
+                exit 1
+              }
             }
-            Write-Output "vcpkg integration verified."
+            Write-Output "All Boost headers found."
 
       # Get installed Windows SDK version
       - task: PowerShell@2
@@ -110,7 +113,7 @@ jobs:
         inputs:
           workingDirectory: '$(Build.SourcesDirectory)\LogMonitor'
           cmakeArgs: |
-            -A $(buildPlatform) -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)
+            -A $(buildPlatform) -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\$(buildPlatform) $(VCPKG_CMAKE_OPTIONS)
 
       - task: CMake@1
         displayName: 'Build with CMake'
