@@ -56,32 +56,33 @@ namespace UtilityTests
 
         TEST_METHOD(TestSanitizeJson)
         {
-            std::wstring str = L"say, \"hello\"";
-            std::wstring expect = L"say, \\\"hello\\\"";
-            Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \"");
-            str = L"\"hello\"";
-            expect = L"\\\"hello\\\"";
-            Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \"");
+            std::wstring str, expect;
 
-            str = L"hello\r\nworld";
-            expect = L"hello\\r\\nworld";
+            str = L"{\"Message\":\"say, \\\"hello\\\"\"}";
+            expect = L"{\"Message\":\"say, \\\\\\\"hello\\\\\\\"\"}";
             Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \r and \n");
-            str = L"\r\nHello\r\n";
-            expect = L"\\r\\nHello\\r\\n";
-            Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \r and \n");
+            Assert::IsTrue(str == expect, L"should escape double quotes inside Message");
 
-            str = L"\\Driver\\XX\\";
-            expect = L"\\\\Driver\\\\XX\\\\";
+            str = L"{\"Message\":\"\\\"hello\\\"\"}";
+            expect = L"{\"Message\":\"\\\\\\\"hello\\\\\\\"\"}";
             Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \\");
-            str = L"C:\\Drive\\XX";
-            expect = L"C:\\\\Drive\\\\XX";
+            Assert::IsTrue(str == expect, L"should escape only quotes");
+
+            str = L"{\"Message\":\"hello\r\nworld\"}";
+            expect = L"{\"Message\":\"hello\\r\\nworld\"}";
             Utility::SanitizeJson(str);
-            Assert::IsTrue(str == expect, L"should escape \\");
+            Assert::IsTrue(str == expect, L"should escape \\r and \\n");
+
+            str = L"{\"Message\":\"\r\nHello\r\n\"}";
+            expect = L"{\"Message\":\"\\r\\nHello\\r\\n\"}";
+            Utility::SanitizeJson(str);
+            Assert::IsTrue(str == expect, L"should escape all \\r and \\n");
+
+            str = L"{\"Message\":\"~Hello~World~\"}";
+            expect = L"{\"Message\":\"HelloWorld\"}";
+            Utility::SanitizeJson(str);
+            Assert::IsTrue(str == expect, L"should remove ~ characters");
         }
+
     };
 }

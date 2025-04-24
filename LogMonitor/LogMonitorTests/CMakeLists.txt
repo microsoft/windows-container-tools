@@ -33,10 +33,11 @@ set_target_properties(LogMonitorTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-# Link LogMonitor and Boost.JSON
-target_link_libraries(LogMonitorTests PRIVATE LogMonitor Boost::json)
+# Link LogMonitor Lib and Boost.JSON to the test shared library
+target_link_libraries(LogMonitorTests PRIVATE LogMonitorLib Boost::json)
 
 # Enable testing
 enable_testing()
 
+# Register tests
 add_test(NAME LogMonitorTests COMMAND LogMonitorTests)

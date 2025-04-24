@@ -4,7 +4,8 @@
 //
 
 #include "pch.h"
-#include <regex>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
 
@@ -254,8 +255,8 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
 /// 
 bool Utility::isJsonNumber(_In_ std::wstring& str)
 {
-    wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+)$");
-    return regex_search(str, isNumber);
+    boost::wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+$)");
+    return boost::regex_search(str, isNumber);
 }
 
 ///
@@ -265,49 +266,39 @@ bool Utility::isJsonNumber(_In_ std::wstring& str)
 ///
 void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
-    size_t i = 0;
-    while (i < str.size()) {
-        auto sub = str.substr(i, 1);
-        auto s = str.substr(0, i + 1);
-        if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\\"");
-                i++;
-            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
-                str.replace(i - 1, 1, L"");
-                i--;
-            }
+    std::string jsonStr = Utility::wstring_to_string(str);
+
+    // Step 1: Remove all ~ characters
+    boost::algorithm::replace_all(jsonStr, "~", "");
+
+    // Step 2: Find and sanitize "Message" value
+    const std::string key = "\"Message\":\"";
+    size_t start = jsonStr.find(key);
+    if (start != std::string::npos)
+    {
+        start += key.length();
+        size_t end = jsonStr.find('"', start);
+        while (end != std::string::npos && jsonStr[end - 1] == '\\') {
+            end = jsonStr.find('"', end + 1); // skip escaped quote
         }
-        else if (sub == L"\\") {
-            if ((i < str.size() - 1 && str.substr(i + 1, 1) != L"\\")
-                || i == str.size() - 1)
-            {
-                str.replace(i, 1, L"\\\\");
-                i++;
-            }
-            else {
-                i += 2;
-            }
+
+        if (end != std::string::npos)
+        {
+            std::string message = jsonStr.substr(start, end - start);
+
+            // Sanitize message content
+            boost::algorithm::replace_all(message, "\\", "\\\\");
+            boost::algorithm::replace_all(message, "\"", "\\\"");
+            boost::algorithm::replace_all(message, "\n", "\\n");
+            boost::algorithm::replace_all(message, "\r", "\\r");
+
+            jsonStr.replace(start, end - start, message);
         }
-        else if (sub == L"\n") {
-            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
-                str.replace(i, 1, L"\\n");
-                i++;
-            }
-        }
-        else if (sub == L"\r") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\r");
-                i++;
-            }
-        }
-        i++;
     }
+
+    str = Utility::string_to_wstring(jsonStr);
 }
+
 
 bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
 {
