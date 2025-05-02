@@ -1,6 +1,6 @@
 # Contributing to Windows Container Tools Projects
 
-This repo will contain multiple tools which could be in different programming languages. This guide is general but could be specific in some areas to the  `LogMonitor` tool which is in C++.
+@microsoft-github-policy-service agree company="Microsoft"
 
 You can contribute to any of the tools with issues and PRs. Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
 
