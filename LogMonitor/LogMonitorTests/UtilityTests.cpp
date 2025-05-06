@@ -83,6 +83,5 @@ namespace UtilityTests
             Utility::SanitizeJson(str);
             Assert::IsTrue(str == expect, L"should remove ~ characters");
         }
-
     };
 }

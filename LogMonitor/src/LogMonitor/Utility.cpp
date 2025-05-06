@@ -268,10 +268,10 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
     std::string jsonStr = Utility::wstring_to_string(str);
 
-    // Step 1: Remove all ~ characters
+    // Remove all ~ characters
     boost::algorithm::replace_all(jsonStr, "~", "");
 
-    // Step 2: Find and sanitize "Message" value
+    // Find and sanitize "Message" value
     const std::string key = "\"Message\":\"";
     size_t start = jsonStr.find(key);
     if (start != std::string::npos)
@@ -298,7 +298,6 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 
     str = Utility::string_to_wstring(jsonStr);
 }
-
 
 bool Utility::ConfigAttributeExists(AttributesMap& Attributes, std::wstring attributeName)
 {
