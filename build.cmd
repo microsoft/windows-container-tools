@@ -21,7 +21,6 @@ if not exist "%VCPKG_DIR%\vcpkg.exe" (
 REM Step 2: Install dependencies
 echo === Installing Boost dependencies ===
 "%VCPKG_DIR%\vcpkg.exe" install boost-json:%BUILD_ARCH%-windows ^
-                               boost-regex:%BUILD_ARCH%-windows ^
                                boost-algorithm:%BUILD_ARCH%-windows
 
 if errorlevel 1 (

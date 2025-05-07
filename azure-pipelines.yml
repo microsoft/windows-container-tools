@@ -30,9 +30,9 @@ jobs:
             .\bootstrap-vcpkg.bat
             .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
 
-      # Install Boost libraries: JSON, Regex, Algorithm
+      # Install Boost libraries: JSON, Algorithm
       - task: PowerShell@2
-        displayName: 'Install Boost Dependencies (JSON, Regex, Algorithm)'
+        displayName: 'Install Boost Dependencies (JSON, Algorithm)'
         inputs:
           targetType: 'inline'
           script: |
@@ -42,9 +42,9 @@ jobs:
             }
             Write-Host "Installing Boost libraries for platform: $(buildPlatform)..."
             if ('$(buildPlatform)' -eq 'x64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows boost-regex:x64-windows boost-algorithm:x64-windows
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows boost-algorithm:x64-windows
             } elseif ('$(buildPlatform)' -eq 'ARM64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows boost-regex:arm64-windows boost-algorithm:arm64-windows
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows boost-algorithm:arm64-windows
             } else {
               Write-Error "Unsupported build platform: $(buildPlatform)"
               exit 1
@@ -61,7 +61,6 @@ jobs:
             $basePath = "$(VCPKG_ROOT)\installed\$(buildPlatform)-windows\include"
             $checks = @(
               "boost\json.hpp",
-              "boost\regex.hpp",
               "boost\algorithm\string\replace.hpp"
             )
             foreach ($header in $checks) {
