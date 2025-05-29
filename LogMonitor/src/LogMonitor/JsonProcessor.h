@@ -6,25 +6,25 @@
 #pragma once
 
 bool handleEventLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 );
 
 bool handleFileLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 );
 
 bool handleETWLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 );
 
 bool handleProcessLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 );
@@ -39,12 +39,12 @@ std::string readJsonFromFile(
 );
 
 bool processLogConfig(
-    const boost::json::value& logConfig,
+    const nlohmann::json& logConfig,
     _Out_ LoggerSettings& Config
 );
 
 bool processSources(
-    const boost::json::array& sources, 
+    _In_ const nlohmann::json& sources,
     _Out_ LoggerSettings& Config
 );
 
@@ -53,6 +53,6 @@ void cleanupAttributes(
 );
 
 std::string getJsonStringCaseInsensitive(
-    _In_ const boost::json::object& obj, 
+    _In_ const nlohmann::json& obj,
     _In_ const std::string& key
 );

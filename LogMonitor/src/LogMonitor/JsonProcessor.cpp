@@ -5,6 +5,13 @@
 
 #include "pch.h"
 
+#ifdef _WIN32
+#include <string.h>
+#define strcasecmp _stricmp
+#endif
+
+using json = nlohmann::json;
+
 /// <summary>
 /// Loads a JSON file, parses its contents, and processes its configuration settings.
 /// </summary>
@@ -16,17 +23,22 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
     std::wstring wstr(jsonFile);
     std::string jsonString = readJsonFromFile(wstr);
 
-    boost::json::value parsedJson;
     try {
-        parsedJson = boost::json::parse(jsonString);
-        const boost::json::value& logConfig = parsedJson.at("LogConfig");
+        json parsedJson = json::parse(jsonString);
+
+        if (!parsedJson.contains("LogConfig")) {
+            logWriter.TraceError(L"Missing 'LogConfig' section in JSON.");
+            return false;
+        }
+
+        const auto& logConfig = parsedJson["LogConfig"];
 
         if (!processLogConfig(logConfig, Config)) {
             logWriter.TraceError(L"Failed to fully process LogConfig.");
             return false;
         }
     }
-    catch (const boost::system::system_error& e) {
+    catch (const json::parse_error& e) {
         logWriter.TraceError(
             Utility::FormatString(
                 L"Error parsing JSON: %S",
@@ -49,11 +61,6 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
         return false;
     }
 
-    if (parsedJson.is_null()) {
-        logWriter.TraceError(L"Parsed JSON is null.");
-        return false;
-    }
-
     return true;
 }
 
@@ -66,15 +73,14 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
 std::string readJsonFromFile(_In_ const std::wstring& filePath) {
     // Open the file as a wide character input stream
     std::wifstream wif(filePath);
-
     if (!wif.is_open()) {
         logWriter.TraceError(L"Failed to open JSON file.");
         return "";
-    }
+	}
 
     // Read the file into a wide string buffer
     std::wstringstream wss;
-    wss << wif.rdbuf();
+    wss << wif.rdbuf();	
     wif.close();
 
     // Convert the wstring buffer to a UTF-8 string
@@ -95,14 +101,25 @@ std::string readJsonFromFile(_In_ const std::wstring& filePath) {
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleEventLog(
-    _In_ const boost::json::value& source,
+    _In_ const json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
     try {
-        bool startAtOldest = source.as_object().at("startAtOldestRecord").as_bool();
-        bool multiLine = source.at("eventFormatMultiLine").as_bool();
-        std::string customLogFormat = source.as_object().at("customLogFormat").as_string().c_str();
+        bool startAtOldest = false;
+        if (source.contains("startAtOldestRecord") && source["startAtOldestRecord"].is_boolean()) {
+            startAtOldest = source["startAtOldestRecord"].get<bool>();
+        }
+
+        bool multiLine = false;
+        if (source.contains("eventFormatMultiLine") && source["eventFormatMultiLine"].is_boolean()) {
+            multiLine = source["eventFormatMultiLine"].get<bool>();
+        }
+
+        std::string customLogFormat;
+        if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+            customLogFormat = source["customLogFormat"].get<std::string>();
+        }
 
         Attributes[JSON_TAG_START_AT_OLDEST_RECORD] = reinterpret_cast<void*>(
             std::make_unique<std::wstring>(startAtOldest ? L"true" : L"false").release()
@@ -117,11 +134,12 @@ bool handleEventLog(
             );
 
         // Process channels if they exist
-        if (source.as_object().contains("channels")) {
+        if (source.contains("channels") && source["channels"].is_array()) {
             auto channels = new std::vector<EventLogChannel>();
-            for (const auto& channel : source.as_object().at("channels").as_array()) {
-                std::string name = getJsonStringCaseInsensitive(channel.as_object(), "name");
-                std::string levelString = getJsonStringCaseInsensitive(channel.as_object(), "level");
+
+            for (const auto& channel : source["channels"]) {
+                std::string name = getJsonStringCaseInsensitive(channel, "name");
+                std::string levelString = getJsonStringCaseInsensitive(channel, "level");
 
                 EventLogChannel eventChannel(Utility::string_to_wstring(name), EventChannelLogLevel::Error);
 
@@ -131,13 +149,14 @@ bool handleEventLog(
                     logWriter.TraceError(
                         Utility::FormatString(
                             L"Invalid level string: %S",
-                            level.c_str()
+                            levelString.c_str()
                         ).c_str()
                     );
+                    delete channels; // Prevent leak
                     return false;
                 }
 
-                channels->push_back(eventChannel); // Add to the vector
+                channels->push_back(eventChannel);
             }
 
             Attributes[JSON_TAG_CHANNELS] = reinterpret_cast<void*>(channels);
@@ -154,16 +173,16 @@ bool handleEventLog(
 
         Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
         return true;
-	}
-	catch (const std::exception& e) {
-		logWriter.TraceError(
-			Utility::FormatString(
-				L"Error parsing EventLog source: %S",
-				e.what()
-			).c_str()
-		);
-		return false;
-	}
+        }
+        catch (const std::exception& e) {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Error parsing EventLog source: %S",
+                    e.what()
+                ).c_str()
+            );
+            return false;
+        }
 }
 
 /// <summary>
@@ -177,14 +196,17 @@ bool handleEventLog(
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleFileLog(
-    _In_ const boost::json::value& source,
+    _In_ const json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
-    std::string directory = getJsonStringCaseInsensitive(source.as_object(), "directory");
-    std::string filter = getJsonStringCaseInsensitive(source.as_object(), "filter");
-    bool includeSubdirs = source.at("includeSubdirectories").as_bool();
-    std::string customLogFormat = getJsonStringCaseInsensitive(source.as_object(), "customLogFormat");
+    std::string directory = getJsonStringCaseInsensitive(source, "directory");
+    std::string filter = getJsonStringCaseInsensitive(source, "filter");
+    bool includeSubdirs = false;
+    if (source.contains("includeSubdirectories") && source["includeSubdirectories"].is_boolean()) {
+        includeSubdirs = source["includeSubdirectories"].get<bool>();
+    }
+    std::string customLogFormat = getJsonStringCaseInsensitive(source, "customLogFormat");
 
     Attributes[JSON_TAG_DIRECTORY] = reinterpret_cast<void*>(
         std::make_unique<std::wstring>(Utility::string_to_wstring(directory)).release()
@@ -206,7 +228,6 @@ bool handleFileLog(
     }
 
     Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
-
     return true;
 }
 
@@ -221,14 +242,21 @@ bool handleFileLog(
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleETWLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
-    bool multiLine = source.at("eventFormatMultiLine").as_bool();
-    std::string customLogFormat = source.at("customLogFormat").as_string().c_str();
+    bool multiLine = false;
+    if (source.contains("eventFormatMultiLine") && source["eventFormatMultiLine"].is_boolean()) {
+        multiLine = source["eventFormatMultiLine"].get<bool>();
+    }
 
-    // Store multiLine and customLogFormat as wide strings in Attributes.
+    std::string customLogFormat;
+    if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+        customLogFormat = source["customLogFormat"].get<std::string>();
+    }
+
+    // Store multiLine and customLogFormat as wide strings in Attributes
     Attributes[JSON_TAG_FORMAT_MULTILINE] = reinterpret_cast<void*>(
         std::make_unique<std::wstring>(multiLine ? L"true" : L"false").release()
         );
@@ -238,25 +266,25 @@ bool handleETWLog(
 
     std::vector<ETWProvider> etwProviders;
 
-    const boost::json::array& providers = source.at("providers").as_array();
-    for (const auto& provider : providers) {
-        std::string providerName = getJsonStringCaseInsensitive(provider.as_object(), "providerName");
-        std::string providerGuid = getJsonStringCaseInsensitive(provider.as_object(), "providerGuid");
-        std::string level = getJsonStringCaseInsensitive(provider.as_object(), "level");
+    if (source.contains("providers") && source["providers"].is_array()) {
+        for (const auto& provider : source["providers"]) {
+            std::string providerName = getJsonStringCaseInsensitive(provider, "providerName");
+            std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid");
+            std::string level = getJsonStringCaseInsensitive(provider, "level");
 
-        ETWProvider etwProvider;
-        etwProvider.ProviderName = Utility::string_to_wstring(providerName);
-        etwProvider.SetProviderGuid(Utility::string_to_wstring(providerGuid));
-        etwProvider.StringToLevel(Utility::string_to_wstring(level));
+            ETWProvider etwProvider;
+            etwProvider.ProviderName = Utility::string_to_wstring(providerName);
+            etwProvider.SetProviderGuid(Utility::string_to_wstring(providerGuid));
+            etwProvider.StringToLevel(Utility::string_to_wstring(level));
 
-        // Check if "keywords" exists and process it if available.
-        auto keywordsIter = provider.as_object().find("keywords");
-        if (keywordsIter != provider.as_object().end()) {
-            std::string keywords = keywordsIter->value().as_string().c_str();
-            etwProvider.Keywords = wcstoull(Utility::string_to_wstring(keywords).c_str(), NULL, 0);
+            // Check if "keywords" exists and process it
+            if (provider.contains("keywords") && provider["keywords"].is_string()) {
+                std::string keywords = provider["keywords"].get<std::string>();
+                etwProvider.Keywords = wcstoull(Utility::string_to_wstring(keywords).c_str(), nullptr, 0);
+            }
+
+            etwProviders.push_back(std::move(etwProvider));
         }
-
-        etwProviders.push_back(etwProvider);
     }
 
     // Store the ETW providers in Attributes.
@@ -289,11 +317,14 @@ bool handleETWLog(
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleProcessLog(
-    _In_ const boost::json::value& source,
+    _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
-    std::string customLogFormat = source.at("customLogFormat").as_string().c_str();
+    std::string customLogFormat;
+    if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+        customLogFormat = source["customLogFormat"].get<std::string>();
+    }
 
     Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
         std::make_unique<std::wstring>(Utility::string_to_wstring(customLogFormat)).release()
@@ -319,28 +350,32 @@ bool handleProcessLog(
 /// Returns true if the log configuration is valid and sources are successfully processed;
 /// otherwise, returns false if the configuration is invalid or sources fail to process.
 /// </returns>
-bool processLogConfig(const boost::json::value& logConfig, _Out_ LoggerSettings& Config) {
+bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings& Config) {
     if (!logConfig.is_object()) {
         logWriter.TraceError(L"Invalid LogConfig object.");
         return false;
     }
 
-    const boost::json::object& obj = logConfig.as_object();
+    const auto& obj = logConfig;
 
-    std::string logFormat = getJsonStringCaseInsensitive(obj, "logFormat");
+    std::string logFormat;
+    if (obj.contains("logFormat") && obj["logFormat"].is_string()) {
+        logFormat = obj["logFormat"].get<std::string>();
+    }
+
     if (!logFormat.empty()) {
         Config.LogFormat = Utility::string_to_wstring(logFormat);
-	} else {
+    } else {
         logWriter.TraceError(L"LogFormat not found in LogConfig. Using default log format.");
-	}
+    }
 
-    if (!obj.contains("sources") || !obj.at("sources").is_array()) {
+    if (!obj.contains("sources") || !obj["sources"].is_array()) {
         logWriter.TraceError(L"Sources array not found or invalid in LogConfig.");
         return false;
     }
 
     // Process the sources array
-    const boost::json::array& sources = obj.at("sources").as_array();
+    const auto& sources = obj["sources"];
     return processSources(sources, Config);
 }
 
@@ -354,8 +389,13 @@ bool processLogConfig(const boost::json::value& logConfig, _Out_ LoggerSettings&
 /// Returns true if all sources are successfully processed;
 /// otherwise, returns false if any source fails to process.
 /// </returns>
-bool processSources(const boost::json::array& sources, _Out_ LoggerSettings& Config) {
+bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Config) {
     bool overallSuccess = true;
+
+    if (!sources.is_array()) {
+        logWriter.TraceError(L"Sources is not an array.");
+        return false;
+    }
 
     for (const auto& source : sources) {
         if (!source.is_object()) {
@@ -364,8 +404,12 @@ bool processSources(const boost::json::array& sources, _Out_ LoggerSettings& Con
             continue;
         }
 
-        const boost::json::object& srcObj = source.as_object();
-        std::string sourceType = getJsonStringCaseInsensitive(srcObj, "type");
+        const auto& srcObj = source;
+
+        std::string sourceType;
+        if (srcObj.contains("type") && srcObj["type"].is_string()) {
+            sourceType = srcObj["type"].get<std::string>();
+        }
 
         if (sourceType.empty()) {
             logWriter.TraceError(L"Skipping source with missing or empty type.");
@@ -402,13 +446,13 @@ bool processSources(const boost::json::array& sources, _Out_ LoggerSettings& Con
                     Utility::string_to_wstring(sourceType).c_str()
                 ).c_str()
             );
-			overallSuccess = false;
+            overallSuccess = false;
         }
 
         cleanupAttributes(sourceAttributes);
     }
 
-	return overallSuccess;
+    return overallSuccess;
 }
 
 /// <summary>
@@ -431,18 +475,16 @@ void cleanupAttributes(_In_ AttributesMap& Attributes) {
 /// <param name="obj">The JSON object to search for the key.</param>
 /// <param name="key">The key to search for in the JSON object, case-insensitive.</param>
 /// <returns>string value associated with the key if found </returns>
-std::string getJsonStringCaseInsensitive(_In_ const boost::json::object& obj, _In_ const std::string& key) {
-    auto it = std::find_if(obj.begin(), obj.end(),
-        [&](const auto& item) {
-            std::string currentKey = std::string(item.key().data());
-            std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), ::tolower);
-            std::string lowerKey = key;
-            std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
-            return currentKey == lowerKey;
-        });
+std::string getJsonStringCaseInsensitive(_In_ const nlohmann::json& obj, _In_ const std::string& key) {
+    auto lowerKey = key;
+    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
 
-    if (it != obj.end() && it->value().is_string()) {
-        return std::string(it->value().as_string().data());
+    for (auto it = obj.begin(); it != obj.end(); ++it) {
+        std::string currentKey = it.key();
+        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), ::tolower);
+        if (currentKey == lowerKey && it.value().is_string()) {
+            return it.value().get<std::string>();
+        }
     }
 
     logWriter.TraceError(
@@ -451,7 +493,6 @@ std::string getJsonStringCaseInsensitive(_In_ const boost::json::object& obj, _I
         ).c_str()
     );
 
-    // Return an empty string if the key is not found or the value is not a string.
     return "";
 }
 

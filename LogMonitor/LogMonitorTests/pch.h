@@ -52,6 +52,7 @@
 #include <direct.h >
 #include <io.h> 
 #include <fcntl.h> 
+#include <nlohmann/json.hpp>
 #include "../src/LogMonitor/Utility.h"
 #include "../src/LogMonitor/Parser/ConfigFileParser.h"
 #include "../src/LogMonitor/Parser/LoggerSettings.h"
