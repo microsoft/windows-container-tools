@@ -36,8 +36,8 @@ set_target_properties(LogMonitorTests PROPERTIES
 # Link LogMonitor Lib and Boost.JSON to the test shared library
 target_link_libraries(LogMonitorTests PRIVATE LogMonitorLib Boost::json)
 
+target_compile_definitions(LogMonitorTests PRIVATE BOOST_ALL_NO_LIB BOOST_JSON_NO_LIB)
+
 # Enable testing
 enable_testing()
-
-# Register tests
 add_test(NAME LogMonitorTests COMMAND LogMonitorTests)

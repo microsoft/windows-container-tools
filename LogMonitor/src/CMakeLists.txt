@@ -36,19 +36,15 @@ target_include_directories(LogMonitor PRIVATE
 )
 
 # Link Boost JSON to LogMonitor and LogMonitorLib
-target_link_libraries(LogMonitor PRIVATE Boost::json)
+target_link_libraries(LogMonitor PRIVATE Boost::json LogMonitorLib)
 target_link_libraries(LogMonitorLib PRIVATE Boost::json)
 
-# Link the executable with the static library
-target_link_libraries(LogMonitor PRIVATE LogMonitorLib)
+target_compile_definitions(LogMonitor PRIVATE BOOST_ALL_NO_LIB BOOST_JSON_NO_LIB)
+target_compile_definitions(LogMonitorLib PRIVATE BOOST_ALL_NO_LIB BOOST_JSON_NO_LIB)
 
-# Specify the output name for the executable
+# Executable output settings
 set_target_properties(LogMonitor PROPERTIES
     OUTPUT_NAME "LogMonitor"
-)
-
-# Specify output directories
-set_target_properties(LogMonitor PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"

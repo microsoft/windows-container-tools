@@ -7,6 +7,7 @@ set BUILD_DIR=%~dp0build
 set TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake
 set BUILD_TYPE=Release
 set BUILD_ARCH=x64
+set VCPKG_TRIPLET=%BUILD_ARCH%-windows-static
 
 REM Step 1: Clone and bootstrap vcpkg if not already done
 if not exist "%VCPKG_DIR%\vcpkg.exe" (
@@ -18,10 +19,10 @@ if not exist "%VCPKG_DIR%\vcpkg.exe" (
     popd
 )
 
-REM Step 2: Install dependencies
-echo === Installing Boost dependencies ===
-"%VCPKG_DIR%\vcpkg.exe" install boost-json:%BUILD_ARCH%-windows ^
-                               boost-algorithm:%BUILD_ARCH%-windows
+REM Step 2: Install static Boost dependencies
+echo === Installing static Boost dependencies ===
+"%VCPKG_DIR%\vcpkg.exe" install boost-json:%VCPKG_TRIPLET% ^
+                               boost-algorithm:%VCPKG_TRIPLET%
 
 if errorlevel 1 (
     echo Failed to install Boost dependencies.
@@ -33,6 +34,7 @@ echo === Configuring CMake ===
 cmake -S "%~dp0LogMonitor" -B "%BUILD_DIR%" ^
     -DCMAKE_TOOLCHAIN_FILE="%TOOLCHAIN_FILE%" ^
     -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
+    -DVCPKG_TARGET_TRIPLET=%VCPKG_TRIPLET% ^
     -A %BUILD_ARCH%
 
 if errorlevel 1 (
