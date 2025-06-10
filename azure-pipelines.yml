@@ -14,7 +14,7 @@ variables:
   buildConfiguration: 'Release'
   VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
   VCPKG_TRIPLET: 'x64-windows-static'
-  VCPKG_CMAKE_OPTIONS: "-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\\scripts\\buildsystems\\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=$(VCPKG_TRIPLET)"
+  VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
   SDKVersion: ''
 
 jobs:
