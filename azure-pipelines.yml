@@ -13,97 +13,91 @@ variables:
   buildPlatform: 'x64'  # Set to x64 or ARM64 depending on the build you want
   buildConfiguration: 'Release'
   VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
-  VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
+  VCPKG_TRIPLET: 'x64-windows-static'
+  VCPKG_CMAKE_OPTIONS: >-
+    -DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake
+    -DVCPKG_TARGET_TRIPLET=$(VCPKG_TRIPLET)
   SDKVersion: ''
 
 jobs:
   - job: build
     steps:
+    
       - task: PowerShell@2
-        displayName: 'Install vcpkg'
-        inputs:
-          targetType: 'inline'
-          script: |
-            echo "Cloning and bootstrapping vcpkg"
-            git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
-            cd $(VCPKG_ROOT)
-            .\bootstrap-vcpkg.bat
-            .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
+      displayName: 'Install vcpkg'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Cloning and bootstrapping vcpkg"
+          git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
+          cd $(VCPKG_ROOT)
+          .\bootstrap-vcpkg.bat
+          .\vcpkg.exe integrate install
 
-      # Install Boost libraries: JSON, Algorithm
       - task: PowerShell@2
         displayName: 'Install Boost Dependencies (JSON, Algorithm)'
         inputs:
-          targetType: 'inline'
-          script: |
-            if (!(Test-Path "$(VCPKG_ROOT)\vcpkg.exe")) {
-                Write-Error "vcpkg.exe not found. Exiting..."
-                exit 1
-            }
-            Write-Host "Installing Boost libraries for platform: $(buildPlatform)..."
-            if ('$(buildPlatform)' -eq 'x64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows boost-algorithm:x64-windows
-            } elseif ('$(buildPlatform)' -eq 'ARM64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows boost-algorithm:arm64-windows
-            } else {
-              Write-Error "Unsupported build platform: $(buildPlatform)"
-              exit 1
-            }
+            targetType: 'inline'
+            script: |
+              if (!(Test-Path "$(VCPKG_ROOT)\vcpkg.exe")) {
+                  Write-Error "vcpkg.exe not found. Exiting..."
+                  exit 1
+              }
+              Write-Host "Installing Boost static libraries for platform: $(buildPlatform)..."
+              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:$(VCPKG_TRIPLET) boost-algorithm:$(VCPKG_TRIPLET)
 
-      # Verify vcpkg integration
       - task: PowerShell@2
         displayName: 'Verify vcpkg Integration'
         inputs:
-          targetType: 'inline'
-          script: |
-            echo "Verifying vcpkg integration for platform: $(buildPlatform)..."
-            & "$(VCPKG_ROOT)\vcpkg.exe" integrate install
-            $basePath = "$(VCPKG_ROOT)\installed\$(buildPlatform)-windows\include"
-            $checks = @(
-              "boost\json.hpp",
-              "boost\algorithm\string\replace.hpp"
-            )
-            foreach ($header in $checks) {
-              $path = Join-Path $basePath $header
-              if (!(Test-Path $path)) {
-                Write-Error "Missing header: $path"
-                exit 1
+            targetType: 'inline'
+            script: |
+              echo "Verifying vcpkg integration for platform: $(buildPlatform)..."
+              & "$(VCPKG_ROOT)\vcpkg.exe" integrate install
+              $basePath = "$(VCPKG_ROOT)\installed\$(VCPKG_TRIPLET)\include"
+              $checks = @(
+                "boost\json.hpp",
+                "boost\algorithm\string\replace.hpp"
+              )
+              foreach ($header in $checks) {
+                $path = Join-Path $basePath $header
+                if (!(Test-Path $path)) {
+                  Write-Error "Missing header: $path"
+                  exit 1
+                }
               }
-            }
-            Write-Output "All Boost headers found."
+              Write-Output "All Boost headers found."
 
-      # Get installed Windows SDK version
       - task: PowerShell@2
         displayName: 'Check Installed Windows SDK Version'
         inputs:
-          targetType: 'inline'
-          script: |
-            $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
-            $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
-            $armSdkPath = "C:\Program Files\Windows Kits\10\Include\arm64"
+            targetType: 'inline'
+            script: |
+              $x86SdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
+              $x64SdkPath = "C:\Program Files\Windows Kits\10\Include"
+              $armSdkPath = "C:\Program Files\Windows Kits\10\Include\arm64"
 
-            function Get-SdkVersion {
-                param ($sdkPath)
-                $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
-                return $sdkVersion
-            }
+              function Get-SdkVersion {
+                  param ($sdkPath)
+                  $sdkVersion = Get-ChildItem $sdkPath | Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+' } | Sort-Object -Property Name | Select-Object -Last 1
+                  return $sdkVersion
+              }
 
-            $sdkFolder = $null
-            if (Test-Path $x64SdkPath) {
-                $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
-            } elseif (Test-Path $x86SdkPath) {
-                $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
-            } elseif (Test-Path $armSdkPath) {
-                $sdkFolder = Get-SdkVersion -sdkPath $armSdkPath
-            }
-            
-            if ($sdkFolder) {
-                Write-Host "Installed Windows SDK version: $($sdkFolder.Name)"
-                Write-Host "##vso[task.setvariable variable=SDKVersion]$($sdkFolder.Name)"
-            } else {
-                Write-Host "Windows SDK not found!"
-                exit 1
-            }
+              $sdkFolder = $null
+              if (Test-Path $x64SdkPath) {
+                  $sdkFolder = Get-SdkVersion -sdkPath $x64SdkPath
+              } elseif (Test-Path $x86SdkPath) {
+                  $sdkFolder = Get-SdkVersion -sdkPath $x86SdkPath
+              } elseif (Test-Path $armSdkPath) {
+                  $sdkFolder = Get-SdkVersion -sdkPath $armSdkPath
+              }
+
+              if ($sdkFolder) {
+                  Write-Host "Installed Windows SDK version: $($sdkFolder.Name)"
+                  Write-Host "##vso[task.setvariable variable=SDKVersion]$($sdkFolder.Name)"
+              } else {
+                  Write-Host "Windows SDK not found!"
+                  exit 1
+              }
 
       # Configure CMake based on selected platform
       - task: CMake@1
