@@ -10,9 +10,10 @@ pool:
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'x64'  # Set to x64 or ARM64 depending on the build you want
+  buildPlatform: 'x64'
   buildConfiguration: 'Release'
   VCPKG_ROOT: '$(Build.SourcesDirectory)\vcpkg'
+  VCPKG_TRIPLET: 'x64-windows-static'
   VCPKG_CMAKE_OPTIONS: '-DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)\scripts\buildsystems\vcpkg.cmake'
   SDKVersion: ''
 
@@ -28,11 +29,10 @@ jobs:
             git clone https://github.com/microsoft/vcpkg.git $(VCPKG_ROOT)
             cd $(VCPKG_ROOT)
             .\bootstrap-vcpkg.bat
-            .\vcpkg.exe integrate install  # Integrate vcpkg with MSBuild
+            .\vcpkg.exe integrate install
 
-      # Install Boost JSON for the selected platform (x64 or ARM64)
       - task: PowerShell@2
-        displayName: 'Install Boost JSON'
+        displayName: 'Install nlohmann_json'
         inputs:
           targetType: 'inline'
           script: |
@@ -40,38 +40,9 @@ jobs:
                 Write-Error "vcpkg.exe not found. Exiting..."
                 exit 1
             }
-            Write-Host "Installing Boost JSON for platform: $(buildPlatform)..."
-            if ('$(buildPlatform)' -eq 'x64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:x64-windows
-            } elseif ('$(buildPlatform)' -eq 'ARM64') {
-              & "$(VCPKG_ROOT)\vcpkg.exe" install boost-json:arm64-windows
-            } else {
-              Write-Error "Unsupported build platform: $(buildPlatform)"
-              exit 1
-            }
+            Write-Host "Installing nlohmann_json for platform: $(VCPKG_TRIPLET)..."
+            & "$(VCPKG_ROOT)\vcpkg.exe" install nlohmann-json:$(VCPKG_TRIPLET)
 
-      # Verify vcpkg integration
-      - task: PowerShell@2
-        displayName: 'Verify vcpkg Integration'
-        inputs:
-          targetType: 'inline'
-          script: |
-            echo "Verifying vcpkg integration for platform: $(buildPlatform)..."
-            & "$(VCPKG_ROOT)\vcpkg.exe" integrate install
-            if ('$(buildPlatform)' -eq 'x64') {
-                if (!(Test-Path "$(VCPKG_ROOT)\installed\x64-windows\include\boost\json.hpp")) {
-                    Write-Error "Boost JSON header not found for x64. Exiting..."
-                    exit 1
-                }
-            } elseif ('$(buildPlatform)' -eq 'ARM64') {
-                if (!(Test-Path "$(VCPKG_ROOT)\installed\arm64-windows\include\boost\json.hpp")) {
-                    Write-Error "Boost JSON header not found for ARM64. Exiting..."
-                    exit 1
-                }
-            }
-            Write-Output "vcpkg integration verified."
-
-      # Get installed Windows SDK version
       - task: PowerShell@2
         displayName: 'Check Installed Windows SDK Version'
         inputs:
@@ -104,13 +75,12 @@ jobs:
                 exit 1
             }
 
-      # Configure CMake based on selected platform
       - task: CMake@1
         displayName: 'Configure CMake'
         inputs:
           workingDirectory: '$(Build.SourcesDirectory)\LogMonitor'
           cmakeArgs: |
-            -A $(buildPlatform) -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)
+            -A $(buildPlatform) -S $(Build.SourcesDirectory)\LogMonitor -B $(Build.BinariesDirectory)\LogMonitor\$(buildPlatform) $(VCPKG_CMAKE_OPTIONS) -DVCPKG_TARGET_TRIPLET=$(VCPKG_TRIPLET)
 
       - task: CMake@1
         displayName: 'Build with CMake'
@@ -118,20 +88,17 @@ jobs:
           workingDirectory: '$(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)'
           cmakeArgs: '--build . --config $(buildConfiguration) --parallel'
 
-      # Component Governance
       - task: ComponentGovernanceComponentDetection@0
         inputs:
           scanType: 'Register'
           verbosity: 'Verbose'
           alertWarningLevel: 'Low'
 
-      # Install Visual Studio Test Platform
       - task: VisualStudioTestPlatformInstaller@1
         inputs:
           packageFeedSelector: 'nugetOrg'
           versionSelector: 'latestPreRelease'
 
-      # Run Tests
       - task: VSTest@2
         inputs:
           testSelector: 'testAssemblies'
@@ -142,7 +109,6 @@ jobs:
           rerunFailedTests: true
           rerunMaxAttempts: 3
 
-      # Publish build artifacts
       - task: PublishPipelineArtifact@1
         inputs:
           targetPath: '$(Build.BinariesDirectory)\LogMonitor\$(buildPlatform)\$(buildConfiguration)\'

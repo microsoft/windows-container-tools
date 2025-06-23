@@ -7,6 +7,7 @@
 #include <regex>
 
 using namespace std;
+using json = nlohmann::json;
 
 
 ///
@@ -265,47 +266,32 @@ bool Utility::isJsonNumber(_In_ std::wstring& str)
 ///
 void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
-    size_t i = 0;
-    while (i < str.size()) {
-        auto sub = str.substr(i, 1);
-        auto s = str.substr(0, i + 1);
-        if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\\"");
-                i++;
-            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
-                str.replace(i - 1, 1, L"");
-                i--;
-            }
+    try
+    {
+        std::string utf8 = Utility::wstring_to_string(str);
+
+        // Remove any embedded nulls
+        utf8.erase(std::find(utf8.begin(), utf8.end(), '\0'), utf8.end());
+
+        // Escape the string using JSON
+        json j = utf8;
+        std::string escapedUtf8 = j.dump(); 
+
+        // Strip the outer quotes
+        if (escapedUtf8.length() >= 2 &&
+            escapedUtf8.front() == '"' &&
+            escapedUtf8.back() == '"')
+        {
+            escapedUtf8 = escapedUtf8.substr(1, escapedUtf8.length() - 2);
         }
-        else if (sub == L"\\") {
-            if ((i < str.size() - 1 && str.substr(i + 1, 1) != L"\\")
-                || i == str.size() - 1)
-            {
-                str.replace(i, 1, L"\\\\");
-                i++;
-            }
-            else {
-                i += 2;
-            }
-        }
-        else if (sub == L"\n") {
-            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
-                str.replace(i, 1, L"\\n");
-                i++;
-            }
-        }
-        else if (sub == L"\r") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\r");
-                i++;
-            }
-        }
-        i++;
+
+        // Convert back to wide string
+        str = Utility::string_to_wstring(escapedUtf8);
+    }
+    catch (const json::exception& e)
+    {
+        std::wcerr << L"SanitizeJson failed: " << Utility::string_to_wstring(e.what()) << std::endl;
+        str = L"[invalid JSON string]";
     }
 }
 
