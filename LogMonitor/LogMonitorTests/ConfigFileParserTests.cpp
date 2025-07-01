@@ -1592,7 +1592,7 @@ namespace LogMonitorTests
                 }";
 
             std::wofstream wof;
-            wof.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>));
+            wof.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>));
             wof.open(fullFileName);
             wof << configFileStr;
             wof.close();
