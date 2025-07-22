@@ -701,13 +701,21 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                                                   nullptr);
                     if (logFile == INVALID_HANDLE_VALUE)
                     {
-                        logWriter.TraceError(
-                            Utility::FormatString(
-                                L"Error in log file monitor. Failed to open file %ws. Error = %d",
-                                fileName.c_str(),
-                                GetLastError()
-                            ).c_str()
-                        );
+                        //
+                        // Added a conditional check to suppress logging for ERROR_NOT_SUPPORTED (benign error).
+                        // This prevents unnecessary log pollution while still logging other actionable errors.
+                        // https://github.com/microsoft/windows-container-tools/issues/125#issuecomment-3056545183
+                        //
+                        if (GetLastError() != ERROR_NOT_SUPPORTED)
+                        {
+                            logWriter.TraceError(
+                                Utility::FormatString(
+                                    L"Error in log file monitor. Failed to open file %ws. Error = %d",
+                                    fileName.c_str(),
+                                    GetLastError()
+                                ).c_str()
+                            );
+                        }
 
                         //
                         // Ignore failure and continue. In the worst case we will
