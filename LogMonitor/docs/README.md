@@ -387,6 +387,7 @@ Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process M
 <strong>Event Logs:</strong>
   - `Source`: The log source (Event Log)
   - `TimeStamp`: Time at which the event was generated
+  - `EventSource`: The event source
   - `EventID`: Unique identifier assigned to an individual event
   - `Severity`: A label that indicates the importance or criticality of an event
   - `Message`: The event message
