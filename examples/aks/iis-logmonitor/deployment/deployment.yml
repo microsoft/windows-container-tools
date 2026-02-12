@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iislogmonitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iislogmonitor
+  template:
+    metadata:
+      labels:
+        app: iislogmonitor
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+      - name: iislogmonitor
+        # Replace the image below with your image built containing LogMonitor.
+        image: <dockerhub-username>/iis-logmonitor:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iislogmonitor
+spec:  
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: iislogmonitor

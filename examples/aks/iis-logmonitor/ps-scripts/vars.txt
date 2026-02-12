@@ -1,0 +1,9 @@
+resourceGroup=logmonv213-demo
+resourceGroupAZ=eastus
+clusterName=aks-logmonv213
+winUsername=<AKS_WINDOWS_ADMIN_USERNAME>
+# winPassword must be at least 14 chars
+winPassword=<AKS_WINDOWS_ADMIN_PASSWORD>
+windowsNodepoolName=npwin
+osType=Windows
+osSku=Windows2022
