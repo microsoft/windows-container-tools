@@ -1175,6 +1175,28 @@ LogFileMonitor::LogFileModifyEventHandler(
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
     {
+        // Detect truncation: if file size < NextReadOffset, reset to read from start
+        LARGE_INTEGER fileSize = {};
+        const std::wstring fullLongPath = m_logDirectory + L'\\' + element->second->FileName;
+        HANDLE logFile = CreateFileW(fullLongPath.c_str(),
+            GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
+            nullptr);
+
+        if (logFile != INVALID_HANDLE_VALUE) {
+            if (GetFileSizeEx(logFile, &fileSize)) {
+                if (fileSize.QuadPart < element->second->NextReadOffset) {
+                    // file was truncated and rewritten in-place -> read from beginning
+                    element->second->NextReadOffset = 0;
+                    element->second->LastReadTimestamp = 0; // force ReadLogFile to treat as fresh
+                }
+            }
+            CloseHandle(logFile);
+        }
+
         status = ReadLogFile(element->second);
     }
     else
