@@ -237,48 +237,41 @@ size_t BufferCopyAndSanitize(char* dst, char* src)
 /// details from the JSON schema.
 /// Returns the number of bytes written to the buffer.
 ///
-size_t FormatProcessLog(char* chBuf) {
+std::string FormatProcessLog(const std::string& line) {
     if (Utility::CompareWStrings(loggingformat, L"Custom")) {
-        return FormatCustomLog(chBuf);
+        return FormatCustomLog(line);
     } else {
-        return FormatStandardLog(chBuf);
+        return FormatStandardLog(line);
     }
 }
 
 ///
 /// Helper function to format the custom log.
 ///
-size_t FormatCustomLog(char* chBuf) {
+std::string FormatCustomLog(const std::string& inputLine) {
     ProcessLogEntry logEntry;
     SYSTEMTIME st;
     GetSystemTime(&st);
 
-    char chBufCpy[BUFSIZE] = "";
-    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
-
     logEntry.source = L"Process";
     logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
 
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesconverter;
-    logEntry.message = fromBytesconverter.from_bytes(chBufCpy);
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesConverter;
+    logEntry.message = fromBytesConverter.from_bytes(inputLine);
 
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesconverter;
     std::wstring formattedLog = Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source);
-    std::string convertedLog = toBytesconverter.to_bytes(formattedLog);
-    std::string str = convertedLog + "\n";
 
-    const char* logLine = str.c_str();
-    size_t logLineLen = strlen(logLine);
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesConverter;
+    std::string logLine = toBytesConverter.to_bytes(formattedLog) + "\n";
 
-    return BufferCopy(chBuf, const_cast<char*>(logLine), 0, logLineLen);
+    return logLine;
 }
 
 ///
 /// Helper function to format the standard log (JSON or XML).
 ///
-size_t FormatStandardLog(char* chBuf) {
-    const char* prefix;
-    const char* suffix;
+std::string FormatStandardLog(const std::string& inputLine) {
+    std::string prefix, suffix;
 
     if (Utility::CompareWStrings(loggingformat, L"XML")) {
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
@@ -287,33 +280,19 @@ size_t FormatStandardLog(char* chBuf) {
         prefix = "{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"";
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
-    char chBufCpy[BUFSIZE] = "";
 
-    //
-    // copy valid (>0 ASCII values) bytes from chBuf to chBufCpy
-    //
-    size_t chBufLen = BufferCopyAndSanitize(chBufCpy, chBuf);
-    size_t prefixLen = strlen(prefix);
-    size_t suffixLen = strlen(suffix);
-    size_t index = BufferCopy(chBuf, const_cast<char*>(prefix), 0, prefixLen);
-
-    index = BufferCopy(chBuf, chBufCpy, index);
-
-    // truncate, in the unlikely event of a long logline > |BUFSIZE-85|
-    // leave at least 36 slots for JSON or 21 slots for XML
-    // reset the start index
-    if ((index + suffixLen) > BUFSIZE - 5) {
-        index = BUFSIZE - 5 - suffixLen;
-        if (Utility::CompareWStrings(loggingformat, L"XML"))
-        {
-            suffix = "...\</Logline></LogEntry></Log>\n";
-        } else {
-            suffix = "...\"},\"SchemaVersion\":\"1.0.0\"}\n";
-        }
+    // Sanitize the log line
+    std::string sanitized;
+    sanitized.reserve(inputLine.size());
+    for (char c : inputLine) {
+        sanitized += (c > 0) ? c : '?';
     }
 
-    return BufferCopy(chBuf, const_cast<char*>(suffix), index, index + suffixLen);
+    std::string logLine = prefix + sanitized + suffix;
+
+    return logLine;
 }
+
 
 /// 
 /// Helper function to clear the stdout buffer
@@ -341,85 +320,61 @@ size_t ClearBuffer(char* chBuf) {
 ///
 DWORD ReadFromPipe(LPVOID Param)
 {
-    DWORD dwRead, dwWritten;
-    char chBuf[BUFSIZE] = "";
-    char chBufOut[BUFSIZE] = "";
-    char chBufRem[BUFSIZE] = ""; // for remaining characters
-    bool bSuccess = false;
+    DWORD dwWritten;
+    char chBuf[BUFSIZE + 1] = { 0 };
+    std::string partialLine;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
     UNREFERENCED_PARAMETER(Param);
 
     for (;;)
     {
-        // clear buffer ready for read
-        ClearBuffer(chBuf);
-        // move valid chars from remainder buffer to chBuf
-        // then ReadFile starts from the end position (chBuf + cnt)
-        char* ptrRem = chBufRem;
-        size_t cnt = 0;
-        while (*ptrRem > 0 && cnt < BUFSIZE) {
-            chBuf[cnt++] = *ptrRem;
-            ptrRem++;
-        }
+        DWORD bytesRead = 0;
+        BOOL bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &bytesRead, NULL);
 
-        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf + cnt, BUFSIZE - cnt, &dwRead, NULL);
-        // clear remainder buffer for the next read
-        ClearBuffer(chBufRem);
-
-        if (!bSuccess || dwRead == 0)
-        {
+        if (!bSuccess || bytesRead == 0)
             break;
+
+        chBuf[bytesRead] = '\0'; // Null-terminate buffer
+        partialLine.append(chBuf);
+
+        size_t start = 0;
+        size_t newlinePos;
+        while ((newlinePos = partialLine.find_first_of("\r\n", start)) != std::string::npos)
+        {
+            std::string line = partialLine.substr(start, newlinePos - start);
+
+            std::string formatted = FormatProcessLog(line);
+            logWriter.WriteLog(
+                hParentStdOut,
+                formatted.c_str(),
+                static_cast<DWORD>(formatted.size()),
+                &dwWritten,
+                NULL);
+
+            // Skip over newline chars
+            start = newlinePos + 1;
+            while (start < partialLine.size() &&
+                (partialLine[start] == '\r' || partialLine[start] == '\n'))
+                ++start;
         }
 
-        // write out a line at a time
-        char* ptr = chBuf;
-        size_t outSz = 0;
-        size_t count = 0;
-        size_t lastNewline = 0;
-        ClearBuffer(chBufOut);
-        while (*ptr != '\0' && count < BUFSIZE) {
-            // copy over to chBufOut till \r\n
-            // the remaining will be reserved to be completed
-            // by the next read.
-            if (*ptr == '\r' || *ptr == '\n') {
-                if (outSz > 0) {
-                    // print out and reset chBufOut and outSz
-                    size_t sz = FormatProcessLog(chBufOut);
-                    DWORD dwRead = static_cast<DWORD>(sz);
+        // Keep unprocessed remainder
+        if (start < partialLine.size())
+            partialLine = partialLine.substr(start);
+        else
+            partialLine.clear();
+    }
 
-                    bSuccess = logWriter.WriteLog(
-                        hParentStdOut,
-                        chBufOut,
-                        dwRead,
-                        &dwWritten,
-                        NULL);
-                    // reset
-                    outSz = 0;
-                    ClearBuffer(chBufOut);
-                    lastNewline = count;
-                }
-            }
-            else {
-                // no support for multibyte characters for now
-                // TODO(nandaa): https://github.com/microsoft/windows-container-tools/issues/121
-                if (*ptr < 0) {
-                    chBufOut[outSz++] = '?';
-                }
-                else chBufOut[outSz++] = *ptr;
-            }
-            ptr++;
-            count++;
-        }
-
-        // move remaining characters to chBufRem
-        ptrRem = chBuf;
-        ptrRem += lastNewline;
-        count = 0;
-        while (*ptrRem > 0 && count < BUFSIZE) {
-            chBufRem[count++] = *ptrRem;
-            ptrRem++;
-        }
+    // Write remaining partial line
+    if (!partialLine.empty())
+    {
+        std::string formatted = FormatProcessLog(partialLine);
+        logWriter.WriteLog(
+            hParentStdOut,
+            formatted.c_str(),
+            static_cast<DWORD>(formatted.size()),
+            &dwWritten,
+            NULL);
     }
 
     return ERROR_SUCCESS;

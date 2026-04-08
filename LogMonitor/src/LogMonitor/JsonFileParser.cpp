@@ -248,9 +248,10 @@ JsonFileParser::ParseNumber()
         else
         {
             //
-            // End of string.
+            // End of number parsing.
+            // The terminating character (comma, bracket, brace, etc.) must remain unconsumed for subsequent
+            // parsing steps
             //
-            offset++;
             AdvanceBufferPointer(offset);
 
             m_doubleValue = negativeValue ? -parsedValue : parsedValue;

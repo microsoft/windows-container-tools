@@ -19,11 +19,11 @@ static DWORD ReadFromPipe(LPVOID Param);
 
 static size_t ClearBuffer(char* chBuf);
 
-size_t FormatProcessLog(char* chBuf);
+std::string FormatProcessLog(const std::string& line);
 
-size_t FormatCustomLog(char* chBuf);
+std::string FormatCustomLog(const std::string& line);
 
-size_t FormatStandardLog(char* chBuf);
+std::string FormatStandardLog(const std::string& line);
 
 static size_t BufferCopy(char* dst, char* src, size_t start, size_t end);
 

@@ -1,17 +1,19 @@
 # Log Monitor Documentation
 
 **Contents:**
+
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
 - [Log File Monitoring](#log-file-monitoring)
 - [Process Monitoring](#process-monitoring)
+- [IIS Monitoring](#iis-monitoring-with-log-monitor)
 - [Log Format Customization](#log-format-customization)
 - [Security Advisory for Config File](#security-advisory-for-config-file)
 
 ## Sample Config File
 
-A sample Log Monitor Config file would be structured as follows: 
+A sample Log Monitor Config file would be structured as follows:
 
 ```json
 {
@@ -60,6 +62,7 @@ A sample Log Monitor Config file would be structured as follows:
 }
 
 ```
+
 Please see below for how to customize your Config file for Log Monitor to pull from.
 
 ## ETW Monitoring
@@ -82,13 +85,13 @@ logman query providers | findstr "<GUID or Provider Name>"
 
 ### Configuration
 
-- `type` (required): This indicates the type of log you want to monitor for. It should be `ETW`. 
+- `type` (required): This indicates the type of log you want to monitor for. It should be `ETW`.
 - `eventFormatMultiLine` (optional): This is Boolean to indicate whether you want the logs displayed with or without new lines. It is initially set to True and you can set it to False depending on how you want to view the logs on the console.
 - `providers` (required): Providers are components that generate events. This field is a list that shows the event providers you are monitoring for.
-    - `providerName` (optional): This represents the name of the provider. It is what shows up when you use logman.
-    - `providerGuid` (required): This is a globally unique identifier that uniquely identifies the provider you specified in the ProviderName field.
-    - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
-    - `keywords` (optional): This string field is a bitmask that specifies what events to collect. Only events with keywords matching the bitmask are collected This is an optional parameter. Default is 0 and all the events will be collected.
+  - `providerName` (optional): This represents the name of the provider. It is what shows up when you use logman.
+  - `providerGuid` (required): This is a globally unique identifier that uniquely identifies the provider you specified in the ProviderName field.
+  - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
+  - `keywords` (optional): This string field is a bitmask that specifies what events to collect. Only events with keywords matching the bitmask are collected This is an optional parameter. Default is 0 and all the events will be collected.
 
 ### Examples
 
@@ -137,9 +140,9 @@ Using both the provider's name and provider GUID:
 
 ### References
 
-- https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/event-tracing-for-windows--etw-
-- https://learn.microsoft.com/en-us/windows/win32/wes/writing-an-instrumentation-manifest
-- https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing#providers
+- <https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/event-tracing-for-windows--etw->
+- <https://learn.microsoft.com/en-us/windows/win32/wes/writing-an-instrumentation-manifest>
+- <https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing#providers>
 
 ## Event Log Monitoring
 
@@ -152,8 +155,8 @@ Event log is a record of events related to the system, security, and application
 - `startAtOldestRecord` (Required): This Boolean field indicates whether the Log Monitor tool should output event logs from the start of the container boot or from the start of the Log Monitor tool itself. If set `true`, the tool should output the event logs from the start of container boot, and if set false, the tool only outputs event logs from the start of log monitor.
 - `eventFormatMultiLine` (Optional): This is a Boolean field that is used to indicate whether the Log Monitor should format the logs to `STDOUT` as multi-line or single line. If the field is not set in the config file, by default the value is `true`. If the field is set `true`, the tool does not format the event messages to a single line (and thus event messages can span multiple lines). If set to false, the tool formats the event log messages to a single line and removes new line characters.
 - `channels` (Required): A channel is a named stream of events. It serves as a logical pathway for transporting events from the event publisher to a log file and possibly a subscriber. It is a sink that collects events. Each defined channel has the following properties:
-    - `name` (Required): The name of the event channel
-    - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
+  - `name` (Required): The name of the event channel
+  - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
 
 ### Examples
 
@@ -201,10 +204,10 @@ Example 1 (Application channel, verboseness: Error):
 }
  ```
 
- ### References
+### References
 
- - https://learn.microsoft.com/en-us/windows/win32/eventlog/event-logging
- - https://learn.microsoft.com/en-us/windows/win32/wes/defining-channels
+- <https://learn.microsoft.com/en-us/windows/win32/eventlog/event-logging>
+- <https://learn.microsoft.com/en-us/windows/win32/wes/defining-channels>
 
 ## Log File Monitoring
 
@@ -217,14 +220,14 @@ This will monitor any changes in log files matching a specified filter, given th
 - `type` (required): `"File"`
 - `directory` (required): set to the directory containing the files to be monitored.
      > :grey_exclamation:**NOTE:** Only works with absolute paths.
-     > 
-     > To support *long file name* functionality, we prepend "\\?\" to the path. This approach extends the MAX_PATH limit from 260 characters to 32,767 wide characters. For more details, see [Maximum Path Length Limitation](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation).
-     > 
+     >
+     > To support _long file name_ functionality, we prepend "\\?\" to the path. This approach extends the MAX_PATH limit from 260 characters to 32,767 wide characters. For more details, see [Maximum Path Length Limitation](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation).
+     >
      > Due to this modification, the path **must** be an [absolute path](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths), beginning with a disk designator with a backslash, for example "C:\" or "d:\".
-     > 
+     >
      > [UNC paths](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#unc-paths) and [DOS device paths](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths) are not supported.
-     > 
-     >  Ensure you [identify the type of path](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#identify-the-path) and the path is correctly formatted to avoid issues.
+     >
+     > Ensure you [identify the type of path](https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#identify-the-path) and the path is correctly formatted to avoid issues.
      >
      > | Example                                                    | Path Type        | Allowed            |
      > |-------------------------------------------------------     |------------------|--------------------|
@@ -242,24 +245,24 @@ This will monitor any changes in log files matching a specified filter, given th
      > | "."                                                        | Relative         | :x:                |
      > | ".\"                                                       | Relative         | :x:                |
      > | "..\temp"                                                  | Relative         | :x:                |
-     
+
 - `filter` (optional): uses [MS-DOS wildcard match type](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/indexsrv/ms-dos-and-windows-wildcard-characters) i.e.. `*, ?`. Can be set to empty, which will be default to `"*"`.
 - `includeSubdirectories` (optional) : `"true|false"`, specify if sub-directories also need to be monitored. Defaults to `false`.
 - `includeFileNames` (optional): `"true|false"`, specifies whether to include file names in the logline, eg. `sample.log: xxxxx`. Defaults to `false`.
-- `waitInSeconds` (optional): specifies the duration to wait for a file or folder to be created if it does not exist. It takes integer values between 0-INFINITY. Defaults to `300` seconds, i.e, 5 minutes. It can be passed as a value or a string. 
+- `waitInSeconds` (optional): specifies the duration to wait for a file or folder to be created if it does not exist. It takes integer values between 0-INFINITY. Defaults to `300` seconds, i.e, 5 minutes. It can be passed as a value or a string.
 
-  -	`waitInSeconds = 0`
+  - `waitInSeconds = 0`
 
     When the value is zero(0), this is means that we do not wait and LogMonitor terminates with an error
 
-  -	`waitInSeconds = +integer`
-        
+  - `waitInSeconds = +integer`
+
     When the value is a positive integer, LogMonitor will wait for the specified time. Once the predefined time elapses, LogMonitor will terminate with an error.
 
-  -	`waitInSeconds = "INFINITY"`
+  - `waitInSeconds = "INFINITY"`
 
-    In this case, LogMonitor will wait forever for the folder to be created. 
-      
+    In this case, LogMonitor will wait forever for the folder to be created.
+
     > :grey_exclamation:**NOTE**
     > - This field is case insensitive
     > - When "INFINITY" is passed, it must be passed as a string.
@@ -269,21 +272,23 @@ This will monitor any changes in log files matching a specified filter, given th
 
   **Examples:**
   1. Wait for 10 seconds
-      * As a value: `"waitInSeconds": 10`
-      * As a string: `"waitInSeconds": "10"` 
+      - As a value: `"waitInSeconds": 10`
+      - As a string: `"waitInSeconds": "10"`
   2. Wait forever/infinitely:
-      * `"waitInSeconds": "INFINITY"` or  `"waitInSeconds": "inf"` or  `"waitInSeconds": "∞"`
-      * This field is case-insensitive
+      - `"waitInSeconds": "INFINITY"` or  `"waitInSeconds": "inf"` or  `"waitInSeconds": "∞"`
+      - This field is case-insensitive
 
   <br />
 
   If a user provides an invalid value, a value less than 0, an error occurs:
+
   ```
   ERROR: Error parsing configuration file. 'waitInSeconds' attribute must be greater or equal to zero
   WARNING: Failed to parse configuration file. Error retrieving source attributes. Invalid source
   ```
 
-### Sample FileMonitor *LogMonitorConfig.json*
+### Sample FileMonitor _LogMonitorConfig.json_
+
 #### Example 1
 
 LogMonitor will monitor log files in the directory "c:\inetpub\logs" along with its subfolders. If the directory does not exist, it will wait for up to 10 seconds for the directory to be created.
@@ -309,9 +314,9 @@ LogMonitor will monitor log files in the directory "c:\inetpub\logs" along with 
 
 LogMonitor will monitor log files in the root directory, "C:\".
 
- > When the directory is the root directory (e.g. "C:\\" ) we can only monitor a file that is in the root directory, not a subfolder. This is due to access issues (even when running LogMonitor as an Admin) for some of the folders in the root directory. Therefore, `includeSubdirectories` must be `false` for the root directory. 
+ > When the directory is the root directory (e.g. "C:\\" ) we can only monitor a file that is in the root directory, not a subfolder. This is due to access issues (even when running LogMonitor as an Admin) for some of the folders in the root directory. Therefore, `includeSubdirectories` must be `false` for the root directory.
 
-See sample valid *LogMonitorConfig.json* below:
+See sample valid _LogMonitorConfig.json_ below:
 
 ```json
 {
@@ -369,15 +374,108 @@ CMD "c:\\windows\\system32\\ping.exe -n 20 localhost"
 
 The Process Monitor will stream the output for `c:\windows\system32\ping.exe -n 20 localhost`
 
+## IIS Monitoring with Log Monitor
+
+Log Monitor can tail IIS log files and forward formatted output to STDOUT. This is useful when running IIS inside Windows containers and you want container logs to be available through the standard container logging pipeline.
+
+## Quickstart
+
+1. Copy `LogMonitor.exe` and `LogMonitorConfig.json` into a directory inside the container or host.
+
+LogMonitorConfig.json
+
+```json
+{
+ "LogConfig": {
+  "logFormat": "json",
+  "sources": [
+   {
+    "type": "File",
+    "directory": "c:\\inetpub\\logs",
+    "filter": "*.log",
+    "includeSubdirectories": true
+   },
+   {
+    "type": "ETW",
+    "eventFormatMultiLine": false,
+    "providers": [
+     {
+      "providerName": "IIS: WWW Server",
+      "providerGuid": "3A2A4E84-4C21-4981-AE10-3FDA0D9B0F83",
+      "level": "Information"
+     },
+     {
+      "providerName": "Microsoft-Windows-IIS-Logging",
+      "providerGuid": "7E8AD27F-B271-4EA2-A783-A47BDE29143B",
+      "level": "Information"
+     }
+    ]
+   }
+  ]
+ }
+}
+```
+
+Dockerfile
+
+```dockerfile
+# escape=`
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+WORKDIR /LogMonitor
+COPY LogMonitorConfig.json .
+COPY LogMonitor.exe .
+
+RUN powershell -Command `
+  Add-WindowsFeature Web-Server; `
+  Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/microsoft/IIS.ServiceMonitor/releases/download/v2.0.1.10/ServiceMonitor.exe" -OutFile "C:\ServiceMonitor.exe"
+
+EXPOSE 80
+
+ENTRYPOINT ["C:\\LogMonitor\\LogMonitor.exe", "C:\\ServiceMonitor.exe", "w3svc"]
+```
+
+## Build and run the Docker image
+
+Build the Docker image from the Dockerfile in this doc or the example folder:
+
+```powershell
+docker build -t iis-logmonitor:latest -f Dockerfile .
+```
+
+Run the container locally:
+
+```powershell
+docker run -it --rm -p 80:80 iis-logmonitor:latest
+```
+
+View container logs
+
+If you start the container detached and with a name you can follow logs with:
+
+```powershell
+docker logs -f iis-logmonitor
+```
+
+If you started the container without a name, get its container ID and follow logs:
+
+```powershell
+docker ps
+docker logs -f <container-id>
+```
+
+For a ready-to-run AKS example that shows how to build the image, deploy to AKS, and enable Azure Monitor (Container Insights), see the AKS example README: [examples/aks/iis-logmonitor/README.md](../../examples/aks/iis-logmonitor/README.md).
+
 ## Log Format Customization
 
 ### Description
+
 By default, logs will be displayed in JSON format. However, users can change the log format to either `XML` or their own `custom` defined format.
 
 To specify the log format, a user needs to configure the `logFormat` field in `LogMonitorConfig.json` to either `XML`, `JSON` or `Custom` <em>(the field value is not case-insensitive)</em>
 <br>For `JSON` and `XML` log formats, no additional configurations are required. However, the `Custom` log format, needs further configuration. For custom log formats, a user needs to specify the `customLogFormat` at the source level.
 
 ### Custom Log Format Pattern Layout
+
 To ensure the different field values are correctly displayed in the customized log outputs, ensure to wrap the field names within modulo operators (%) and the field names specified matches the correct log sources' field names.
 
 For example: `%Message%, %TimeStamp%`<br>
@@ -385,35 +483,40 @@ For example: `%Message%, %TimeStamp%`<br>
 Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process Monitor logs)</em> has log field names specific to them:
 
 <strong>Event Logs:</strong>
-  - `Source`: The log source (Event Log)
-  - `TimeStamp`: Time at which the event was generated
-  - `EventID`: Unique identifier assigned to an individual event
-  - `Severity`: A label that indicates the importance or criticality of an event
-  - `Message`: The event message
+
+- `Source`: The log source (Event Log)
+- `TimeStamp`: Time at which the event was generated
+- `EventSource`: The source of an event
+- `EventID`: Unique identifier assigned to an individual event
+- `Severity`: A label that indicates the importance or criticality of an event
+- `Message`: The event message
 
 <strong>ETW:</strong>
-  - `Source`: The log source (ETW)
-  - `TimeStamp`: Time at which the event was generated
-  - `Severity`: A label that indicates the importance or criticality of an event
-  - `ProviderId`:  Unique identifier that is assigned to the event provider during its registration process.
-  - `ProviderName`: Unique identifier or name assigned to an event provider
-  - `DecodingSource`: Component or provider responsible for decoding and translating raw event data into a human-readable format
-  - `ExecutionProcessId`: Identifier associated with a process that is being executed at the time an event is generated
-  - `ExecutionThreadId`: Identifier associated with a thread at the time an event is generated
-  - `Keyword`:  Flag or attribute assigned to an event or a group of related events
-  - `EventId`: Unique identifier assigned to an individual event
-  - `EventData`: Payload or data associated with an event.
+
+- `Source`: The log source (ETW)
+- `TimeStamp`: Time at which the event was generated
+- `Severity`: A label that indicates the importance or criticality of an event
+- `ProviderId`:  Unique identifier that is assigned to the event provider during its registration process.
+- `ProviderName`: Unique identifier or name assigned to an event provider
+- `DecodingSource`: Component or provider responsible for decoding and translating raw event data into a human-readable format
+- `ExecutionProcessId`: Identifier associated with a process that is being executed at the time an event is generated
+- `ExecutionThreadId`: Identifier associated with a thread at the time an event is generated
+- `Keyword`:  Flag or attribute assigned to an event or a group of related events
+- `EventId`: Unique identifier assigned to an individual event
+- `EventData`: Payload or data associated with an event.
 
 <strong>Log Files:</strong>
-  - `Source`: The log source (File)
-  - `TimeStamp`: Time at which the change was introduced in the monitored file.
-  - `FileName`: Name of the file that the log entry is read from.
-  - `Message`: The line/change added in the monitored file.
+
+- `Source`: The log source (File)
+- `TimeStamp`: Time at which the change was introduced in the monitored file.
+- `FileName`: Name of the file that the log entry is read from.
+- `Message`: The line/change added in the monitored file.
 
 <strong>Process Monitor:</strong>
-  - `Source`: The log source (Process Monitor)
-  - `TimeStamp`: Time at which the process was executed
-  - `Message` : The output of the process/command executed
+
+- `Source`: The log source (Process Monitor)
+- `TimeStamp`: Time at which the process was executed
+- `Message` : The output of the process/command executed
 
 ### Sample Custom Log Configuration
 
@@ -450,16 +553,17 @@ Each log source tracked by log monitor <em>(ETW, Log File, Events, and Process M
 }
 ```
 
-For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. In such a case, The `logFormat` value should be `custom`. 
+For advanced usage of the custom log feature, a user can choose to define their own custom JSON log format. In such a case, The `logFormat` value should be `custom`.
 <br>To enable sanitization of the JSON output and ensure the the outputs displayed by the tool is valid, the user can add a suffix: `'|json'` after the desired custom log format.
 
 For example:
+
 ```json
 {
   "LogConfig": {
-	"logFormat": "custom",
+ "logFormat": "custom",
         "sources": [
-	      {
+       {
                 "type": "ETW",
                 "eventFormatMultiLine": false,
                 "providers": [
@@ -470,7 +574,7 @@ For example:
                    }
                  ],
                 "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Severity':'%Severity%', 'ProviderId':'%ProviderId%', 'ProviderName':'%ProviderName%', 'EventId':'%EventId%', 'EventData':'%EventData%'}|json"
-	      },
+       },
           {
             "type": "Process",
             "customLogFormat": "{'TimeStamp':'%TimeStamp%', 'Source':'%Source%', 'Message':'%Message%'}|JSON" 
