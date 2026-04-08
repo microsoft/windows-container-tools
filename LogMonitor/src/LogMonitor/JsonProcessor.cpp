@@ -135,11 +135,11 @@ bool handleEventLog(
 
         // Process channels if they exist
         if (source.contains("channels") && source["channels"].is_array()) {
-            auto channels = new std::vector<EventLogChannel>();
+            auto channels = std::make_unique<std::vector<EventLogChannel>>();
 
             for (const auto& channel : source["channels"]) {
-                std::string name = getJsonStringCaseInsensitive(channel, "name");
-                std::string levelString = getJsonStringCaseInsensitive(channel, "level");
+                std::string name = getJsonStringCaseInsensitive(channel, "name", true);
+                std::string levelString = getJsonStringCaseInsensitive(channel, "level", true);
 
                 EventLogChannel eventChannel(Utility::string_to_wstring(name), EventChannelLogLevel::Error);
 
@@ -152,14 +152,13 @@ bool handleEventLog(
                             levelString.c_str()
                         ).c_str()
                     );
-                    delete channels; // Prevent leak
                     return false;
                 }
 
                 channels->push_back(eventChannel);
             }
 
-            Attributes[JSON_TAG_CHANNELS] = reinterpret_cast<void*>(channels);
+            Attributes[JSON_TAG_CHANNELS] = reinterpret_cast<void*>(channels.release());
         }
         else {
             Attributes[JSON_TAG_CHANNELS] = nullptr;
@@ -200,7 +199,7 @@ bool handleFileLog(
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
-    std::string directory = getJsonStringCaseInsensitive(source, "directory");
+    std::string directory = getJsonStringCaseInsensitive(source, "directory", true);
     std::string filter = getJsonStringCaseInsensitive(source, "filter");
     bool includeSubdirs = false;
     if (source.contains("includeSubdirectories") && source["includeSubdirectories"].is_boolean()) {
@@ -242,7 +241,7 @@ bool handleFileLog(
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleETWLog(
-    _In_ const nlohmann::json& source,
+    _In_ const json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
@@ -268,9 +267,9 @@ bool handleETWLog(
 
     if (source.contains("providers") && source["providers"].is_array()) {
         for (const auto& provider : source["providers"]) {
-            std::string providerName = getJsonStringCaseInsensitive(provider, "providerName");
-            std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid");
-            std::string level = getJsonStringCaseInsensitive(provider, "level");
+            std::string providerName = getJsonStringCaseInsensitive(provider, "providerName", true);
+            std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid", true);
+            std::string level = getJsonStringCaseInsensitive(provider, "level", true);
 
             ETWProvider etwProvider;
             etwProvider.ProviderName = Utility::string_to_wstring(providerName);
@@ -317,7 +316,7 @@ bool handleETWLog(
 /// otherwise, returns false if parsing fails.
 /// </returns>
 bool handleProcessLog(
-    _In_ const nlohmann::json& source,
+    _In_ const json& source,
     _In_ AttributesMap& Attributes,
     _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
 ) {
@@ -475,7 +474,7 @@ void cleanupAttributes(_In_ AttributesMap& Attributes) {
 /// <param name="obj">The JSON object to search for the key.</param>
 /// <param name="key">The key to search for in the JSON object, case-insensitive.</param>
 /// <returns>string value associated with the key if found </returns>
-std::string getJsonStringCaseInsensitive(_In_ const nlohmann::json& obj, _In_ const std::string& key) {
+std::string getJsonStringCaseInsensitive(_In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
     auto lowerKey = key;
     std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
 
@@ -487,11 +486,13 @@ std::string getJsonStringCaseInsensitive(_In_ const nlohmann::json& obj, _In_ co
         }
     }
 
-    logWriter.TraceError(
-        Utility::FormatString(
-            L"Key %S not found in JSON object", key.c_str()
-        ).c_str()
-    );
+    if (required) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Key %S not found in JSON object", key.c_str()
+            ).c_str()
+        );
+    }
 
     return "";
 }

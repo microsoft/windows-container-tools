@@ -22,7 +22,23 @@ if not exist "%VCPKG_DIR%\vcpkg.exe" (
     popd
 )
 
-REM Step 2: Install nlohmann-json dependencies
+REM Step 2: Locate cmake — prefer PATH, then VS, then vcpkg's downloaded copy
+where cmake >nul 2>&1
+if errorlevel 1 (
+    if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" (
+        set "PATH=%PATH%;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+        goto cmake_found
+    )
+    for /f "delims=" %%i in ('dir /s /b "%VCPKG_DIR%\downloads\tools\cmake-*\bin\cmake.exe" 2^>nul') do (
+        set "PATH=%PATH%;%%~dpi"
+        goto cmake_found
+    )
+    echo cmake not found. Install cmake or Visual Studio CMake tools.
+    exit /b 1
+)
+:cmake_found
+
+REM Step 3: Install nlohmann-json dependencies
 echo === Installing nlohmann dependencies ===
 "%VCPKG_DIR%\vcpkg.exe" install nlohmann-json:%VCPKG_TRIPLET%
 
@@ -31,7 +47,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Create the build directory if it doesn't exist
+REM Step 4: Create the build directory if it doesn't exist
 if not exist "%PROJECT_DIR%\build" (
     mkdir "%PROJECT_DIR%\build"
 )

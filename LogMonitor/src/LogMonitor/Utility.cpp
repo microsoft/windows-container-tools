@@ -290,8 +290,10 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
     }
     catch (const json::exception& e)
     {
-        std::wcerr << L"SanitizeJson failed: " << Utility::string_to_wstring(e.what()) << std::endl;
-        str = L"[invalid JSON string]";
+        // Leave str unchanged — emitting unescaped content is better than losing the log line.
+        logWriter.TraceError(
+            Utility::FormatString(L"SanitizeJson failed: %S", e.what()).c_str()
+        );
     }
 }
 

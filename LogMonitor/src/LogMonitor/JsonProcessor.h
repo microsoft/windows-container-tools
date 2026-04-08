@@ -54,5 +54,6 @@ void cleanupAttributes(
 
 std::string getJsonStringCaseInsensitive(
     _In_ const nlohmann::json& obj,
-    _In_ const std::string& key
+    _In_ const std::string& key,
+    _In_ bool required = false
 );
