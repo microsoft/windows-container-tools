@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(LogMonitorTests)
 
-find_package(Boost REQUIRED COMPONENTS json)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # Automatically gather all test source files
 file(GLOB_RECURSE TEST_SOURCES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
@@ -22,7 +22,7 @@ target_compile_definitions(LogMonitorTests PRIVATE LOGMONITORTESTS_EXPORTS)
 target_include_directories(LogMonitorTests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}  # Includes Utility.h and pch.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
-    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/LogMonitor
 )
 
 # Set Windows-specific linker flags
@@ -33,8 +33,8 @@ set_target_properties(LogMonitorTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-# Link LogMonitor and Boost.JSON
-target_link_libraries(LogMonitorTests PRIVATE LogMonitor Boost::json)
+# Link LogMonitor and Nlohmann JSON
+target_link_libraries(LogMonitorTests PRIVATE LogMonitorLib nlohmann_json::nlohmann_json)
 
 # Enable testing
 enable_testing()

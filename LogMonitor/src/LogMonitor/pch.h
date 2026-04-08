@@ -47,7 +47,7 @@
 #include "shlwapi.h"
 #include <io.h> 
 #include <fcntl.h>
-#include <boost/json.hpp>
+#include <nlohmann/json.hpp>
 #include "Utility.h"
 #include "Parser/ConfigFileParser.h"
 #include "Parser/LoggerSettings.h"
