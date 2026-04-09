@@ -70,6 +70,13 @@ jobs:
           queries: security-and-quality # Default is "security-extended"
           build-mode: ${{ matrix.build-mode }}
 
+      - name: Install vcpkg and nlohmann-json
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg.exe install nlohmann-json:x64-windows
+          .\vcpkg\vcpkg.exe integrate install
+
      # https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2022#arguments
       - name: Build LogMonitor
         run:  |
