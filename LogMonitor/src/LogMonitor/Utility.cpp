@@ -268,7 +268,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
     try
     {
-        std::string utf8 = Utility::wstring_to_string(str);
+        std::string utf8 = Utility::WStringToString(str);
 
         // Remove any embedded nulls
         utf8.erase(std::find(utf8.begin(), utf8.end(), '\0'), utf8.end());
@@ -286,9 +286,9 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
         }
 
         // Convert back to wide string
-        str = Utility::string_to_wstring(escapedUtf8);
+        str = Utility::StringToWString(escapedUtf8);
     }
-    catch (const json::exception& e)
+    catch (const std::exception& e)
     {
         // Leave str unchanged — emitting unescaped content is better than losing the log line.
         logWriter.TraceError(
@@ -431,7 +431,7 @@ bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
 /// </summary>
 /// <param name="wstr"></param>
 /// <returns></returns>
-std::string Utility::wstring_to_string(_In_ const std::wstring& wstr) {
+std::string Utility::WStringToString(_In_ const std::wstring& wstr) {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     return converter.to_bytes(wstr);
 }
@@ -441,7 +441,7 @@ std::string Utility::wstring_to_string(_In_ const std::wstring& wstr) {
 /// </summary>
 /// <param name="str">The input string to be converted</param>
 /// <returns>A wide string representation of the input string</returns>
-std::wstring Utility::string_to_wstring(_In_ const std::string& str) {
+std::wstring Utility::StringToWString(_In_ const std::string& str) {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     return converter.from_bytes(str);
 }

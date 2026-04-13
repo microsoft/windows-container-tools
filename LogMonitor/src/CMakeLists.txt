@@ -37,10 +37,11 @@ target_include_directories(LogMonitor PRIVATE
 target_link_libraries(LogMonitorLib PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(LogMonitor PRIVATE LogMonitorLib nlohmann_json::nlohmann_json)
 
-# Set output path
+# Set output path — use $<CONFIG> so Release/Debug binaries go into separate subdirectories,
+# matching the pipeline's $(buildConfiguration) layout.
 set_target_properties(LogMonitor PROPERTIES
-	OUTPUT_NAME "LogMonitor"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    OUTPUT_NAME "LogMonitor"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
 )

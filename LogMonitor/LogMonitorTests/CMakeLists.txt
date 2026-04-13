@@ -26,17 +26,17 @@ target_include_directories(LogMonitorTests PRIVATE
 )
 
 # Set Windows-specific linker flags
+# Use $<CONFIG> so binaries land in Release/ or Debug/, matching the pipeline's $(buildConfiguration) layout.
 set_target_properties(LogMonitorTests PROPERTIES
     COMPILE_PDB_NAME "LogMonitorTests"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
     LINK_FLAGS "/DEBUG:FULL /OPT:REF /OPT:ICF"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
 )
 
 # Link LogMonitor and Nlohmann JSON
 target_link_libraries(LogMonitorTests PRIVATE LogMonitorLib nlohmann_json::nlohmann_json)
 
-# Enable testing
-enable_testing()
-
-add_test(NAME LogMonitorTests COMMAND LogMonitorTests)
+# LogMonitorTests is a shared library (DLL) for VSTest, not a standalone executable.
+# Run tests with: vstest.console.exe <build>/Release/LogMonitorTests.dll
+# (as used by the Azure pipeline)

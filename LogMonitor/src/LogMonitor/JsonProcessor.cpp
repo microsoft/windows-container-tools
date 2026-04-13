@@ -71,21 +71,27 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
 /// <returns>A UTF-8 encoded string containing the JSON file's contents, 
 /// or an empty string if the file could not be opened.</returns>
 std::string readJsonFromFile(_In_ const std::wstring& filePath) {
-    // Open the file as a wide character input stream
-    std::wifstream wif(filePath);
-    if (!wif.is_open()) {
+    // Read raw bytes so UTF-8 content is preserved exactly as stored.
+    std::ifstream input(filePath, std::ios::binary);
+    if (!input.is_open()) {
         logWriter.TraceError(L"Failed to open JSON file.");
         return "";
-	}
+    }
 
-    // Read the file into a wide string buffer
-    std::wstringstream wss;
-    wss << wif.rdbuf();	
-    wif.close();
+    std::string jsonString(
+        (std::istreambuf_iterator<char>(input)),
+        std::istreambuf_iterator<char>()
+    );
+    input.close();
 
-    // Convert the wstring buffer to a UTF-8 string
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    std::string jsonString = converter.to_bytes(wss.str());
+    // Strip UTF-8 BOM if present.
+    if (jsonString.size() >= 3 &&
+        static_cast<unsigned char>(jsonString[0]) == 0xEF &&
+        static_cast<unsigned char>(jsonString[1]) == 0xBB &&
+        static_cast<unsigned char>(jsonString[2]) == 0xBF)
+    {
+        jsonString.erase(0, 3);
+    }
 
     return jsonString;
 }
@@ -111,7 +117,7 @@ bool handleEventLog(
             startAtOldest = source["startAtOldestRecord"].get<bool>();
         }
 
-        bool multiLine = false;
+        bool multiLine = true;
         if (source.contains("eventFormatMultiLine") && source["eventFormatMultiLine"].is_boolean()) {
             multiLine = source["eventFormatMultiLine"].get<bool>();
         }
@@ -122,15 +128,15 @@ bool handleEventLog(
         }
 
         Attributes[JSON_TAG_START_AT_OLDEST_RECORD] = reinterpret_cast<void*>(
-            std::make_unique<std::wstring>(startAtOldest ? L"true" : L"false").release()
+            std::make_unique<bool>(startAtOldest).release()
             );
 
         Attributes[JSON_TAG_FORMAT_MULTILINE] = reinterpret_cast<void*>(
-            std::make_unique<std::wstring>(multiLine ? L"true" : L"false").release()
+            std::make_unique<bool>(multiLine).release()
             );
 
         Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
-            std::make_unique<std::wstring>(Utility::string_to_wstring(customLogFormat)).release()
+            std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
             );
 
         // Process channels if they exist
@@ -139,20 +145,22 @@ bool handleEventLog(
 
             for (const auto& channel : source["channels"]) {
                 std::string name = getJsonStringCaseInsensitive(channel, "name", true);
-                std::string levelString = getJsonStringCaseInsensitive(channel, "level", true);
+                std::string levelString = getJsonStringCaseInsensitive(channel, "level");
 
-                EventLogChannel eventChannel(Utility::string_to_wstring(name), EventChannelLogLevel::Error);
+                EventLogChannel eventChannel(Utility::StringToWString(name), EventChannelLogLevel::Error);
 
-                std::wstring level = Utility::string_to_wstring(levelString);
-                // Set the level based on the levelString, logging an error if invalid
-                if (!eventChannel.SetLevelByString(level)) {
-                    logWriter.TraceError(
-                        Utility::FormatString(
-                            L"Invalid level string: %S",
-                            levelString.c_str()
-                        ).c_str()
-                    );
-                    return false;
+                if (!levelString.empty()) {
+                    std::wstring level = Utility::StringToWString(levelString);
+                    // Set the level based on the levelString, logging an error if invalid
+                    if (!eventChannel.SetLevelByString(level)) {
+                        logWriter.TraceError(
+                            Utility::FormatString(
+                                L"Invalid level string: %S",
+                                levelString.c_str()
+                            ).c_str()
+                        );
+                        return false;
+                    }
                 }
 
                 channels->push_back(eventChannel);
@@ -208,17 +216,23 @@ bool handleFileLog(
     std::string customLogFormat = getJsonStringCaseInsensitive(source, "customLogFormat");
 
     Attributes[JSON_TAG_DIRECTORY] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::string_to_wstring(directory)).release()
+        std::make_unique<std::wstring>(Utility::StringToWString(directory)).release()
         );
     Attributes[JSON_TAG_FILTER] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::string_to_wstring(filter)).release()
+        std::make_unique<std::wstring>(Utility::StringToWString(filter)).release()
         );
     Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(includeSubdirs ? L"true" : L"false").release()
+        std::make_unique<bool>(includeSubdirs).release()
         );
     Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::string_to_wstring(customLogFormat)).release()
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
         );
+
+    if (source.contains("waitInSeconds") && source["waitInSeconds"].is_number()) {
+        Attributes[JSON_TAG_WAITINSECONDS] = reinterpret_cast<void*>(
+            std::make_unique<std::double_t>(source["waitInSeconds"].get<std::double_t>()).release()
+        );
+    }
 
     auto sourceFile = std::make_shared<SourceFile>();
     if (!SourceFile::Unwrap(Attributes, *sourceFile)) {
@@ -255,12 +269,12 @@ bool handleETWLog(
         customLogFormat = source["customLogFormat"].get<std::string>();
     }
 
-    // Store multiLine and customLogFormat as wide strings in Attributes
+    // Store multiLine and customLogFormat in Attributes
     Attributes[JSON_TAG_FORMAT_MULTILINE] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(multiLine ? L"true" : L"false").release()
+        std::make_unique<bool>(multiLine).release()
         );
     Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::string_to_wstring(customLogFormat)).release()
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
         );
 
     std::vector<ETWProvider> etwProviders;
@@ -272,14 +286,14 @@ bool handleETWLog(
             std::string level = getJsonStringCaseInsensitive(provider, "level", true);
 
             ETWProvider etwProvider;
-            etwProvider.ProviderName = Utility::string_to_wstring(providerName);
-            etwProvider.SetProviderGuid(Utility::string_to_wstring(providerGuid));
-            etwProvider.StringToLevel(Utility::string_to_wstring(level));
+            etwProvider.ProviderName = Utility::StringToWString(providerName);
+            etwProvider.SetProviderGuid(Utility::StringToWString(providerGuid));
+            etwProvider.StringToLevel(Utility::StringToWString(level));
 
             // Check if "keywords" exists and process it
             if (provider.contains("keywords") && provider["keywords"].is_string()) {
                 std::string keywords = provider["keywords"].get<std::string>();
-                etwProvider.Keywords = wcstoull(Utility::string_to_wstring(keywords).c_str(), nullptr, 0);
+                etwProvider.Keywords = wcstoull(Utility::StringToWString(keywords).c_str(), nullptr, 0);
             }
 
             etwProviders.push_back(std::move(etwProvider));
@@ -326,7 +340,7 @@ bool handleProcessLog(
     }
 
     Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::string_to_wstring(customLogFormat)).release()
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
         );
 
     auto sourceProcess = std::make_shared<SourceProcess>();
@@ -363,7 +377,7 @@ bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings
     }
 
     if (!logFormat.empty()) {
-        Config.LogFormat = Utility::string_to_wstring(logFormat);
+        Config.LogFormat = Utility::StringToWString(logFormat);
     } else {
         logWriter.TraceError(L"LogFormat not found in LogConfig. Using default log format.");
     }
@@ -385,12 +399,12 @@ bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings
 /// <param name="sources">JSON array containing different log sources.</param>
 /// <param name="Config">LoggerSettings structure where parsed sources are stored.</param>
 /// <returns>
-/// Returns true if all sources are successfully processed;
-/// otherwise, returns false if any source fails to process.
+/// Returns true if the sources array is structurally valid (even if individual
+/// source entries fail to parse). Invalid entries are logged and skipped so that
+/// well-formed sources can still start, matching the previous parser's resilience.
+/// Returns false only if sources is not an array.
 /// </returns>
 bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Config) {
-    bool overallSuccess = true;
-
     if (!sources.is_array()) {
         logWriter.TraceError(L"Sources is not an array.");
         return false;
@@ -399,7 +413,6 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
     for (const auto& source : sources) {
         if (!source.is_object()) {
             logWriter.TraceError(L"Skipping invalid source entry (not an object).");
-            overallSuccess = false;
             continue;
         }
 
@@ -412,7 +425,6 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
 
         if (sourceType.empty()) {
             logWriter.TraceError(L"Skipping source with missing or empty type.");
-            overallSuccess = false;
             continue;
         }
 
@@ -431,10 +443,9 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Invalid source type: %S",
-                    Utility::string_to_wstring(sourceType).c_str()
+                    Utility::StringToWString(sourceType).c_str()
                 ).c_str()
             );
-            overallSuccess = false;
             continue;
         }
 
@@ -442,16 +453,15 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
             logWriter.TraceError(
                 Utility::FormatString(
                     L"Failed to process source of type: %S",
-                    Utility::string_to_wstring(sourceType).c_str()
+                    Utility::StringToWString(sourceType).c_str()
                 ).c_str()
             );
-            overallSuccess = false;
         }
 
         cleanupAttributes(sourceAttributes);
     }
 
-    return overallSuccess;
+    return true;
 }
 
 /// <summary>
