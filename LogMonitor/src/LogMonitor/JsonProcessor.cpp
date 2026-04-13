@@ -4,6 +4,7 @@
 //
 
 #include "pch.h"
+#include "JsonProcessor.h"
 
 #ifdef _WIN32
 #include <string.h>
