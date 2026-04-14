@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include <regex>
+#include <string>
 
 using namespace std;
 using json = nlohmann::json;
@@ -275,7 +276,7 @@ void Utility::SanitizeJson(_Inout_ std::wstring& str)
 
         // Escape the string using JSON
         json j = utf8;
-        std::string escapedUtf8 = j.dump(); 
+        std::string escapedUtf8 = j.dump();
 
         // Strip the outer quotes
         if (escapedUtf8.length() >= 2 &&
@@ -432,8 +433,12 @@ bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
 /// <param name="wstr"></param>
 /// <returns></returns>
 std::string Utility::WStringToString(_In_ const std::wstring& wstr) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    return converter.to_bytes(wstr);
+    if (wstr.empty()) return {};
+    int size = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (size <= 0) return {};
+    std::string result(size - 1, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], size, nullptr, nullptr);
+    return result;
 }
 
 /// <summary>
@@ -442,6 +447,10 @@ std::string Utility::WStringToString(_In_ const std::wstring& wstr) {
 /// <param name="str">The input string to be converted</param>
 /// <returns>A wide string representation of the input string</returns>
 std::wstring Utility::StringToWString(_In_ const std::string& str) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    return converter.from_bytes(str);
+    if (str.empty()) return {};
+    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    if (size <= 0) return {};
+    std::wstring result(size - 1, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], size);
+    return result;
 }

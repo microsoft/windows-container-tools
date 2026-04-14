@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 bool handleEventLog(
     _In_ const nlohmann::json& source,
     _In_ AttributesMap& Attributes,

@@ -4,7 +4,12 @@
 //
 
 #include "pch.h"
-#include "JsonProcessor.h"
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+#include "JsonProcessor.h"  // NOLINT(build/include_subdir)
 
 #ifdef _WIN32
 #include <string.h>
@@ -69,7 +74,7 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
 /// Reads a JSON file from a given file path and returns its contents as a UTF-8 encoded string.
 /// </summary>
 /// <param name="filePath">The path to the JSON file.</param>
-/// <returns>A UTF-8 encoded string containing the JSON file's contents, 
+/// <returns>A UTF-8 encoded string containing the JSON file's contents,
 /// or an empty string if the file could not be opened.</returns>
 std::string readJsonFromFile(_In_ const std::wstring& filePath) {
     // Read raw bytes so UTF-8 content is preserved exactly as stored.
@@ -394,7 +399,7 @@ bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings
 }
 
 /// <summary>
-/// Iterates through the sources array from the configuration, 
+/// Iterates through the sources array from the configuration,
 /// parsing and processing each log source based on its type.
 /// </summary>
 /// <param name="sources">JSON array containing different log sources.</param>
@@ -485,7 +490,8 @@ void cleanupAttributes(_In_ AttributesMap& Attributes) {
 /// <param name="obj">The JSON object to search for the key.</param>
 /// <param name="key">The key to search for in the JSON object, case-insensitive.</param>
 /// <returns>string value associated with the key if found </returns>
-std::string getJsonStringCaseInsensitive(_In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
+std::string getJsonStringCaseInsensitive(
+    _In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
     auto lowerKey = key;
     std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
 

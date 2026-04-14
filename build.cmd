@@ -18,7 +18,7 @@ if not exist "%VCPKG_DIR%\vcpkg.exe" (
     git clone https://github.com/microsoft/vcpkg.git "%VCPKG_DIR%"
     echo === Bootstrapping vcpkg ===
     pushd "%VCPKG_DIR%"
-    .\bootstrap-vcpkg.bat
+    call .\bootstrap-vcpkg.bat
     popd
 )
 
@@ -40,7 +40,7 @@ if errorlevel 1 (
 
 REM Step 3: Install nlohmann-json dependencies
 echo === Installing nlohmann dependencies ===
-"%VCPKG_DIR%\vcpkg.exe" install nlohmann-json:%VCPKG_TRIPLET%
+"%VCPKG_DIR%\vcpkg.exe" install nlohmann-json:%VCPKG_TRIPLET% --no-binarycaching
 
 if errorlevel 1 (
     echo Failed to install nlohmann-json dependencies.

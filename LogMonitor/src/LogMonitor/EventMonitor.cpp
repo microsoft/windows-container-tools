@@ -79,8 +79,6 @@ EventMonitor::~EventMonitor()
 
         if (waitResult != WAIT_OBJECT_0)
         {
-            HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
-                                                           : HRESULT_FROM_WIN32(waitResult);
         }
     }
 
@@ -125,14 +123,14 @@ EventMonitor::StartEventMonitorStatic(
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start event log monitor. %S", ex.what()).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start event log monitor. Unknown error occurred.").c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -411,7 +409,6 @@ EventMonitor::PrintEvent(
     )
 {
     DWORD status = ERROR_SUCCESS;
-    DWORD bytesWritten = 0;
     EVT_HANDLE renderContext = NULL;
     EVT_HANDLE publisher = NULL;
 
@@ -707,9 +704,9 @@ EventMonitor::EnableEventLogChannels()
                     }
                 }
 
-                DWORD status = EnableEventLogChannel(eventChannel.Name.c_str());
+                DWORD retryStatus = EnableEventLogChannel(eventChannel.Name.c_str());
 
-                if (status == RPC_S_SERVER_UNAVAILABLE) {
+                if (retryStatus == RPC_S_SERVER_UNAVAILABLE) {
                     elapsedTime += Utility::WAIT_INTERVAL;
                 } else {
                     logWriter.TraceInfo(

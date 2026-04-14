@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string>
+
 //
 // Define the AttributesMap, that is a map<wstring, void*> with case
 // insensitive keys

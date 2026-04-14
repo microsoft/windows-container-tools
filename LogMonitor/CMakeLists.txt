@@ -27,6 +27,10 @@ if (DEFINED ENV{SDKVersion})
     set(CMAKE_SYSTEM_VERSION $ENV{SDKVersion})
 endif()
 
+# Require C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Enable Unicode globally
 add_definitions(-DUNICODE -D_UNICODE)
 

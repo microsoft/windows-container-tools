@@ -138,8 +138,7 @@ std::wstring FileMonitorUtilities::_GetParentDir(std::wstring dirPath)
         std::wstring pathError = Utility::FormatString(
             L"Directory cannot be a relative path or an empty string %s.",
             dirPath.c_str());
-        std::string strPathError(pathError.begin(), pathError.end());
-        throw std::invalid_argument(strPathError);
+        throw std::invalid_argument(Utility::WStringToString(pathError));
     }
 
     return parentdir;
