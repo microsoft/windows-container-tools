@@ -4,12 +4,12 @@
 //
 
 #include "pch.h"
+#include "JsonProcessor.h"  // NOLINT(build/include_subdir)
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include "JsonProcessor.h"  // NOLINT(build/include_subdir)
 
 #ifdef _WIN32
 #include <string.h>

@@ -4,6 +4,7 @@
 //
 
 #include "pch.h"
+#include "Utility.h"  // NOLINT(build/include_subdir)
 #include <regex>
 #include <string>
 
