@@ -1,0 +1,592 @@
+//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+
+#include "pch.h"
+#include "JsonProcessor.h"  // NOLINT(build/include_subdir)
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#ifdef _WIN32
+#include <string.h>
+#define strcasecmp _stricmp
+#endif
+
+using json = nlohmann::json;
+
+/// <summary>
+/// Loads a JSON file, parses its contents, and processes its configuration settings.
+/// </summary>
+/// <param name="jsonFile">The path to the JSON file.</param>
+/// <param name="Config">The LoggerSettings object to populate with the parsed configuration data.</param>
+/// <returns>Returns true if the JSON file is successfully loaded and processed; otherwise,
+/// returns false on error.</returns>
+bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
+    std::wstring wstr(jsonFile);
+    std::string jsonString = readJsonFromFile(wstr);
+
+    try {
+        json parsedJson = json::parse(jsonString);
+
+        const nlohmann::json* logConfigPtr = findJsonKeyCaseInsensitive(parsedJson, "LogConfig");
+        if (logConfigPtr == nullptr) {
+            logWriter.TraceError(L"Missing 'LogConfig' section in JSON.");
+            return false;
+        }
+
+        if (!processLogConfig(*logConfigPtr, Config)) {
+            logWriter.TraceError(L"Failed to fully process LogConfig.");
+            return false;
+        }
+    }
+    catch (const json::parse_error& e) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Error parsing JSON: %S",
+                e.what()
+            ).c_str()
+        );
+        return false;
+    }
+    catch (const std::exception& e) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"An unexpected error occurred: %S",
+                e.what()
+            ).c_str()
+        );
+        return false;
+    }
+    catch (...) {
+        logWriter.TraceError(L"An unknown error occurred.");
+        return false;
+    }
+
+    return true;
+}
+
+/// <summary>
+/// Reads a JSON file from a given file path and returns its contents as a UTF-8 encoded string.
+/// </summary>
+/// <param name="filePath">The path to the JSON file.</param>
+/// <returns>A UTF-8 encoded string containing the JSON file's contents,
+/// or an empty string if the file could not be opened.</returns>
+std::string readJsonFromFile(_In_ const std::wstring& filePath) {
+    // Read raw bytes so UTF-8 content is preserved exactly as stored.
+    std::ifstream input(filePath, std::ios::binary);
+    if (!input.is_open()) {
+        logWriter.TraceError(L"Failed to open JSON file.");
+        return "";
+    }
+
+    std::string jsonString(
+        (std::istreambuf_iterator<char>(input)),
+        std::istreambuf_iterator<char>()
+    );
+    input.close();
+
+    // Strip UTF-8 BOM if present.
+    if (jsonString.size() >= 3 &&
+        static_cast<unsigned char>(jsonString[0]) == 0xEF &&
+        static_cast<unsigned char>(jsonString[1]) == 0xBB &&
+        static_cast<unsigned char>(jsonString[2]) == 0xBF)
+    {
+        jsonString.erase(0, 3);
+    }
+
+    return jsonString;
+}
+
+/// <summary>
+/// Parses and processes configuration data for an EventLog log source, initializing a SourceEventLog object.
+/// </summary>
+/// <param name="source">JSON configuration data.</param>
+/// <param name="Attributes">Map of attributes used to store the configuration details.</param>
+/// <param name="Sources">Vector of log sources.</param>
+/// <returns>
+/// Returns true if the Event log source is successfully parsed and added to Sources;
+/// otherwise, returns false if parsing fails.
+/// </returns>
+bool handleEventLog(
+    _In_ const json& source,
+    _In_ AttributesMap& Attributes,
+    _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
+) {
+    try {
+        bool startAtOldest = false;
+        if (source.contains("startAtOldestRecord") && source["startAtOldestRecord"].is_boolean()) {
+            startAtOldest = source["startAtOldestRecord"].get<bool>();
+        }
+
+        bool multiLine = true;
+        if (source.contains("eventFormatMultiLine") && source["eventFormatMultiLine"].is_boolean()) {
+            multiLine = source["eventFormatMultiLine"].get<bool>();
+        }
+
+        std::string customLogFormat;
+        if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+            customLogFormat = source["customLogFormat"].get<std::string>();
+        }
+
+        Attributes[JSON_TAG_START_AT_OLDEST_RECORD] = reinterpret_cast<void*>(
+            std::make_unique<bool>(startAtOldest).release()
+            );
+
+        Attributes[JSON_TAG_FORMAT_MULTILINE] = reinterpret_cast<void*>(
+            std::make_unique<bool>(multiLine).release()
+            );
+
+        Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
+            std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
+            );
+
+        // Process channels if they exist
+        if (source.contains("channels") && source["channels"].is_array()) {
+            auto channels = std::make_unique<std::vector<EventLogChannel>>();
+
+            for (const auto& channel : source["channels"]) {
+                std::string name = getJsonStringCaseInsensitive(channel, "name", true);
+                std::string levelString = getJsonStringCaseInsensitive(channel, "level");
+
+                EventLogChannel eventChannel(Utility::StringToWString(name), EventChannelLogLevel::Error);
+
+                if (!levelString.empty()) {
+                    std::wstring level = Utility::StringToWString(levelString);
+                    // Set the level based on the levelString, logging an error if invalid
+                    if (!eventChannel.SetLevelByString(level)) {
+                        logWriter.TraceError(
+                            Utility::FormatString(
+                                L"Invalid level string: %S",
+                                levelString.c_str()
+                            ).c_str()
+                        );
+                        return false;
+                    }
+                }
+
+                channels->push_back(eventChannel);
+            }
+
+            Attributes[JSON_TAG_CHANNELS] = reinterpret_cast<void*>(channels.release());
+        }
+        else {
+            Attributes[JSON_TAG_CHANNELS] = nullptr;
+        }
+
+        auto sourceEventLog = std::make_shared<SourceEventLog>();
+        if (!SourceEventLog::Unwrap(Attributes, *sourceEventLog)) {
+            logWriter.TraceError(L"Error parsing configuration file. Invalid EventLog source");
+            return false;
+        }
+
+        Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceEventLog)));
+        return true;
+        }
+        catch (const std::exception& e) {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Error parsing EventLog source: %S",
+                    e.what()
+                ).c_str()
+            );
+            return false;
+        }
+}
+
+/// <summary>
+/// Parses and processes configuration data specific to File type logs, initializing a SourceFile object.
+/// </summary>
+/// <param name="source">JSON value containing configuration data.</param>
+/// <param name="Attributes">Map of attributes for storing configuration details.</param>
+/// <param name="Sources">Vector of log sources.</param>
+/// <returns>
+/// Returns true if the File log source is successfully parsed and added to Sources;
+/// otherwise, returns false if parsing fails.
+/// </returns>
+bool handleFileLog(
+    _In_ const json& source,
+    _In_ AttributesMap& Attributes,
+    _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
+) {
+    std::string directory = getJsonStringCaseInsensitive(source, "directory", true);
+    std::string filter = getJsonStringCaseInsensitive(source, "filter");
+    bool includeSubdirs = false;
+    if (source.contains("includeSubdirectories") && source["includeSubdirectories"].is_boolean()) {
+        includeSubdirs = source["includeSubdirectories"].get<bool>();
+    }
+    std::string customLogFormat = getJsonStringCaseInsensitive(source, "customLogFormat");
+
+    std::wstring directoryW = Utility::StringToWString(directory);
+    FileMonitorUtilities::ParseDirectoryValue(directoryW);
+
+    if (!FileMonitorUtilities::IsValidSourceFile(directoryW, includeSubdirs)) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Invalid File source: root directory cannot be monitored with includeSubdirectories=true. Directory: %s",
+                directoryW.c_str()
+            ).c_str()
+        );
+        return false;
+    }
+
+    Attributes[JSON_TAG_DIRECTORY] = reinterpret_cast<void*>(
+        std::make_unique<std::wstring>(std::move(directoryW)).release()
+        );
+    Attributes[JSON_TAG_FILTER] = reinterpret_cast<void*>(
+        std::make_unique<std::wstring>(Utility::StringToWString(filter)).release()
+        );
+    Attributes[JSON_TAG_INCLUDE_SUBDIRECTORIES] = reinterpret_cast<void*>(
+        std::make_unique<bool>(includeSubdirs).release()
+        );
+    Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
+        );
+
+    if (source.contains("waitInSeconds") && source["waitInSeconds"].is_number()) {
+        Attributes[JSON_TAG_WAITINSECONDS] = reinterpret_cast<void*>(
+            std::make_unique<std::double_t>(source["waitInSeconds"].get<std::double_t>()).release()
+        );
+    }
+
+    auto sourceFile = std::make_shared<SourceFile>();
+    if (!SourceFile::Unwrap(Attributes, *sourceFile)) {
+        logWriter.TraceError(L"Error parsing configuration file. Invalid File source");
+        return false;
+    }
+
+    Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceFile)));
+    return true;
+}
+
+/// <summary>
+/// Parses and processes configuration details specific to ETW logs, initializing a SourceETW object.
+/// </summary>
+/// <param name="source">JSON value containing configuration data.</param>
+/// <param name="Attributes">Map of attributes for storing configuration details.</param>
+/// <param name="Sources">Vector of log sources.</param>
+/// <returns>
+/// Returns true if the ETW log source is successfully parsed and added to Sources;
+/// otherwise, returns false if parsing fails.
+/// </returns>
+bool handleETWLog(
+    _In_ const json& source,
+    _In_ AttributesMap& Attributes,
+    _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
+) {
+    bool multiLine = false;
+    if (source.contains("eventFormatMultiLine") && source["eventFormatMultiLine"].is_boolean()) {
+        multiLine = source["eventFormatMultiLine"].get<bool>();
+    }
+
+    std::string customLogFormat;
+    if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+        customLogFormat = source["customLogFormat"].get<std::string>();
+    }
+
+    // Store multiLine and customLogFormat in Attributes
+    Attributes[JSON_TAG_FORMAT_MULTILINE] = reinterpret_cast<void*>(
+        std::make_unique<bool>(multiLine).release()
+        );
+    Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
+        );
+
+    if (!source.contains("providers") || !source["providers"].is_array()) {
+        logWriter.TraceError(
+            L"Error parsing configuration file. "
+            L"Invalid ETW source: missing or invalid 'providers' array."
+        );
+        return false;
+    }
+
+    std::vector<ETWProvider> etwProviders;
+
+    for (const auto& provider : source["providers"]) {
+        std::string providerName = getJsonStringCaseInsensitive(provider, "providerName");
+        std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid");
+        std::string level = getJsonStringCaseInsensitive(provider, "level");
+
+        ETWProvider etwProvider;
+        etwProvider.ProviderName = Utility::StringToWString(providerName);
+        if (!providerGuid.empty()) {
+            etwProvider.SetProviderGuid(Utility::StringToWString(providerGuid));
+        }
+        if (!level.empty()) {
+            if (!etwProvider.StringToLevel(Utility::StringToWString(level))) {
+                logWriter.TraceWarning(
+                    Utility::FormatString(
+                        L"Error parsing configuration file. '%S' isn't a valid log level. Setting 'Error' level as default",
+                        level.c_str()
+                    ).c_str()
+                );
+            }
+        }
+
+        // Check if "keywords" exists and process it
+        if (provider.contains("keywords") && provider["keywords"].is_string()) {
+            std::string keywords = provider["keywords"].get<std::string>();
+            etwProvider.Keywords = wcstoull(Utility::StringToWString(keywords).c_str(), nullptr, 0);
+        }
+
+        if (!etwProvider.IsValid()) {
+            logWriter.TraceWarning(
+                L"Error parsing configuration file. Discarded invalid provider "
+                L"(it must have a non-empty 'providerName' or 'providerGuid')."
+            );
+            continue;
+        }
+
+        etwProviders.push_back(std::move(etwProvider));
+    }
+
+    // Store the ETW providers in Attributes.
+    Attributes[JSON_TAG_PROVIDERS] = reinterpret_cast<void*>(
+        std::make_unique<std::vector<ETWProvider>>(std::move(etwProviders)).release()
+        );
+
+    auto sourceETW = std::make_shared<SourceETW>();
+    if (!SourceETW::Unwrap(Attributes, *sourceETW)) {
+        logWriter.TraceError(
+            L"Error parsing configuration file. "
+            L"Invalid ETW source: 'providers' must be a non-empty array."
+        );
+        return false;
+    }
+
+    Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceETW)));
+
+    return true;
+}
+
+/// <summary>
+/// Parses and processes configuration details specific to Process logs, initializing a SourceProcess object.
+/// </summary>
+/// <param name="source">JSON value with configuration data.</param>
+/// <param name="Attributes">Map of attributes for storing configuration details.</param>
+/// <param name="Sources">Vector of log sources.</param>
+/// <returns>
+/// Returns true if the process log source is successfully parsed and added to Sources;
+/// otherwise, returns false if parsing fails.
+/// </returns>
+bool handleProcessLog(
+    _In_ const json& source,
+    _In_ AttributesMap& Attributes,
+    _Inout_ std::vector<std::shared_ptr<LogSource>>& Sources
+) {
+    std::string customLogFormat;
+    if (source.contains("customLogFormat") && source["customLogFormat"].is_string()) {
+        customLogFormat = source["customLogFormat"].get<std::string>();
+    }
+
+    Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] = reinterpret_cast<void*>(
+        std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
+        );
+
+    auto sourceProcess = std::make_shared<SourceProcess>();
+    if (!SourceProcess::Unwrap(Attributes, *sourceProcess)) {
+        logWriter.TraceError(L"Error parsing configuration file. Invalid Process source");
+        return false;
+    }
+
+    Sources.push_back(std::reinterpret_pointer_cast<LogSource>(std::move(sourceProcess)));
+
+    return true;
+}
+
+/// <summary>
+/// Processes the logging configuration from a JSON object, populating the LoggerSettings structure.
+/// </summary>
+/// <param name="logConfig">JSON value containing logging configuration details.</param>
+/// <param name="Config">LoggerSettings structure to populate with the parsed configuration.</param>
+/// <returns>
+/// Returns true if the log configuration is valid and sources are successfully processed;
+/// otherwise, returns false if the configuration is invalid or sources fail to process.
+/// </returns>
+bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings& Config) {
+    if (!logConfig.is_object()) {
+        logWriter.TraceError(L"Invalid LogConfig object.");
+        return false;
+    }
+
+    const auto& obj = logConfig;
+
+    const nlohmann::json* logFormatPtr = findJsonKeyCaseInsensitive(obj, "logFormat");
+    if (logFormatPtr != nullptr && logFormatPtr->is_string()) {
+        Config.LogFormat = Utility::StringToWString(logFormatPtr->get<std::string>());
+    } else {
+        logWriter.TraceWarning(L"LogFormat not found in LogConfig. Using default log format.");
+    }
+
+    const nlohmann::json* sourcesPtr = findJsonKeyCaseInsensitive(obj, "sources");
+    if (sourcesPtr == nullptr || !sourcesPtr->is_array()) {
+        logWriter.TraceError(L"Sources array not found or invalid in LogConfig.");
+        return false;
+    }
+
+    // Process the sources array
+    return processSources(*sourcesPtr, Config);
+}
+
+/// <summary>
+/// Iterates through the sources array from the configuration,
+/// parsing and processing each log source based on its type.
+/// </summary>
+/// <param name="sources">JSON array containing different log sources.</param>
+/// <param name="Config">LoggerSettings structure where parsed sources are stored.</param>
+/// <returns>
+/// Returns true if the sources array is structurally valid (even if individual
+/// source entries fail to parse). Invalid entries are logged and skipped so that
+/// well-formed sources can still start, matching the previous parser's resilience.
+/// Returns false only if sources is not an array.
+/// </returns>
+bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Config) {
+    if (!sources.is_array()) {
+        logWriter.TraceError(L"Sources is not an array.");
+        return false;
+    }
+
+    for (const auto& source : sources) {
+        if (!source.is_object()) {
+            logWriter.TraceError(L"Skipping invalid source entry (not an object).");
+            continue;
+        }
+
+        const auto& srcObj = source;
+
+        std::string sourceType;
+        if (srcObj.contains("type") && srcObj["type"].is_string()) {
+            sourceType = srcObj["type"].get<std::string>();
+        }
+
+        if (sourceType.empty()) {
+            logWriter.TraceError(L"Skipping source with missing or empty type.");
+            continue;
+        }
+
+        std::string sourceTypeLower = sourceType;
+        std::transform(sourceTypeLower.begin(), sourceTypeLower.end(),
+                       sourceTypeLower.begin(),
+                       [](unsigned char c) { return static_cast<char>(::tolower(c)); });
+
+        AttributesMap sourceAttributes;
+        bool parseSuccess = false;
+
+        if (sourceTypeLower == "eventlog") {
+            parseSuccess = handleEventLog(source, sourceAttributes, Config.Sources);
+        } else if (sourceTypeLower == "file") {
+            parseSuccess = handleFileLog(source, sourceAttributes, Config.Sources);
+        } else if (sourceTypeLower == "etw") {
+            parseSuccess = handleETWLog(source, sourceAttributes, Config.Sources);
+        } else if (sourceTypeLower == "process") {
+            parseSuccess = handleProcessLog(source, sourceAttributes, Config.Sources);
+        } else {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Invalid source type: %S",
+                    Utility::StringToWString(sourceType).c_str()
+                ).c_str()
+            );
+            continue;
+        }
+
+        if (!parseSuccess) {
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Failed to process source of type: %S",
+                    Utility::StringToWString(sourceType).c_str()
+                ).c_str()
+            );
+        }
+
+        cleanupAttributes(sourceAttributes);
+    }
+
+    return true;
+}
+
+/// <summary>
+/// Cleans up dynamically allocated memory in the Attributes map.
+/// Each value must be deleted through its actual type to avoid undefined behavior
+/// (deleting a void* does not invoke destructors for non-trivial types).
+/// </summary>
+/// <param name="Attributes">A map of attribute keys to heap-allocated pointers.</param>
+void cleanupAttributes(_In_ AttributesMap& Attributes) {
+    for (const auto& attributePair : Attributes)
+    {
+        if (attributePair.second == nullptr) {
+            continue;
+        }
+
+        const auto& key = attributePair.first;
+
+        if (key == JSON_TAG_START_AT_OLDEST_RECORD ||
+            key == JSON_TAG_FORMAT_MULTILINE ||
+            key == JSON_TAG_INCLUDE_SUBDIRECTORIES) {
+            delete static_cast<bool*>(attributePair.second);
+        } else if (key == JSON_TAG_CUSTOM_LOG_FORMAT ||
+                   key == JSON_TAG_DIRECTORY ||
+                   key == JSON_TAG_FILTER) {
+            delete static_cast<std::wstring*>(attributePair.second);
+        } else if (key == JSON_TAG_CHANNELS) {
+            delete static_cast<std::vector<EventLogChannel>*>(attributePair.second);
+        } else if (key == JSON_TAG_PROVIDERS) {
+            delete static_cast<std::vector<ETWProvider>*>(attributePair.second);
+        } else if (key == JSON_TAG_WAITINSECONDS) {
+            delete static_cast<std::double_t*>(attributePair.second);
+        }
+    }
+}
+
+/// <summary>
+/// Retrieves a string value from a JSON object in a case-insensitive manner.
+/// </summary>
+/// <param name="obj">The JSON object to search for the key.</param>
+/// <param name="key">The key to search for in the JSON object, case-insensitive.</param>
+/// <returns>string value associated with the key if found </returns>
+const nlohmann::json* findJsonKeyCaseInsensitive(
+    _In_ const nlohmann::json& obj, _In_ const std::string& key) {
+    auto toLowerChar = [](unsigned char c) { return static_cast<char>(::tolower(c)); };
+
+    std::string lowerKey = key;
+    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), toLowerChar);
+
+    for (auto it = obj.begin(); it != obj.end(); ++it) {
+        std::string currentKey = it.key();
+        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), toLowerChar);
+        if (currentKey == lowerKey) {
+            return &it.value();
+        }
+    }
+    return nullptr;
+}
+
+std::string getJsonStringCaseInsensitive(
+    _In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
+    auto toLowerChar = [](unsigned char c) { return static_cast<char>(::tolower(c)); };
+
+    auto lowerKey = key;
+    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), toLowerChar);
+
+    for (auto it = obj.begin(); it != obj.end(); ++it) {
+        std::string currentKey = it.key();
+        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), toLowerChar);
+        if (currentKey == lowerKey && it.value().is_string()) {
+            return it.value().get<std::string>();
+        }
+    }
+
+    if (required) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Key %S not found in JSON object", key.c_str()
+            ).c_str()
+        );
+    }
+
+    return "";
+}
+

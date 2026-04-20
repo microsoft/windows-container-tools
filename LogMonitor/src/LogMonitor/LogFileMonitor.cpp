@@ -238,7 +238,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
                 ex.what()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
@@ -248,7 +248,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
                 pThis->m_logDirectory.c_str()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -803,7 +803,7 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
                 ex.what()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
@@ -813,7 +813,7 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
                 pThis->m_logDirectory.c_str()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -1340,7 +1340,7 @@ LogFileMonitor::RenameFileInMaps(
 
 DWORD
 LogFileMonitor::LogFileReInitEventHandler(
-    _In_ DirChangeNotificationEvent& Event
+    _In_ DirChangeNotificationEvent& /* Event */
     )
 {
     DWORD status = ERROR_SUCCESS;
@@ -1863,7 +1863,6 @@ LogFileMonitor::FileTypeFromBuffer(
     LM_FILETYPE lmFileType = LM_FILETYPE::FileTypeUnknown;
     FoundBomSize = 0;
 
-    PWSTR szBuf = (PWSTR)FileContents;
     if (ContentSize <= 1 && BomSize <= 1)
     {
         return lmFileType;

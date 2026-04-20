@@ -160,10 +160,9 @@
     <ClInclude Include="EtwMonitor.h" />
     <ClInclude Include="EventMonitor.h" />
     <ClInclude Include="FileMonitor\FileMonitorUtilities.h" />
+    <ClInclude Include="JsonProcessor.h" />
     <ClInclude Include="LogFileMonitor.h" />
     <ClInclude Include="LogWriter.h" />
-    <ClInclude Include="Parser\ConfigFileParser.h" />
-    <ClInclude Include="Parser\JsonFileParser.h" />
     <ClInclude Include="Parser\LoggerSettings.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ProcessMonitor.h" />
@@ -172,11 +171,10 @@
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConfigFileParser.cpp" />
     <ClCompile Include="EtwMonitor.cpp" />
     <ClCompile Include="EventMonitor.cpp" />
-    <ClCompile Include="JsonFileParser.cpp" />
     <ClCompile Include="FileMonitor\FileMonitorUtilities.cpp" />
+    <ClCompile Include="JsonProcessor.cpp" />
     <ClCompile Include="LogFileMonitor.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp">

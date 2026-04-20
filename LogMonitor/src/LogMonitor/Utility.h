@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string>
+
 //
 // Define the AttributesMap, that is a map<wstring, void*> with case
 // insensitive keys
@@ -90,4 +92,8 @@ public:
     );
     
     static bool IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
+
+    static std::string WStringToString(_In_ const std::wstring& wstr);
+
+    static std::wstring StringToWString(_In_ const std::string& str);
 };

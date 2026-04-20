@@ -195,7 +195,7 @@ Example 1 (Application channel, verboseness: Error):
         "channels": [
           {
             "name": "system",
-            "level": " Information"
+            "level": "Information"
           }
         ]
       }

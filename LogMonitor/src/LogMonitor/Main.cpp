@@ -259,9 +259,9 @@ void StartMonitors(_In_ LoggerSettings& settings)
     std::vector<EventLogChannel> eventChannels;
     std::vector<ETWProvider> etwProviders;
 
-    bool eventMonMultiLine;
-    bool eventMonStartAtOldestRecord;
-    bool etwMonMultiLine;
+    bool eventMonMultiLine = false;
+    bool eventMonStartAtOldestRecord = false;
+    bool etwMonMultiLine = false;
 
     // Set the log format from settings
     logFormat = settings.LogFormat;
@@ -341,6 +341,7 @@ int __cdecl wmain(int argc, WCHAR *argv[])
 {
     std::wstring cmdline;
     PWCHAR configFileName = (PWCHAR)DEFAULT_CONFIG_FILENAME;
+    std::wstring resolvedConfigPath = DEFAULT_CONFIG_FILENAME;
     int exitcode = 0;
 
     g_hStopEvent = CreateEvent(nullptr,            // default security attributes
@@ -375,13 +376,46 @@ int __cdecl wmain(int argc, WCHAR *argv[])
         if (_wcsnicmp(argv[1], ARGV_OPTION_CONFIG_FILE, _countof(ARGV_OPTION_CONFIG_FILE)) == 0)
         {
             configFileName = argv[2];
+            std::wstring userConfigName = argv[2];
+
+            // Reject paths with traversal sequences or absolute path indicators
+            if (userConfigName.find(L"..") != std::wstring::npos ||
+                userConfigName.find(L'/') != std::wstring::npos ||
+                userConfigName.find(L'\\') != std::wstring::npos ||
+                userConfigName.find(L':') != std::wstring::npos)
+            {
+                logWriter.TraceError(L"Invalid configuration file name.");
+                return 0;
+            }
+
+            // Anchor the config file to the executable's directory
+            WCHAR modulePath[MAX_PATH] = {};
+            if (GetModuleFileNameW(nullptr, modulePath, _countof(modulePath)) == 0)
+            {
+                logWriter.TraceError(
+                    Utility::FormatString(L"Failed to get module path. Error: %d", GetLastError()).c_str()
+                );
+                return 0;
+            }
+            if (!PathRemoveFileSpecW(modulePath))
+            {
+                logWriter.TraceError(L"Failed to resolve executable directory.");
+                return 0;
+            }
+            WCHAR combinedPath[MAX_PATH] = {};
+            if (PathCombineW(combinedPath, modulePath, userConfigName.c_str()) == nullptr)
+            {
+                logWriter.TraceError(L"Failed to resolve configuration file path.");
+                return 0;
+            }
+            resolvedConfigPath = combinedPath;
             indexCommandArgument = 3;
         }
     }
 
     LoggerSettings settings;
     //read the config file
-    bool configFileReadSuccess = OpenConfigFile(configFileName, settings);
+    bool configFileReadSuccess = ReadConfigFile((PWCHAR)resolvedConfigPath.c_str(), settings);
 
     //start the monitors
     if (configFileReadSuccess)

@@ -175,64 +175,6 @@ DWORD CreateChildProcess(std::wstring& Cmdline)
 }
 
 ///
-/// Helper function for making a copy of the buffer.
-/// returns the index after the last copied byte.
-/// 
-size_t BufferCopy(char* dst, char* src, size_t start, size_t end = 0)
-{
-    char* ptr = src;
-    size_t i = start;
-    while (*ptr > 0 && i < BUFSIZE) {
-        // *ptr > 0: leave out the '\0' for the const char*
-        if (i == end && end > 0) {
-            break;
-        }
-        dst[i++] = *ptr;
-        ptr++;
-    }
-
-    return i;
-}
-
-///
-/// Helper function for making a copy of the buffer.
-/// For optimization, the function also "sanitizes" the string for JSON.
-/// returns the index after the last copied byte.
-/// 
-size_t BufferCopyAndSanitize(char* dst, char* src)
-{
-    char* ptr = src;
-    size_t i = 0;
-    while (*ptr > 0 && i < BUFSIZE) {
-        // *ptr > 0: leave out the '\0' for the const char*
-
-        // clean, eg. replace \r\n with \\r\\n (displayed as "\r\n")
-        if (*ptr == '\r') {
-            dst[i++] = '\\';
-            dst[i++] = 'r';
-        }
-        else if (*ptr == '\n') {
-            dst[i++] = '\\';
-            dst[i++] = 'n';
-        }
-        else if (*ptr == '\"') {
-            dst[i++] = '\\';
-            dst[i++] = '\"';
-        }
-        else if (*ptr == '\\' && i < BUFSIZE - 1 && *(ptr + 1) != '\\') {
-            dst[i++] = '\\';
-            dst[i++] = '\\';
-        }
-        else {
-            dst[i++] = *ptr;
-        }
-        ptr++;
-    }
-
-    return i;
-}
-
-///
 /// Helper function to format the stdout buffer to include additional
 /// details from the JSON schema.
 /// Returns the number of bytes written to the buffer.
@@ -256,13 +198,11 @@ std::string FormatCustomLog(const std::string& inputLine) {
     logEntry.source = L"Process";
     logEntry.currentTime = Utility::SystemTimeToString(st).c_str();
 
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> fromBytesConverter;
-    logEntry.message = fromBytesConverter.from_bytes(inputLine);
+    logEntry.message = Utility::StringToWString(inputLine);
 
     std::wstring formattedLog = Utility::FormatEventLineLog(processCustomLogFormat, &logEntry, logEntry.source);
 
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> toBytesConverter;
-    std::string logLine = toBytesConverter.to_bytes(formattedLog) + "\n";
+    std::string logLine = Utility::WStringToString(formattedLog) + "\n";
 
     return logLine;
 }
@@ -293,23 +233,6 @@ std::string FormatStandardLog(const std::string& inputLine) {
     return logLine;
 }
 
-
-/// 
-/// Helper function to clear the stdout buffer
-/// return number of bytes cleared
-/// 
-size_t ClearBuffer(char* chBuf) {
-    size_t count = 0;
-    char* ptr = chBuf;
-
-    while (count < BUFSIZE) {
-        *ptr = 0; // null char
-        ptr++;
-        count++;
-    }
-
-    return count;
-}
 
 ///
 /// Read output from the child process's pipe for STDOUT

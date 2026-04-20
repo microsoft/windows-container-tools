@@ -4,9 +4,12 @@
 //
 
 #include "pch.h"
+#include "Utility.h"  // NOLINT(build/include_subdir)
 #include <regex>
+#include <string>
 
 using namespace std;
+using json = nlohmann::json;
 
 
 ///
@@ -265,47 +268,34 @@ bool Utility::isJsonNumber(_In_ std::wstring& str)
 ///
 void Utility::SanitizeJson(_Inout_ std::wstring& str)
 {
-    size_t i = 0;
-    while (i < str.size()) {
-        auto sub = str.substr(i, 1);
-        auto s = str.substr(0, i + 1);
-        if (sub == L"\"") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\" && str.substr(i - 1, 1) != L"~")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\\"");
-                i++;
-            } else if (i > 0 && str.substr(i - 1, 1) == L"~") {
-                str.replace(i - 1, 1, L"");
-                i--;
-            }
+    try
+    {
+        std::string utf8 = Utility::WStringToString(str);
+
+        // Remove any embedded nulls
+        utf8.erase(std::find(utf8.begin(), utf8.end(), '\0'), utf8.end());
+
+        // Escape the string using JSON
+        json j = utf8;
+        std::string escapedUtf8 = j.dump();
+
+        // Strip the outer quotes
+        if (escapedUtf8.length() >= 2 &&
+            escapedUtf8.front() == '"' &&
+            escapedUtf8.back() == '"')
+        {
+            escapedUtf8 = escapedUtf8.substr(1, escapedUtf8.length() - 2);
         }
-        else if (sub == L"\\") {
-            if ((i < str.size() - 1 && str.substr(i + 1, 1) != L"\\")
-                || i == str.size() - 1)
-            {
-                str.replace(i, 1, L"\\\\");
-                i++;
-            }
-            else {
-                i += 2;
-            }
-        }
-        else if (sub == L"\n") {
-            if (i == 0 || str.substr(i - 1, 1) != L"\\") {
-                str.replace(i, 1, L"\\n");
-                i++;
-            }
-        }
-        else if (sub == L"\r") {
-            if ((i > 0 && str.substr(i - 1, 1) != L"\\")
-                || i == 0)
-            {
-                str.replace(i, 1, L"\\r");
-                i++;
-            }
-        }
-        i++;
+
+        // Convert back to wide string
+        str = Utility::StringToWString(escapedUtf8);
+    }
+    catch (const std::exception& e)
+    {
+        // Leave str unchanged — emitting unescaped content is better than losing the log line.
+        logWriter.TraceError(
+            Utility::FormatString(L"SanitizeJson failed: %S", e.what()).c_str()
+        );
     }
 }
 
@@ -438,3 +428,30 @@ bool Utility::IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat)
     return isCustomJSONFormat;
 }
 
+/// <summary>
+/// Function to convert wstring to string (UTF-8)
+/// </summary>
+/// <param name="wstr"></param>
+/// <returns></returns>
+std::string Utility::WStringToString(_In_ const std::wstring& wstr) {
+    if (wstr.empty()) return {};
+    int size = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (size <= 0) return {};
+    std::string result(size - 1, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], size, nullptr, nullptr);
+    return result;
+}
+
+/// <summary>
+/// Function to convert string to wstring (UTF-8)
+/// </summary>
+/// <param name="str">The input string to be converted</param>
+/// <returns>A wide string representation of the input string</returns>
+std::wstring Utility::StringToWString(_In_ const std::string& str) {
+    if (str.empty()) return {};
+    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    if (size <= 0) return {};
+    std::wstring result(size - 1, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], size);
+    return result;
+}

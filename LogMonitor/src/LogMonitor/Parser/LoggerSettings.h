@@ -170,6 +170,12 @@ typedef struct _EventLogChannel
     std::wstring Name;
     EventChannelLogLevel Level = EventChannelLogLevel::Error;
 
+    _EventLogChannel()
+        : Name(L""), Level(EventChannelLogLevel::Error) {}
+
+    _EventLogChannel(const std::wstring& name, EventChannelLogLevel level = EventChannelLogLevel::Error)
+        : Name(name), Level(level) {}
+
     inline bool IsValid()
     {
         return !Name.empty();

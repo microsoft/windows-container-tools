@@ -115,9 +115,6 @@ EtwMonitor::~EtwMonitor()
 
     if (waitResult != WAIT_OBJECT_0)
     {
-        HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
-            : HRESULT_FROM_WIN32(waitResult);
-
         //
         // This object is being destroyed, so kill the thread to avoid an
         // access to the invalid object.
@@ -303,14 +300,14 @@ EtwMonitor::StartEtwMonitorStatic(
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW monitor. %S", ex.what()).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW monitor").c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -387,7 +384,7 @@ EtwMonitor::StaticBufferEventCallback(
 ///
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
-    _In_ PEVENT_TRACE_LOGFILE Buffer
+    _In_ PEVENT_TRACE_LOGFILE /* Buffer */
     )
 {
     if (this->m_stopFlag)
@@ -409,8 +406,6 @@ DWORD
 EtwMonitor::StartEtwMonitor()
 {
     DWORD status = ERROR_SUCCESS;
-    EVT_HANDLE hSubscription = NULL;
-    const DWORD eventsCount = 2;
 
     //
     // Setup the trace
@@ -663,7 +658,9 @@ EtwMonitor::OnRecordEvent(
             }
             catch (std::bad_alloc& e) {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to allocate memory for event info (size=%lu).", bufferSize).c_str()
+                    Utility::FormatString(
+                        L"Failed to allocate memory for event info (size=%lu): %hs",
+                        bufferSize, e.what()).c_str()
                 );
                 status = ERROR_OUTOFMEMORY;
             }
