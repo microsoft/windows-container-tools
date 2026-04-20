@@ -32,14 +32,13 @@ bool ReadConfigFile(_In_ const PWCHAR jsonFile, _Out_ LoggerSettings& Config) {
     try {
         json parsedJson = json::parse(jsonString);
 
-        if (!parsedJson.contains("LogConfig")) {
+        const nlohmann::json* logConfigPtr = findJsonKeyCaseInsensitive(parsedJson, "LogConfig");
+        if (logConfigPtr == nullptr) {
             logWriter.TraceError(L"Missing 'LogConfig' section in JSON.");
             return false;
         }
 
-        const auto& logConfig = parsedJson["LogConfig"];
-
-        if (!processLogConfig(logConfig, Config)) {
+        if (!processLogConfig(*logConfigPtr, Config)) {
             logWriter.TraceError(L"Failed to fully process LogConfig.");
             return false;
         }
@@ -221,8 +220,21 @@ bool handleFileLog(
     }
     std::string customLogFormat = getJsonStringCaseInsensitive(source, "customLogFormat");
 
+    std::wstring directoryW = Utility::StringToWString(directory);
+    FileMonitorUtilities::ParseDirectoryValue(directoryW);
+
+    if (!FileMonitorUtilities::IsValidSourceFile(directoryW, includeSubdirs)) {
+        logWriter.TraceError(
+            Utility::FormatString(
+                L"Invalid File source: root directory cannot be monitored with includeSubdirectories=true. Directory: %s",
+                directoryW.c_str()
+            ).c_str()
+        );
+        return false;
+    }
+
     Attributes[JSON_TAG_DIRECTORY] = reinterpret_cast<void*>(
-        std::make_unique<std::wstring>(Utility::StringToWString(directory)).release()
+        std::make_unique<std::wstring>(std::move(directoryW)).release()
         );
     Attributes[JSON_TAG_FILTER] = reinterpret_cast<void*>(
         std::make_unique<std::wstring>(Utility::StringToWString(filter)).release()
@@ -283,27 +295,52 @@ bool handleETWLog(
         std::make_unique<std::wstring>(Utility::StringToWString(customLogFormat)).release()
         );
 
+    if (!source.contains("providers") || !source["providers"].is_array()) {
+        logWriter.TraceError(
+            L"Error parsing configuration file. "
+            L"Invalid ETW source: missing or invalid 'providers' array."
+        );
+        return false;
+    }
+
     std::vector<ETWProvider> etwProviders;
 
-    if (source.contains("providers") && source["providers"].is_array()) {
-        for (const auto& provider : source["providers"]) {
-            std::string providerName = getJsonStringCaseInsensitive(provider, "providerName", true);
-            std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid", true);
-            std::string level = getJsonStringCaseInsensitive(provider, "level", true);
+    for (const auto& provider : source["providers"]) {
+        std::string providerName = getJsonStringCaseInsensitive(provider, "providerName");
+        std::string providerGuid = getJsonStringCaseInsensitive(provider, "providerGuid");
+        std::string level = getJsonStringCaseInsensitive(provider, "level");
 
-            ETWProvider etwProvider;
-            etwProvider.ProviderName = Utility::StringToWString(providerName);
+        ETWProvider etwProvider;
+        etwProvider.ProviderName = Utility::StringToWString(providerName);
+        if (!providerGuid.empty()) {
             etwProvider.SetProviderGuid(Utility::StringToWString(providerGuid));
-            etwProvider.StringToLevel(Utility::StringToWString(level));
-
-            // Check if "keywords" exists and process it
-            if (provider.contains("keywords") && provider["keywords"].is_string()) {
-                std::string keywords = provider["keywords"].get<std::string>();
-                etwProvider.Keywords = wcstoull(Utility::StringToWString(keywords).c_str(), nullptr, 0);
-            }
-
-            etwProviders.push_back(std::move(etwProvider));
         }
+        if (!level.empty()) {
+            if (!etwProvider.StringToLevel(Utility::StringToWString(level))) {
+                logWriter.TraceWarning(
+                    Utility::FormatString(
+                        L"Error parsing configuration file. '%S' isn't a valid log level. Setting 'Error' level as default",
+                        level.c_str()
+                    ).c_str()
+                );
+            }
+        }
+
+        // Check if "keywords" exists and process it
+        if (provider.contains("keywords") && provider["keywords"].is_string()) {
+            std::string keywords = provider["keywords"].get<std::string>();
+            etwProvider.Keywords = wcstoull(Utility::StringToWString(keywords).c_str(), nullptr, 0);
+        }
+
+        if (!etwProvider.IsValid()) {
+            logWriter.TraceWarning(
+                L"Error parsing configuration file. Discarded invalid provider "
+                L"(it must have a non-empty 'providerName' or 'providerGuid')."
+            );
+            continue;
+        }
+
+        etwProviders.push_back(std::move(etwProvider));
     }
 
     // Store the ETW providers in Attributes.
@@ -315,7 +352,7 @@ bool handleETWLog(
     if (!SourceETW::Unwrap(Attributes, *sourceETW)) {
         logWriter.TraceError(
             L"Error parsing configuration file. "
-            L"Invalid ETW source (it must have a non-empty 'channels')"
+            L"Invalid ETW source: 'providers' must be a non-empty array."
         );
         return false;
     }
@@ -377,25 +414,21 @@ bool processLogConfig(_In_ const nlohmann::json& logConfig, _Out_ LoggerSettings
 
     const auto& obj = logConfig;
 
-    std::string logFormat;
-    if (obj.contains("logFormat") && obj["logFormat"].is_string()) {
-        logFormat = obj["logFormat"].get<std::string>();
-    }
-
-    if (!logFormat.empty()) {
-        Config.LogFormat = Utility::StringToWString(logFormat);
+    const nlohmann::json* logFormatPtr = findJsonKeyCaseInsensitive(obj, "logFormat");
+    if (logFormatPtr != nullptr && logFormatPtr->is_string()) {
+        Config.LogFormat = Utility::StringToWString(logFormatPtr->get<std::string>());
     } else {
-        logWriter.TraceError(L"LogFormat not found in LogConfig. Using default log format.");
+        logWriter.TraceWarning(L"LogFormat not found in LogConfig. Using default log format.");
     }
 
-    if (!obj.contains("sources") || !obj["sources"].is_array()) {
+    const nlohmann::json* sourcesPtr = findJsonKeyCaseInsensitive(obj, "sources");
+    if (sourcesPtr == nullptr || !sourcesPtr->is_array()) {
         logWriter.TraceError(L"Sources array not found or invalid in LogConfig.");
         return false;
     }
 
     // Process the sources array
-    const auto& sources = obj["sources"];
-    return processSources(sources, Config);
+    return processSources(*sourcesPtr, Config);
 }
 
 /// <summary>
@@ -434,16 +467,21 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
             continue;
         }
 
+        std::string sourceTypeLower = sourceType;
+        std::transform(sourceTypeLower.begin(), sourceTypeLower.end(),
+                       sourceTypeLower.begin(),
+                       [](unsigned char c) { return static_cast<char>(::tolower(c)); });
+
         AttributesMap sourceAttributes;
         bool parseSuccess = false;
 
-        if (sourceType == "EventLog") {
+        if (sourceTypeLower == "eventlog") {
             parseSuccess = handleEventLog(source, sourceAttributes, Config.Sources);
-        } else if (sourceType == "File") {
+        } else if (sourceTypeLower == "file") {
             parseSuccess = handleFileLog(source, sourceAttributes, Config.Sources);
-        } else if (sourceType == "ETW") {
+        } else if (sourceTypeLower == "etw") {
             parseSuccess = handleETWLog(source, sourceAttributes, Config.Sources);
-        } else if (sourceType == "Process") {
+        } else if (sourceTypeLower == "process") {
             parseSuccess = handleProcessLog(source, sourceAttributes, Config.Sources);
         } else {
             logWriter.TraceError(
@@ -471,15 +509,34 @@ bool processSources(_In_ const nlohmann::json& sources, _Out_ LoggerSettings& Co
 }
 
 /// <summary>
-/// Cleans up dynamically allocated memory in the Attributes map by deleting each non-null attribute pointer.
+/// Cleans up dynamically allocated memory in the Attributes map.
+/// Each value must be deleted through its actual type to avoid undefined behavior
+/// (deleting a void* does not invoke destructors for non-trivial types).
 /// </summary>
-/// <param name="Attributes">A map of attribute keys to pointers. </param>
+/// <param name="Attributes">A map of attribute keys to heap-allocated pointers.</param>
 void cleanupAttributes(_In_ AttributesMap& Attributes) {
-    for (auto attributePair : Attributes)
+    for (const auto& attributePair : Attributes)
     {
-        if (attributePair.second != nullptr)
-        {
-            delete attributePair.second;
+        if (attributePair.second == nullptr) {
+            continue;
+        }
+
+        const auto& key = attributePair.first;
+
+        if (key == JSON_TAG_START_AT_OLDEST_RECORD ||
+            key == JSON_TAG_FORMAT_MULTILINE ||
+            key == JSON_TAG_INCLUDE_SUBDIRECTORIES) {
+            delete static_cast<bool*>(attributePair.second);
+        } else if (key == JSON_TAG_CUSTOM_LOG_FORMAT ||
+                   key == JSON_TAG_DIRECTORY ||
+                   key == JSON_TAG_FILTER) {
+            delete static_cast<std::wstring*>(attributePair.second);
+        } else if (key == JSON_TAG_CHANNELS) {
+            delete static_cast<std::vector<EventLogChannel>*>(attributePair.second);
+        } else if (key == JSON_TAG_PROVIDERS) {
+            delete static_cast<std::vector<ETWProvider>*>(attributePair.second);
+        } else if (key == JSON_TAG_WAITINSECONDS) {
+            delete static_cast<std::double_t*>(attributePair.second);
         }
     }
 }
@@ -490,14 +547,33 @@ void cleanupAttributes(_In_ AttributesMap& Attributes) {
 /// <param name="obj">The JSON object to search for the key.</param>
 /// <param name="key">The key to search for in the JSON object, case-insensitive.</param>
 /// <returns>string value associated with the key if found </returns>
-std::string getJsonStringCaseInsensitive(
-    _In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
-    auto lowerKey = key;
-    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
+const nlohmann::json* findJsonKeyCaseInsensitive(
+    _In_ const nlohmann::json& obj, _In_ const std::string& key) {
+    auto toLowerChar = [](unsigned char c) { return static_cast<char>(::tolower(c)); };
+
+    std::string lowerKey = key;
+    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), toLowerChar);
 
     for (auto it = obj.begin(); it != obj.end(); ++it) {
         std::string currentKey = it.key();
-        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), ::tolower);
+        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), toLowerChar);
+        if (currentKey == lowerKey) {
+            return &it.value();
+        }
+    }
+    return nullptr;
+}
+
+std::string getJsonStringCaseInsensitive(
+    _In_ const nlohmann::json& obj, _In_ const std::string& key, _In_ bool required) {
+    auto toLowerChar = [](unsigned char c) { return static_cast<char>(::tolower(c)); };
+
+    auto lowerKey = key;
+    std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), toLowerChar);
+
+    for (auto it = obj.begin(); it != obj.end(); ++it) {
+        std::string currentKey = it.key();
+        std::transform(currentKey.begin(), currentKey.end(), currentKey.begin(), toLowerChar);
         if (currentKey == lowerKey && it.value().is_string()) {
             return it.value().get<std::string>();
         }

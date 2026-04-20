@@ -55,6 +55,11 @@ void cleanupAttributes(
     _In_ AttributesMap& Attributes
 );
 
+const nlohmann::json* findJsonKeyCaseInsensitive(
+    _In_ const nlohmann::json& obj,
+    _In_ const std::string& key
+);
+
 std::string getJsonStringCaseInsensitive(
     _In_ const nlohmann::json& obj,
     _In_ const std::string& key,
