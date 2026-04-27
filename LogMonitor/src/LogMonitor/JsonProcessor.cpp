@@ -3,13 +3,13 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
 #include "JsonProcessor.h"  // NOLINT(build/include_subdir)
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
+#include <algorithm>  // NOLINT(build/include_order)
+#include <memory>  // NOLINT(build/include_order)
+#include <string>  // NOLINT(build/include_order)
+#include <utility>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 #ifdef _WIN32
 #include <string.h>
@@ -226,7 +226,8 @@ bool handleFileLog(
     if (!FileMonitorUtilities::IsValidSourceFile(directoryW, includeSubdirs)) {
         logWriter.TraceError(
             Utility::FormatString(
-                L"Invalid File source: root directory cannot be monitored with includeSubdirectories=true. Directory: %s",
+                L"Invalid File source: root directory cannot be monitored with"
+                L" includeSubdirectories=true. Directory: %s",
                 directoryW.c_str()
             ).c_str()
         );
@@ -319,7 +320,8 @@ bool handleETWLog(
             if (!etwProvider.StringToLevel(Utility::StringToWString(level))) {
                 logWriter.TraceWarning(
                     Utility::FormatString(
-                        L"Error parsing configuration file. '%S' isn't a valid log level. Setting 'Error' level as default",
+                        L"Error parsing configuration file. '%S' isn't a valid log level."
+                        L" Setting 'Error' level as default",
                         level.c_str()
                     ).c_str()
                 );

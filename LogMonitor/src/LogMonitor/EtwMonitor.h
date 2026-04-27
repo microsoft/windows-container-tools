@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 typedef LPTSTR(NTAPI* PIPV6ADDRTOSTRING)(
     const IN6_ADDR* Addr,
     LPTSTR S
@@ -30,7 +33,7 @@ struct EtwLogEntry {
 
 class EtwMonitor final
 {
-public:
+ public:
     EtwMonitor() = delete;
 
     EtwMonitor(
@@ -43,7 +46,7 @@ public:
 
     static std::wstring EtwFieldsMapping(_In_ std::wstring etwFields, _In_ void* pLogEntryData);
 
-private:
+ private:
     static constexpr int ETW_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
 
     std::vector<ETWProvider> m_providersConfig;

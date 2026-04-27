@@ -3,8 +3,8 @@
 // Licensed under the MIT license.
 //
 
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef LOGMONITOR_SRC_LOGMONITOR_VERSION_H_
+#define LOGMONITOR_SRC_LOGMONITOR_VERSION_H_
 
 #define LM_MAJORNUMBER          2
 #define LM_MINORNUMBER          1
@@ -13,4 +13,4 @@
 // major.minor.patch
 // #define LM_BUILDMINORVERSION    0
 
-#endif
+#endif  // LOGMONITOR_SRC_LOGMONITOR_VERSION_H_

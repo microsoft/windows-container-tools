@@ -3,8 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
-#include <regex>
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "LogFileMonitor.h"  // NOLINT(build/include_subdir)
+#include <regex>  // NOLINT(build/include_order)
 
 using namespace std;
 
@@ -346,7 +347,7 @@ LogFileMonitor::StartLogFileMonitor()
     {
         m_readLogFilesFromStart = true;
     }
- 
+
     m_logDirHandle = logDirHandle;
 
     //
@@ -496,7 +497,8 @@ LogFileMonitor::StartLogFileMonitor()
                     status = GetLastError();
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"Failed to monitor log directory changes. Wait operation failed. Log directory: %ws, Error: %d",
+                            L"Failed to monitor log directory changes."
+                            L" Wait operation failed. Log directory: %ws, Error: %d",
                             m_logDirectory.c_str(),
                             status
                         ).c_str()
@@ -786,7 +788,8 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
         {
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. Error: %lu",
+                    L"Failed to monitor log directory changes."
+                    L" Log files in a directory %s will not be monitored. Error: %lu",
                     pThis->m_logDirectory.c_str(),
                     status
                 ).c_str()
@@ -860,7 +863,7 @@ LogFileMonitor::LogFilesChangeHandler()
     if (!SetWaitableTimer(timerEvent, &liDueTime, 0, NULL, NULL, 0))
     {
         status = GetLastError();
-        
+
         logWriter.TraceError(
             Utility::FormatString(
                 L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
@@ -1014,7 +1017,8 @@ LogFileMonitor::LogFilesChangeHandler()
 
                 logWriter.TraceError(
                     Utility::FormatString(
-                        L"Failed to wait on directory change notification events to monitor log file changes in directory %s. Error: %lu",
+                        L"Failed to wait on directory change notification events"
+                        L" to monitor log file changes in directory %s. Error: %lu",
                         m_logDirectory.c_str(),
                         status
                     ).c_str()

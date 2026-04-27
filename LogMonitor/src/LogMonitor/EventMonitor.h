@@ -5,10 +5,11 @@
 
 #pragma once
 
+#include <vector>
+
 class EventMonitor final
 {
-public:
-
+ public:
     EventMonitor() = delete;
 
     EventMonitor(
@@ -23,7 +24,7 @@ public:
 
     static std::wstring EventFieldsMapping(_In_ std::wstring eventField, _In_ void* pLogEntryData);
 
-private:
+ private:
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int EVENT_ARRAY_SIZE = 10;
 

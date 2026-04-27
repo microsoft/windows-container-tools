@@ -3,6 +3,9 @@
 // Licensed under the MIT license.
 //
 
+#ifndef LOGMONITOR_SRC_LOGMONITOR_RESOURCE_H_
+#define LOGMONITOR_SRC_LOGMONITOR_RESOURCE_H_
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by LogMonitor.rc
@@ -17,3 +20,5 @@
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
+
+#endif  // LOGMONITOR_SRC_LOGMONITOR_RESOURCE_H_

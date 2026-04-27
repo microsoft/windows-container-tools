@@ -3,10 +3,10 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
 #include "Utility.h"  // NOLINT(build/include_subdir)
-#include <regex>
-#include <string>
+#include <regex>  // NOLINT(build/include_order)
+#include <string>  // NOLINT(build/include_order)
 
 using namespace std;
 using json = nlohmann::json;
@@ -250,11 +250,11 @@ std::wstring Utility::ReplaceAll(_In_ std::wstring Str, _In_ const std::wstring&
 }
 
 
-/// 
+///
 /// helper function for a basic check if a string is a Number (JSON)
 /// as per the JSON spec - https://www.json.org/json-en.html
 /// only numbers not covered are those in scientific e-notation
-/// 
+///
 bool Utility::isJsonNumber(_In_ std::wstring& str)
 {
     wregex isNumber(L"(^\\-?\\d+$)|(^\\-?\\d+\\.\\d+)$");

@@ -3,8 +3,8 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
-#include "Version.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "Version.h"  // NOLINT(build/include_subdir)
 
 using namespace std;
 
