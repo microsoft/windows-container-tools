@@ -4,7 +4,7 @@
 //
 
 #include "pch.h"  // NOLINT(build/include_subdir)
-#include "FileMonitor/FileMonitorUtilities.h"  // NOLINT(build/include_subdir)
+#include "FileMonitorUtilities.h"  // NOLINT(build/include_subdir)
 #include <regex>  // NOLINT(build/include_order)
 
 /**
