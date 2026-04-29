@@ -5,9 +5,11 @@
 
 #pragma once
 
+#include <cstdio>
+
 class LogWriter final
 {
-public:
+ public:
     LogWriter()
     {
         InitializeSRWLock(&m_stdoutLock);
@@ -26,7 +28,7 @@ public:
 
     ~LogWriter() {}
 
-private:
+ private:
     SRWLOCK m_stdoutLock;
     bool m_isConsole;
 
@@ -38,7 +40,7 @@ private:
         }
     }
 
-public :
+ public:
     bool WriteLog(
         _In_ HANDLE       FileHandle,
         _In_ LPCVOID      Buffer,

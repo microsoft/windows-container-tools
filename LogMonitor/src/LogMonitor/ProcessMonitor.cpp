@@ -3,7 +3,8 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "ProcessMonitor.h"  // NOLINT(build/include_subdir)
 
 using namespace std;
 

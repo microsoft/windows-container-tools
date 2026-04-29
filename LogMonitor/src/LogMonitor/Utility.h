@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 
 //
@@ -22,8 +23,7 @@ typedef std::map<std::wstring, void*, CaseInsensitiveWideString> AttributesMap;
 
 class Utility final
 {
-public:
-
+ public:
     static const int WAIT_INTERVAL = 15;
 
     static std::wstring SystemTimeToString(
@@ -90,7 +90,7 @@ public:
         _In_ void* pLogEntry,
         _In_ std::wstring sourceType
     );
-    
+
     static bool IsCustomJsonFormat(_Inout_ std::wstring& customLogFormat);
 
     static std::string WStringToString(_In_ const std::wstring& wstr);

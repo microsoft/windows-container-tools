@@ -3,10 +3,10 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "EventMonitor.h"  // NOLINT(build/include_subdir)
 
 using namespace std;
-
 
 ///
 /// EventMonitor.cpp
@@ -79,6 +79,7 @@ EventMonitor::~EventMonitor()
 
         if (waitResult != WAIT_OBJECT_0)
         {
+            // Wait failed or timed out
         }
     }
 
@@ -156,7 +157,7 @@ EventMonitor::StartEventMonitor()
     // Order stop event first so that stop is prioritized if both events are already signalled (changes
     // are available but stop has been called).
     //
-    HANDLE aWaitHandles[eventsCount];
+    HANDLE aWaitHandles[2];
 
     aWaitHandles[0] = m_stopEvent;
 
@@ -193,7 +194,9 @@ EventMonitor::StartEventMonitor()
         status = GetLastError();
 
         if (ERROR_EVT_CHANNEL_NOT_FOUND == status)
-            logWriter.TraceError(L"Failed to subscribe to event log channel. The specified event channel was not found.");
+            logWriter.TraceError(
+                L"Failed to subscribe to event log channel."
+                L" The specified event channel was not found.");
         else if (ERROR_EVT_INVALID_QUERY == status)
             logWriter.TraceError(
                 Utility::FormatString(
@@ -232,7 +235,8 @@ EventMonitor::StartEventMonitor()
                 {
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"Failed to subscribe to event log channel. Wait operation on event handle failed. Error: %lu.",
+                            L"Failed to subscribe to event log channel."
+                            L" Wait operation on event handle failed. Error: %lu.",
                             GetLastError()).c_str()
                     );
                 }
@@ -502,7 +506,9 @@ EventMonitor::PrintEvent(
             // Extract the variant values for each queried property. If the variant failed to get a valid type
             // set a default value.
             //
-            std::wstring providerName = (EvtVarTypeString != variants[EvtSystemProviderName].Type) ? L"" : variants[EvtSystemProviderName].StringVal;
+            std::wstring providerName =
+                (EvtVarTypeString != variants[EvtSystemProviderName].Type)
+                    ? L"" : variants[EvtSystemProviderName].StringVal;
             std::wstring channelName = (EvtVarTypeString != variants[1].Type) ? L"" : variants[1].StringVal;
             pLogEntry->eventId = (EvtVarTypeUInt16 != variants[2].Type) ? 0 : variants[2].UInt16Val;
             UINT8 level = (EvtVarTypeByte != variants[3].Type) ? 0 : variants[3].ByteVal;

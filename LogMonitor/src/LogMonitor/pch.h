@@ -2,13 +2,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-#ifndef PCH_H
-#define PCH_H
+#ifndef LOGMONITOR_SRC_LOGMONITOR_PCH_H_
+#define LOGMONITOR_SRC_LOGMONITOR_PCH_H_
 
 // TODO(annandaa): reorder the header files as per convention.
 // currently there are some implicit dependencies, things break when
 // you try to reorder.
 
+// NOLINTBEGIN(build/include_order)
 #include <functional>
 #include <conio.h>
 #include <stdio.h>
@@ -45,19 +46,20 @@
 #include <locale>
 #include <codecvt>
 #include "shlwapi.h"
-#include <io.h> 
+#include <io.h>
 #include <fcntl.h>
+// NOLINTEND(build/include_order)
 #include <nlohmann/json.hpp>
-#include "Utility.h"
-#include "Parser/ConfigFileParser.h"
-#include "Parser/LoggerSettings.h"
-#include "Parser/JsonFileParser.h"
-#include "LogWriter.h"
-#include "EtwMonitor.h"
-#include "EventMonitor.h"
-#include "FileMonitor/FileMonitorUtilities.h"
-#include "LogFileMonitor.h"
-#include "ProcessMonitor.h"
-#include "JsonProcessor.h"
+#include "Utility.h"  // NOLINT(build/include_subdir)
+#include "Parser/ConfigFileParser.h"  // NOLINT(build/include_subdir)
+#include "Parser/LoggerSettings.h"  // NOLINT(build/include_subdir)
+#include "Parser/JsonFileParser.h"  // NOLINT(build/include_subdir)
+#include "LogWriter.h"  // NOLINT(build/include_subdir)
+#include "EtwMonitor.h"  // NOLINT(build/include_subdir)
+#include "EventMonitor.h"  // NOLINT(build/include_subdir)
+#include "FileMonitor/FileMonitorUtilities.h"  // NOLINT(build/include_subdir)
+#include "LogFileMonitor.h"  // NOLINT(build/include_subdir)
+#include "ProcessMonitor.h"  // NOLINT(build/include_subdir)
+#include "JsonProcessor.h"  // NOLINT(build/include_subdir)
 
-#endif //PCH_H
+#endif  // LOGMONITOR_SRC_LOGMONITOR_PCH_H_

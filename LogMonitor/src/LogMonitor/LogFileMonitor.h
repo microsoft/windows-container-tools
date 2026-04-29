@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include <vector>
+#include <map>
 #include <memory>
+#include <queue>
+#include <string>
+#include <vector>
 
 #define REVERSE_BYTE_ORDER_MARK 0xFFFE
 #define BYTE_ORDER_MARK 0xFEFF
@@ -56,7 +59,7 @@ struct DirChangeNotificationEvent
 
 class LogFileMonitor final
 {
-public:
+ public:
     LogFileMonitor() = delete;
 
     LogFileMonitor(
@@ -71,7 +74,7 @@ public:
 
     static std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
 
-private:
+ private:
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int RECORDS_BUFFER_SIZE_BYTES = 8 * 1024;
 
