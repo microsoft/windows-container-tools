@@ -3,7 +3,8 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "EtwMonitor.h"  // NOLINT(build/include_subdir)
 
 #define MAX_NAME 256
 
@@ -77,12 +78,17 @@ EtwMonitor::~EtwMonitor()
         {
         case ERROR_INVALID_PARAMETER:
             logWriter.TraceWarning(
-                Utility::FormatString(L"Invalid TraceHandle or InstanceName is Null or both. Error: %lu", status).c_str()
+                Utility::FormatString(
+                    L"Invalid TraceHandle or InstanceName is Null or both. Error: %lu",
+                    status).c_str()
             );
             break;
         case ERROR_ACCESS_DENIED:
             logWriter.TraceWarning(
-                Utility::FormatString(L"Only users running with elevated administrative privileges can control event tracing sessions. Error: %lu", status).c_str()
+                Utility::FormatString(
+                    L"Only users running with elevated administrative privileges can control"
+                    L" event tracing sessions. Error: %lu",
+                    status).c_str()
             );
             break;
         case ERROR_WMI_INSTANCE_NOT_FOUND:
@@ -97,12 +103,15 @@ EtwMonitor::~EtwMonitor()
             break;
         default:
             logWriter.TraceWarning(
-                Utility::FormatString(L"Another issue might be preventing the stop of the event tracing session. Error: %lu", status).c_str()
+                Utility::FormatString(
+                    L"Another issue might be preventing the stop of the"
+                    L" event tracing session. Error: %lu",
+                    status).c_str()
             );
             break;
         }
     }
-    
+
 
     CloseTrace(m_startTraceHandle);
 
@@ -115,9 +124,6 @@ EtwMonitor::~EtwMonitor()
 
     if (waitResult != WAIT_OBJECT_0)
     {
-        HRESULT hr = (waitResult == WAIT_FAILED) ? HRESULT_FROM_WIN32(GetLastError())
-            : HRESULT_FROM_WIN32(waitResult);
-
         //
         // This object is being destroyed, so kill the thread to avoid an
         // access to the invalid object.
@@ -303,14 +309,14 @@ EtwMonitor::StartEtwMonitorStatic(
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW monitor. %S", ex.what()).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to start ETW monitor").c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -387,7 +393,7 @@ EtwMonitor::StaticBufferEventCallback(
 ///
 BOOL WINAPI
 EtwMonitor::BufferEventCallback(
-    _In_ PEVENT_TRACE_LOGFILE Buffer
+    _In_ PEVENT_TRACE_LOGFILE /* Buffer */
     )
 {
     if (this->m_stopFlag)
@@ -409,8 +415,6 @@ DWORD
 EtwMonitor::StartEtwMonitor()
 {
     DWORD status = ERROR_SUCCESS;
-    EVT_HANDLE hSubscription = NULL;
-    const DWORD eventsCount = 2;
 
     //
     // Setup the trace
@@ -596,10 +600,14 @@ EtwMonitor::StartTraceSession(
                     logWriter.TraceError(L"You cannot update the level when the provider is not registered.");
                     break;
                 case ERROR_NO_SYSTEM_RESOURCES:
-                    logWriter.TraceError(L"Exceeded the number of ETW trace sessions that the provider can enable.");
+                    logWriter.TraceError(
+                        L"Exceeded the number of ETW trace sessions that"
+                        L" the provider can enable.");
                     break;
                 case ERROR_ACCESS_DENIED:
-                    logWriter.TraceError(L"Only users with administrative privileges can enable event providers to a cross-process session.");
+                    logWriter.TraceError(
+                        L"Only users with administrative privileges can enable"
+                        L" event providers to a cross-process session.");
                     break;
                 default:
                     logWriter.TraceError(
@@ -663,7 +671,9 @@ EtwMonitor::OnRecordEvent(
             }
             catch (std::bad_alloc& e) {
                 logWriter.TraceError(
-                    Utility::FormatString(L"Failed to allocate memory for event info (size=%lu).", bufferSize).c_str()
+                    Utility::FormatString(
+                        L"Failed to allocate memory for event info (size=%lu): %hs",
+                        bufferSize, e.what()).c_str()
                 );
                 status = ERROR_OUTOFMEMORY;
             }
@@ -813,7 +823,7 @@ EtwMonitor::PrintEvent(
     )
 {
     DWORD status = ERROR_SUCCESS;
-    
+
     // struct to hold the Etw log entry and later format print
     EtwLogEntry logEntry;
     EtwLogEntry* pLogEntry = &logEntry;

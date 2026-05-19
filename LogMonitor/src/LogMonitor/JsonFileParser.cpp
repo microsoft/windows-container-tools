@@ -3,8 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
-#include <regex>
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "Parser/JsonFileParser.h"  // NOLINT(build/include_subdir)
+#include <regex>  // NOLINT(build/include_order)
 
 /// JsonFileParser.cpp
 ///

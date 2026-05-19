@@ -60,6 +60,7 @@ namespace UtilityTests
             std::wstring expect = L"say, \\\"hello\\\"";
             Utility::SanitizeJson(str);
             Assert::IsTrue(str == expect, L"should escape \"");
+
             str = L"\"hello\"";
             expect = L"\\\"hello\\\"";
             Utility::SanitizeJson(str);
@@ -69,6 +70,7 @@ namespace UtilityTests
             expect = L"hello\\r\\nworld";
             Utility::SanitizeJson(str);
             Assert::IsTrue(str == expect, L"should escape \r and \n");
+
             str = L"\r\nHello\r\n";
             expect = L"\\r\\nHello\\r\\n";
             Utility::SanitizeJson(str);
@@ -78,6 +80,7 @@ namespace UtilityTests
             expect = L"\\\\Driver\\\\XX\\\\";
             Utility::SanitizeJson(str);
             Assert::IsTrue(str == expect, L"should escape \\");
+
             str = L"C:\\Drive\\XX";
             expect = L"C:\\\\Drive\\\\XX";
             Utility::SanitizeJson(str);

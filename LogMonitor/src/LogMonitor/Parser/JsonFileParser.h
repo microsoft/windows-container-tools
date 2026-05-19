@@ -7,7 +7,7 @@
 
 class JsonFileParser
 {
-public:
+ public:
     JsonFileParser(_In_ const wchar_t* BufferStart, size_t BufferLength)
         : m_buffer(BufferStart),
           m_bufferLength(BufferLength)
@@ -18,7 +18,7 @@ public:
         AdvanceBufferPointer(0);
     }
 
-    JsonFileParser(_In_ const std::wstring& JsonString)
+    explicit JsonFileParser(_In_ const std::wstring& JsonString)
         : JsonFileParser(JsonString.data(), JsonString.size())
     {
     }
@@ -55,7 +55,7 @@ public:
 
     void SkipValue();
 
-private:
+ private:
     //
     // Buffer to parse
     //

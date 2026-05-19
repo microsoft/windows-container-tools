@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <vector>
+
 #define DEFAULT_CONFIG_FILENAME L"C:\\LogMonitor\\LogMonitorConfig.json"
 
 #define JSON_TAG_LOG_CONFIG L"LogConfig"
@@ -159,7 +161,7 @@ const LPCWSTR LogSourceTypeNames[] = {
 ///
 class LogSource
 {
-public:
+ public:
     LogSourceType Type;
 };
 
@@ -170,6 +172,12 @@ typedef struct _EventLogChannel
 {
     std::wstring Name;
     EventChannelLogLevel Level = EventChannelLogLevel::Error;
+
+    _EventLogChannel()
+        : Name(L""), Level(EventChannelLogLevel::Error) {}
+
+    _EventLogChannel(const std::wstring& name, EventChannelLogLevel level = EventChannelLogLevel::Error)
+        : Name(name), Level(level) {}
 
     inline bool IsValid()
     {
@@ -200,7 +208,7 @@ typedef struct _EventLogChannel
 ///
 class SourceEventLog : LogSource
 {
-public:
+ public:
     std::vector<EventLogChannel> Channels;
     bool EventFormatMultiLine = true;
     bool StartAtOldestRecord = false;
@@ -262,7 +270,7 @@ public:
 ///
 class SourceFile : LogSource
 {
-public:
+ public:
     std::wstring Directory;
     std::wstring Filter;
     bool IncludeSubdirectories = false;
@@ -346,7 +354,7 @@ public:
 ///
 class ETWProvider
 {
-public:
+ public:
     std::wstring ProviderName;
     std::wstring ProviderGuidStr;
     GUID ProviderGuid = { 0 };
@@ -400,7 +408,7 @@ public:
 ///
 class SourceETW : LogSource
 {
-public:
+ public:
     std::vector<ETWProvider> Providers;
     bool EventFormatMultiLine = true;
     std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Severity%] "
@@ -455,7 +463,7 @@ public:
 ///
 class SourceProcess : LogSource
 {
-    public:
+ public:
         std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%Message%]";
 
         static bool Unwrap(

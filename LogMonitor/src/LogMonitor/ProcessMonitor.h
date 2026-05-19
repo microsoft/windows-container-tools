@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string>
+
 struct ProcessLogEntry {
     std::wstring source;
     std::wstring currentTime;
@@ -31,7 +33,7 @@ static size_t BufferCopyAndSanitize(char* dst, char* src);
 
 class ProcessMonitor final
 {
-public:
+ public:
     ProcessMonitor();
 
     static std::wstring ProcessFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);

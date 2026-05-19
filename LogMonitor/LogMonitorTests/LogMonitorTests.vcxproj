@@ -166,6 +166,7 @@
   <ItemGroup>
     <ClCompile Include="EtwMonitorTests.cpp" />
     <ClCompile Include="EventMonitorTests.cpp" />
+	<ClCompile Include="JsonProcessorTests.cpp" />
     <ClCompile Include="LogFileMonitorTests.cpp" />
     <ClCompile Include="LogMonitorTests.cpp" />
     <ClCompile Include="pch.cpp">
@@ -174,7 +175,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ConfigFileParserTests.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="UtilityTests.cpp" />
   </ItemGroup>

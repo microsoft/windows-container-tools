@@ -172,7 +172,7 @@ namespace LogMonitorTests
                 wchar_t* folder = new wchar_t[directoryPath.length() + 3];
                 ::ZeroMemory(folder, (directoryPath.length() + 3) * sizeof(folder[0]));
 
-                size_t numCopied = directoryPath.copy(folder, directoryPath.length());
+                directoryPath.copy(folder, directoryPath.length());
 
                 SHFILEOPSTRUCT fileOp = {
                    NULL,
@@ -185,7 +185,7 @@ namespace LogMonitorTests
                    NULL
                 };
 
-                long hr = SHFileOperation(&fileOp);
+                SHFileOperation(&fileOp);
 
                 delete[] folder;
             }

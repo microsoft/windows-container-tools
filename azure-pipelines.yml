@@ -2,8 +2,8 @@ trigger:
 - main
 
 pool:
-    vmImage: 'windows-2022'  # name of the pool to run this job in
-    demands: 
+    vmImage: 'windows-2022'
+    demands:
       - msbuild
       - visualstudio
       - vstest
@@ -16,6 +16,19 @@ variables:
 jobs:
   - job: x64_build
     steps:
+    - task: PowerShell@2
+      displayName: 'Install nlohmann_json'
+      env:
+        VCPKG_BINARY_SOURCES: 'clear'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $vcpkgRoot = "$(Build.SourcesDirectory)\vcpkg"
+          git clone https://github.com/microsoft/vcpkg.git $vcpkgRoot
+          & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
+          & "$vcpkgRoot\vcpkg.exe" install nlohmann-json:x64-windows --no-binarycaching
+          & "$vcpkgRoot\vcpkg.exe" integrate install
+
     - task: VSBuild@1
       inputs:
         platform: 'x64'
@@ -37,49 +50,62 @@ jobs:
       inputs:
         testSelector: 'testAssemblies'
         testAssemblyVer2: '**\*test*.dll'
-        searchFolder: '$(System.DefaultWorkingDirectory)' 
+        searchFolder: '$(System.DefaultWorkingDirectory)'
         runOnlyImpactedTests: false
         runInParallel: false
         rerunFailedTests: true
         rerunMaxAttempts: 3
-    
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: '$(Build.SourcesDirectory)\LogMonitor\x64\Release\'
         artifactType: 'pipeline'
         artifactName: '64-bit'
-    
+
   - job: x86_build
     steps:
-      - task: VSBuild@1
-        inputs:
-          platform: 'x86'
-          solution: '$(solution)'
-          configuration: '$(buildConfiguration)'
+    - task: PowerShell@2
+      displayName: 'Install nlohmann_json'
+      env:
+        VCPKG_BINARY_SOURCES: 'clear'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $vcpkgRoot = "$(Build.SourcesDirectory)\vcpkg"
+          git clone https://github.com/microsoft/vcpkg.git $vcpkgRoot
+          & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
+          & "$vcpkgRoot\vcpkg.exe" install nlohmann-json:x86-windows --no-binarycaching
+          & "$vcpkgRoot\vcpkg.exe" integrate install
 
-      - task: ComponentGovernanceComponentDetection@0
-        inputs:
-          scanType: 'LogOnly'
-          verbosity: 'Verbose'
-          alertWarningLevel: 'High'
+    - task: VSBuild@1
+      inputs:
+        platform: 'x86'
+        solution: '$(solution)'
+        configuration: '$(buildConfiguration)'
 
-      - task: VisualStudioTestPlatformInstaller@1
-        inputs:
-          packageFeedSelector: 'nugetOrg'
-          versionSelector: 'latestPreRelease'
+    - task: ComponentGovernanceComponentDetection@0
+      inputs:
+        scanType: 'LogOnly'
+        verbosity: 'Verbose'
+        alertWarningLevel: 'High'
 
-      - task: VSTest@2
-        inputs:
-          testSelector: 'testAssemblies'
-          testAssemblyVer2: '**\*test*.dll'
-          searchFolder: '$(System.DefaultWorkingDirectory)' 
-          runOnlyImpactedTests: false
-          runInParallel: false
-          rerunFailedTests: true
-          rerunMaxAttempts: 3
-      
-      - task: PublishPipelineArtifact@1
-        inputs:
-          targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
-          artifactType: 'pipeline'
-          artifactName: '32-bit'
+    - task: VisualStudioTestPlatformInstaller@1
+      inputs:
+        packageFeedSelector: 'nugetOrg'
+        versionSelector: 'latestPreRelease'
+
+    - task: VSTest@2
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: '**\*test*.dll'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        runOnlyImpactedTests: false
+        runInParallel: false
+        rerunFailedTests: true
+        rerunMaxAttempts: 3
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)\LogMonitor\Release\'
+        artifactType: 'pipeline'
+        artifactName: '32-bit'

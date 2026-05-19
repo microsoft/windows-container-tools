@@ -3,8 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
-#include <regex>
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "LogFileMonitor.h"  // NOLINT(build/include_subdir)
+#include <regex>  // NOLINT(build/include_order)
 
 using namespace std;
 
@@ -241,7 +242,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
                 ex.what()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
@@ -251,7 +252,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
                 pThis->m_logDirectory.c_str()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -349,7 +350,7 @@ LogFileMonitor::StartLogFileMonitor()
     {
         m_readLogFilesFromStart = true;
     }
- 
+
     m_logDirHandle = logDirHandle;
 
     //
@@ -499,7 +500,8 @@ LogFileMonitor::StartLogFileMonitor()
                     status = GetLastError();
                     logWriter.TraceError(
                         Utility::FormatString(
-                            L"Failed to monitor log directory changes. Wait operation failed. Log directory: %ws, Error: %d",
+                            L"Failed to monitor log directory changes."
+                            L" Wait operation failed. Log directory: %ws, Error: %d",
                             m_logDirectory.c_str(),
                             status
                         ).c_str()
@@ -789,7 +791,8 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
         {
             logWriter.TraceError(
                 Utility::FormatString(
-                    L"Failed to monitor log directory changes. Log files in a directory %s will not be monitored. Error: %lu",
+                    L"Failed to monitor log directory changes."
+                    L" Log files in a directory %s will not be monitored. Error: %lu",
                     pThis->m_logDirectory.c_str(),
                     status
                 ).c_str()
@@ -806,7 +809,7 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
                 ex.what()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
     catch (...)
     {
@@ -816,7 +819,7 @@ LogFileMonitor::LogFilesChangeHandlerStatic(
                 pThis->m_logDirectory.c_str()
             ).c_str()
         );
-        return E_FAIL;
+        return ERROR_UNHANDLED_EXCEPTION;
     }
 }
 
@@ -863,7 +866,7 @@ LogFileMonitor::LogFilesChangeHandler()
     if (!SetWaitableTimer(timerEvent, &liDueTime, 0, NULL, NULL, 0))
     {
         status = GetLastError();
-        
+
         logWriter.TraceError(
             Utility::FormatString(
                 L"Failed to set timer object to monitor log file changes in directory %s. Error: %lu",
@@ -1017,7 +1020,8 @@ LogFileMonitor::LogFilesChangeHandler()
 
                 logWriter.TraceError(
                     Utility::FormatString(
-                        L"Failed to wait on directory change notification events to monitor log file changes in directory %s. Error: %lu",
+                        L"Failed to wait on directory change notification events"
+                        L" to monitor log file changes in directory %s. Error: %lu",
                         m_logDirectory.c_str(),
                         status
                     ).c_str()
@@ -1343,7 +1347,7 @@ LogFileMonitor::RenameFileInMaps(
 
 DWORD
 LogFileMonitor::LogFileReInitEventHandler(
-    _In_ DirChangeNotificationEvent& Event
+    _In_ DirChangeNotificationEvent& /* Event */
     )
 {
     DWORD status = ERROR_SUCCESS;
@@ -1880,7 +1884,6 @@ LogFileMonitor::FileTypeFromBuffer(
     LM_FILETYPE lmFileType = LM_FILETYPE::FileTypeUnknown;
     FoundBomSize = 0;
 
-    PWSTR szBuf = (PWSTR)FileContents;
     if (ContentSize <= 1 && BomSize <= 1)
     {
         return lmFileType;

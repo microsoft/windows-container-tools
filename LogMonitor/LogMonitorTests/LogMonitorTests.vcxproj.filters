@@ -21,9 +21,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigFileParserTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LogFileMonitorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -37,6 +34,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UtilityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+	<ClCompile Include="JsonProcessorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

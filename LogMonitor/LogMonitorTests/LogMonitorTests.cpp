@@ -5,10 +5,10 @@
 
 #include "pch.h"
 
-#include "../src/LogMonitor/ConfigFileParser.cpp"
 #include "../src/LogMonitor/EtwMonitor.cpp"
 #include "../src/LogMonitor/EventMonitor.cpp"
 #include "../src/LogMonitor/JsonFileParser.cpp"
+#include "../src/LogMonitor/JsonProcessor.cpp"
 #include "../src/LogMonitor/FileMonitor/FileMonitorUtilities.cpp"
 #include "../src/LogMonitor/LogFileMonitor.cpp"
 #include "../src/LogMonitor/ProcessMonitor.cpp"
