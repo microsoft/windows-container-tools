@@ -65,7 +65,8 @@ public:
         _In_ bool IncludeSubfolders,
         _In_ const std::double_t &WaitInSeconds,
         _In_ std::wstring LogFormat,
-        _In_ std::wstring CustomLogFormat);
+        _In_ std::wstring CustomLogFormat,
+        _In_ bool EnableTruncationRecovery);
 
     ~LogFileMonitor();
 
@@ -82,6 +83,7 @@ private:
     bool m_includeSubfolders;
     std::wstring m_logFormat;
     std::wstring m_customLogFormat;
+    bool m_enableTruncationRecovery;
 
     struct FileLogEntry {
         std::wstring source;

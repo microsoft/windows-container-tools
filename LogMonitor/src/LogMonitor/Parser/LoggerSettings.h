@@ -28,6 +28,7 @@
 #define JSON_TAG_INCLUDE_SUBDIRECTORIES L"includeSubdirectories"
 #define JSON_TAG_PROVIDERS L"providers"
 #define JSON_TAG_WAITINSECONDS L"waitInSeconds"
+#define JSON_TAG_ENABLE_TRUNCATION_RECOVERY L"enableTruncationRecovery"
 
 ///
 /// Valid channel attributes
@@ -266,6 +267,7 @@ public:
     std::wstring Filter;
     bool IncludeSubdirectories = false;
     std::wstring CustomLogFormat = L"[%TimeStamp%] [%Source%] [%FileName%] %Message%";
+    bool EnableTruncationRecovery = false;
 
     // Default wait time: 5minutes
     std::double_t WaitInSeconds = 300;
@@ -324,6 +326,15 @@ public:
             && Attributes[JSON_TAG_CUSTOM_LOG_FORMAT] != nullptr)
         {
             NewSource.CustomLogFormat = *(std::wstring*)Attributes[JSON_TAG_CUSTOM_LOG_FORMAT];
+        }
+
+        //
+        // enableTruncationRecovery is an optional value
+        //
+        if (Attributes.find(JSON_TAG_ENABLE_TRUNCATION_RECOVERY) != Attributes.end()
+            && Attributes[JSON_TAG_ENABLE_TRUNCATION_RECOVERY] != nullptr)
+        {
+            NewSource.EnableTruncationRecovery = *(bool*)Attributes[JSON_TAG_ENABLE_TRUNCATION_RECOVERY];
         }
 
         return true;

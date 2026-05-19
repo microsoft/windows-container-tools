@@ -249,6 +249,7 @@ This will monitor any changes in log files matching a specified filter, given th
 - `filter` (optional): uses [MS-DOS wildcard match type](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/indexsrv/ms-dos-and-windows-wildcard-characters) i.e.. `*, ?`. Can be set to empty, which will be default to `"*"`.
 - `includeSubdirectories` (optional) : `"true|false"`, specify if sub-directories also need to be monitored. Defaults to `false`.
 - `includeFileNames` (optional): `"true|false"`, specifies whether to include file names in the logline, eg. `sample.log: xxxxx`. Defaults to `false`.
+- `enableTruncationRecovery` (optional): `"true|false"`, when `true` the monitor detects if a log file has been truncated in-place (its current size is smaller than the last read position) and resets the read offset to the beginning of the file so new content is not missed. This is useful when a log rotation strategy rewrites the same file rather than renaming it. Defaults to `false`.
 - `waitInSeconds` (optional): specifies the duration to wait for a file or folder to be created if it does not exist. It takes integer values between 0-INFINITY. Defaults to `300` seconds, i.e, 5 minutes. It can be passed as a value or a string.
 
   - `waitInSeconds = 0`

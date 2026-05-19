@@ -343,7 +343,11 @@ ReadSourceAttributes(
                     key.c_str(),
                     JSON_TAG_INCLUDE_SUBDIRECTORIES,
                     _countof(JSON_TAG_INCLUDE_SUBDIRECTORIES)) == 0
-            )
+                || _wcsnicmp(
+                    key.c_str(),
+                    JSON_TAG_ENABLE_TRUNCATION_RECOVERY,
+                    _countof(JSON_TAG_ENABLE_TRUNCATION_RECOVERY)) == 0
+             )
             {
                 Attributes[key] = new bool{ Parser.ParseBooleanValue() };
             }
@@ -744,6 +748,7 @@ void _PrintSettings(_Out_ LoggerSettings& Config)
             std::wprintf(L"\t\tFilter: %ls\n", sourceFile->Filter.c_str());
             std::wprintf(L"\t\tIncludeSubdirectories: %ls\n", sourceFile->IncludeSubdirectories ? L"true" : L"false");
             std::wprintf(L"\t\twaitInSeconds: %d\n", int(sourceFile->WaitInSeconds));
+            std::wprintf(L"\t\tEnableTruncationRecovery: %ls\n", sourceFile->EnableTruncationRecovery ? L"true" : L"false");
             std::wprintf(L"\n");
 
             break;

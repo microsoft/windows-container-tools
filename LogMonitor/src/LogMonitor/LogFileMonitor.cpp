@@ -34,24 +34,27 @@ using namespace std;
 /// that thread registers for directory change notifications. This ensures that no
 /// changes to log files are missed once the LogFileMonitor object is created.
 ///
-/// \param LogDirectory:        The log directory to be monitored
-/// \param Filter:              The filter to apply when looking fr log files
-/// \param IncludeSubfolders:   TRUE if subdirectories also needs to be monitored
-/// \param WaitInSeconds:       Waiting time in seconds to retry if folder/file to be monitored does not exist
+/// \param LogDirectory:             The log directory to be monitored
+/// \param Filter:                   The filter to apply when looking fr log files
+/// \param IncludeSubfolders:        TRUE if subdirectories also needs to be monitored
+/// \param WaitInSeconds:            Waiting time in seconds to retry if folder/file to be monitored does not exist
+/// \param EnableTruncationRecovery: TRUE if detection and handling of truncated files is desired
 ///
 LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::wstring& Filter,
                                _In_ bool IncludeSubfolders,
                                _In_ const std::double_t& WaitInSeconds,
                                _In_ std::wstring LogFormat,
-                               _In_ std::wstring CustomLogFormat = L""
+                               _In_ std::wstring CustomLogFormat = L"",
+                               _In_ bool EnableTruncationRecovery = false
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
                                m_includeSubfolders(IncludeSubfolders),
                                m_waitInSeconds(WaitInSeconds),
                                m_logFormat(LogFormat),
-                               m_customLogFormat(CustomLogFormat)
+                               m_customLogFormat(CustomLogFormat),
+                               m_enableTruncationRecovery(EnableTruncationRecovery)
 {
     m_stopEvent = NULL;
     m_overlappedEvent = NULL;
@@ -1175,28 +1178,6 @@ LogFileMonitor::LogFileModifyEventHandler(
     if (element != m_logFilesInformation.end() &&
         Event.Timestamp > element->second->LastReadTimestamp)
     {
-        // Detect truncation: if file size < NextReadOffset, reset to read from start
-        LARGE_INTEGER fileSize = {};
-        const std::wstring fullLongPath = m_logDirectory + L'\\' + element->second->FileName;
-        HANDLE logFile = CreateFileW(fullLongPath.c_str(),
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
-            nullptr);
-
-        if (logFile != INVALID_HANDLE_VALUE) {
-            if (GetFileSizeEx(logFile, &fileSize)) {
-                if (fileSize.QuadPart < element->second->NextReadOffset) {
-                    // file was truncated and rewritten in-place -> read from beginning
-                    element->second->NextReadOffset = 0;
-                    element->second->LastReadTimestamp = 0; // force ReadLogFile to treat as fresh
-                }
-            }
-            CloseHandle(logFile);
-        }
-
         status = ReadLogFile(element->second);
     }
     else
@@ -1467,6 +1448,20 @@ LogFileMonitor::ReadLogFile(
             );
         }
         return status;
+    }
+
+    if (m_enableTruncationRecovery)
+    {
+        LARGE_INTEGER fileSize = {};
+        if (GetFileSizeEx(logFile, &fileSize))
+        {
+            if (fileSize.QuadPart < LogFileInfo->NextReadOffset)
+            {
+                // File was truncated and rewritten in-place; read from beginning.
+                LogFileInfo->NextReadOffset = 0;
+                LogFileInfo->LastReadTimestamp = 0;
+            }
+        }
     }
 
     DWORD dwPtr = SetFilePointer(logFile, 0L, NULL, FILE_BEGIN);

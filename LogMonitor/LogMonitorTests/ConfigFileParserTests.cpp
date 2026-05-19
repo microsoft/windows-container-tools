@@ -448,6 +448,7 @@ namespace LogMonitorTests
                 Assert::AreEqual(L"", sourceFile->Filter.c_str());
                 Assert::AreEqual(false, sourceFile->IncludeSubdirectories);
                 Assert::AreEqual(300.0, sourceFile->WaitInSeconds);
+                Assert::AreEqual(false, sourceFile->EnableTruncationRecovery);
             }
         }
 
@@ -1710,6 +1711,73 @@ namespace LogMonitorTests
                     Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
                     std::stod(waitInSeconds)
                 );
+            }
+        }
+
+        TEST_METHOD(TestEnableTruncationRecovery)
+        {
+            std::wstring directory = L"C:\\LogMonitor\\logs";
+
+            // Test enabled = true
+            std::wstring configFileStrTrue = Utility::FormatString(
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"File\",\
+                                \"directory\": \"%s\",\
+                                \"%s\": true\
+                            }\
+                        ]\
+                    }\
+                }",
+                Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                JSON_TAG_ENABLE_TRUNCATION_RECOVERY
+            );
+
+            {
+                JsonFileParser jsonParser(configFileStrTrue);
+                LoggerSettings settings;
+
+                bool success = ReadConfigFile(jsonParser, settings);
+                Assert::IsTrue(success);
+
+                Assert::AreEqual((size_t)1, settings.Sources.size());
+                Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
+
+                std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
+                Assert::IsTrue(sourceFile->EnableTruncationRecovery);
+            }
+
+            // Test enabled = false
+            std::wstring configFileStrFalse = Utility::FormatString(
+                L"{    \
+                    \"LogConfig\": {    \
+                        \"sources\": [ \
+                            {\
+                                \"type\": \"File\",\
+                                \"directory\": \"%s\",\
+                                \"%s\": false\
+                            }\
+                        ]\
+                    }\
+                }",
+                Utility::ReplaceAll(directory, L"\\", L"\\\\").c_str(),
+                JSON_TAG_ENABLE_TRUNCATION_RECOVERY
+            );
+
+            {
+                JsonFileParser jsonParser(configFileStrFalse);
+                LoggerSettings settings;
+
+                bool success = ReadConfigFile(jsonParser, settings);
+                Assert::IsTrue(success);
+
+                Assert::AreEqual((size_t)1, settings.Sources.size());
+                Assert::AreEqual((int)LogSourceType::File, (int)settings.Sources[0]->Type);
+
+                std::shared_ptr<SourceFile> sourceFile = std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0]);
+                Assert::IsFalse(sourceFile->EnableTruncationRecovery);
             }
         }
 
