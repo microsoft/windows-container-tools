@@ -134,7 +134,8 @@ void InitializeFileMonitor(std::shared_ptr<SourceFile> sourceFile)
             sourceFile->IncludeSubdirectories,
             sourceFile->WaitInSeconds,
             logFormat,
-            sourceFile->CustomLogFormat
+            sourceFile->CustomLogFormat,
+            sourceFile->EnableTruncationRecovery
         );
         g_logfileMonitors.push_back(std::move(logfileMon));
     }

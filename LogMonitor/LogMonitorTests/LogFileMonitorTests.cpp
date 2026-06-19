@@ -102,6 +102,43 @@ namespace LogMonitorTests
             return (success)? 0 : GetLastError();
         }
 
+        ///
+        /// Overwrites a file from offset 0, truncating any existing content.
+        /// Used to simulate log-rotation-in-place for truncation recovery tests.
+        ///
+        DWORD TruncateAndWriteFile(
+            const std::wstring& FileName,
+            _In_reads_bytes_opt_(BufferSize) LPCVOID Buffer,
+            _In_ size_t BufferSize
+        )
+        {
+            HANDLE hFile = CreateFile(
+                FileName.c_str(),
+                GENERIC_WRITE,
+                FILE_SHARE_READ,
+                NULL,
+                CREATE_ALWAYS,
+                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
+                NULL);
+
+            if (hFile == INVALID_HANDLE_VALUE)
+            {
+                return GetLastError();
+            }
+
+            DWORD bytesWritten;
+            bool success = WriteFile(
+                hFile,
+                Buffer,
+                (DWORD)BufferSize,
+                &bytesWritten,
+                nullptr);
+
+            CloseHandle(hFile);
+
+            return (success)? 0 : GetLastError();
+        }
+
     public:
 
         ///
@@ -176,7 +213,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -224,7 +261,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -293,7 +330,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -396,7 +433,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -572,7 +609,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -678,7 +715,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -798,7 +835,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -989,7 +1026,7 @@ namespace LogMonitorTests
             fflush(stdout);
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
 
-            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"");
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories, sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
             Sleep(WAIT_TIME_LOGFILEMONITOR_START);
 
             //
@@ -1061,6 +1098,134 @@ namespace LogMonitorTests
 
                 Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
             }
+        }
+
+        ///
+        /// Check that when EnableTruncationRecovery is true, a file truncated
+        /// in-place (size smaller than last read offset) is re-read from offset 0
+        /// so that new content is emitted to stdout.
+        ///
+        TEST_METHOD(TestTruncationRecovery_Enabled)
+        {
+            std::wstring output;
+
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+
+            SourceFile sourceFile;
+            sourceFile.Directory = tempDirectory;
+            sourceFile.EnableTruncationRecovery = true;
+
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(
+                sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories,
+                sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
+            Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+            //
+            // Write initial content (200 bytes) to a new file. The monitor reads
+            // it, advancing NextReadOffset to 200.
+            //
+            std::wstring filename = sourceFile.Directory + L"\\rotate.log";
+            std::string initialContent(200, 'A');
+            WriteToFile(filename, initialContent.c_str(), initialContent.length());
+
+            {
+                int retries = 0;
+                do {
+                    retries++;
+                    Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+                    output = RecoverOuput();
+                } while (output.empty() && retries < READ_OUTPUT_RETRIES);
+
+                Assert::IsFalse(output.empty());
+            }
+
+            //
+            // Truncate the file and write shorter replacement content (14 bytes).
+            // fileSize(14) < NextReadOffset(200), so recovery resets to offset 0
+            // and the new content is emitted.
+            //
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::string newContent = "AFTER_ROTATION";
+            TruncateAndWriteFile(filename, newContent.c_str(), newContent.length());
+
+            {
+                int retries = 0;
+                do {
+                    retries++;
+                    Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+                    output = RecoverOuput();
+                } while (output.empty() && retries < READ_OUTPUT_RETRIES);
+
+                Assert::IsTrue(output.find(TO_WSTR(newContent)) != std::wstring::npos);
+            }
+        }
+
+        ///
+        /// Check that when EnableTruncationRecovery is false, a file truncated
+        /// in-place is not re-read from offset 0 — the monitor attempts to read
+        /// from the stale offset and emits nothing.
+        ///
+        TEST_METHOD(TestTruncationRecovery_Disabled)
+        {
+            std::wstring output;
+
+            std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+
+            SourceFile sourceFile;
+            sourceFile.Directory = tempDirectory;
+            sourceFile.EnableTruncationRecovery = false;
+
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::shared_ptr<LogFileMonitor> logfileMon = std::make_shared<LogFileMonitor>(
+                sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories,
+                sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
+            Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+            //
+            // Write initial content (200 bytes). Monitor reads it, NextReadOffset = 200.
+            //
+            std::wstring filename = sourceFile.Directory + L"\\rotate.log";
+            std::string initialContent(200, 'B');
+            WriteToFile(filename, initialContent.c_str(), initialContent.length());
+
+            {
+                int retries = 0;
+                do {
+                    retries++;
+                    Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+                    output = RecoverOuput();
+                } while (output.empty() && retries < READ_OUTPUT_RETRIES);
+
+                Assert::IsFalse(output.empty());
+            }
+
+            //
+            // Truncate and write shorter content. Without recovery, the monitor
+            // reads from offset 200 on a 16-byte file and gets EOF — no output.
+            //
+            fflush(stdout);
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+            std::string newContent = "SKIPPED_ROTATION";
+            TruncateAndWriteFile(filename, newContent.c_str(), newContent.length());
+
+            Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_LONG);
+
+            output = RecoverOuput();
+            Assert::AreEqual(L"", output.c_str());
         }
     };
 }

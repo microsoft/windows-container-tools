@@ -161,6 +161,60 @@ namespace LogMonitorTests
             Assert::IsTrue(success2);
             auto src2 = std::reinterpret_pointer_cast<SourceFile>(settings2.Sources[0]);
             Assert::AreEqual(300.0, src2->WaitInSeconds);
+            Assert::IsFalse(src2->EnableTruncationRecovery);
+        }
+
+        ///
+        /// enableTruncationRecovery must parse true/false correctly and default
+        /// to false when the key is absent.
+        ///
+        TEST_METHOD(JsonProcessor_ParsesEnableTruncationRecovery)
+        {
+            // Explicit true
+            auto pathTrue = WriteTempConfig(R"({
+                "LogConfig": {
+                    "sources": [{
+                        "type": "File",
+                        "directory": "C:\\logs",
+                        "enableTruncationRecovery": true
+                    }]
+                }
+            })");
+
+            LoggerSettings settingsTrue;
+            bool successTrue = ReadConfigFile((PWCHAR)pathTrue.c_str(), settingsTrue);
+
+            Assert::IsTrue(successTrue);
+            Assert::AreEqual((size_t)1, settingsTrue.Sources.size());
+            Assert::AreEqual((int)LogSourceType::File,
+                             (int)settingsTrue.Sources[0]->Type);
+            {
+                auto src = std::reinterpret_pointer_cast<SourceFile>(
+                    settingsTrue.Sources[0]);
+                Assert::IsTrue(src->EnableTruncationRecovery);
+            }
+
+            // Explicit false
+            auto pathFalse = WriteTempConfig(R"({
+                "LogConfig": {
+                    "sources": [{
+                        "type": "File",
+                        "directory": "C:\\logs",
+                        "enableTruncationRecovery": false
+                    }]
+                }
+            })");
+
+            LoggerSettings settingsFalse;
+            bool successFalse = ReadConfigFile((PWCHAR)pathFalse.c_str(), settingsFalse);
+
+            Assert::IsTrue(successFalse);
+            Assert::AreEqual((size_t)1, settingsFalse.Sources.size());
+            {
+                auto src = std::reinterpret_pointer_cast<SourceFile>(
+                    settingsFalse.Sources[0]);
+                Assert::IsFalse(src->EnableTruncationRecovery);
+            }
         }
 
         ///
