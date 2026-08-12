@@ -259,7 +259,9 @@ bool ResolveConfigPath(const std::wstring& userConfigName, std::wstring& resolve
     }
 
     // Relative paths must be plain file names rooted under the executable directory.
-    if (userConfigName.find(L"..") != std::wstring::npos ||
+    if (userConfigName.empty() ||
+        userConfigName == L"." ||
+        userConfigName == L".." ||
         userConfigName.find(L'/') != std::wstring::npos ||
         userConfigName.find(L'\\') != std::wstring::npos ||
         userConfigName.find(L':') != std::wstring::npos)
@@ -268,11 +270,18 @@ bool ResolveConfigPath(const std::wstring& userConfigName, std::wstring& resolve
     }
 
     WCHAR modulePath[MAX_PATH] = {};
-    if (GetModuleFileNameW(nullptr, modulePath, _countof(modulePath)) == 0)
+    DWORD modulePathLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+    if (modulePathLength == 0)
     {
         logWriter.TraceError(
             Utility::FormatString(L"Failed to get module path. Error: %d", GetLastError()).c_str()
         );
+        return false;
+    }
+
+    if (modulePathLength >= _countof(modulePath))
+    {
+        logWriter.TraceError(L"Module path exceeds the maximum supported length.");
         return false;
     }
 
