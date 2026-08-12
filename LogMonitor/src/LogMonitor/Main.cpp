@@ -249,6 +249,59 @@ void CreateEtwMonitor(
     }
 }
 
+bool ResolveConfigPath(const std::wstring& userConfigName, std::wstring& resolvedConfigPath)
+{
+    // Preserve support for absolute paths passed via /Config.
+    if (!PathIsRelativeW(userConfigName.c_str()))
+    {
+        resolvedConfigPath = userConfigName;
+        return true;
+    }
+
+    // Relative paths must be plain file names rooted under the executable directory.
+    if (userConfigName.empty() ||
+        userConfigName == L"." ||
+        userConfigName == L".." ||
+        userConfigName.find(L'/') != std::wstring::npos ||
+        userConfigName.find(L'\\') != std::wstring::npos ||
+        userConfigName.find(L':') != std::wstring::npos)
+    {
+        return false;
+    }
+
+    WCHAR modulePath[MAX_PATH] = {};
+    DWORD modulePathLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+    if (modulePathLength == 0)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to get module path. Error: %d", GetLastError()).c_str()
+        );
+        return false;
+    }
+
+    if (modulePathLength >= _countof(modulePath))
+    {
+        logWriter.TraceError(L"Module path exceeds the maximum supported length.");
+        return false;
+    }
+
+    if (!PathRemoveFileSpecW(modulePath))
+    {
+        logWriter.TraceError(L"Failed to resolve executable directory.");
+        return false;
+    }
+
+    WCHAR combinedPath[MAX_PATH] = {};
+    if (PathCombineW(combinedPath, modulePath, userConfigName.c_str()) == nullptr)
+    {
+        logWriter.TraceError(L"Failed to resolve configuration file path.");
+        return false;
+    }
+
+    resolvedConfigPath = combinedPath;
+    return true;
+}
+
 /// <summary>
 /// Start the monitors by delegating to the helper functions based on log source type
 /// </summary>
@@ -378,37 +431,12 @@ int __cdecl wmain(int argc, WCHAR *argv[])
             configFileName = argv[2];
             std::wstring userConfigName = argv[2];
 
-            // Reject paths with traversal sequences or absolute path indicators
-            if (userConfigName.find(L"..") != std::wstring::npos ||
-                userConfigName.find(L'/') != std::wstring::npos ||
-                userConfigName.find(L'\\') != std::wstring::npos ||
-                userConfigName.find(L':') != std::wstring::npos)
+            if (!ResolveConfigPath(userConfigName, resolvedConfigPath))
             {
                 logWriter.TraceError(L"Invalid configuration file name.");
                 return 0;
             }
 
-            // Anchor the config file to the executable's directory
-            WCHAR modulePath[MAX_PATH] = {};
-            if (GetModuleFileNameW(nullptr, modulePath, _countof(modulePath)) == 0)
-            {
-                logWriter.TraceError(
-                    Utility::FormatString(L"Failed to get module path. Error: %d", GetLastError()).c_str()
-                );
-                return 0;
-            }
-            if (!PathRemoveFileSpecW(modulePath))
-            {
-                logWriter.TraceError(L"Failed to resolve executable directory.");
-                return 0;
-            }
-            WCHAR combinedPath[MAX_PATH] = {};
-            if (PathCombineW(combinedPath, modulePath, userConfigName.c_str()) == nullptr)
-            {
-                logWriter.TraceError(L"Failed to resolve configuration file path.");
-                return 0;
-            }
-            resolvedConfigPath = combinedPath;
             indexCommandArgument = 3;
         }
     }
