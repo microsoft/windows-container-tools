@@ -13,8 +13,8 @@ jobs:
     name: Lint C++
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: reviewdog/action-cpplint@master
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: reviewdog/action-cpplint@5f1bbc6ecc3dc6d9b2cb8ddae490464240ae415d # v1.12.0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-check
