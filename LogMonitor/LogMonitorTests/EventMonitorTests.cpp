@@ -5,6 +5,7 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include <cstdio>  // NOLINT(build/include_order)
+#include <memory>  // NOLINT(build/include_order)
 #include <vector>  // NOLINT(build/include_order)
 
 
@@ -43,6 +44,7 @@ TEST_CLASS(EventMonitorTests)
     };
 
     WCHAR bigOutBuf[BUFFER_SIZE];
+    int m_previousStdoutMode = -1;
 
     ///
     /// Gets the content of the Stdout buffer and returns it in a wstring.
@@ -71,7 +73,7 @@ TEST_CLASS(EventMonitorTests)
 
         int status = _wsystem(
             Utility::FormatString(
-                L"powershell eventcreate /t %s /id %d /l APPLICATION /d \"\"\"\"%s\"\"\"\"",
+                L"powershell -NoProfile -NonInteractive eventcreate /t %s /id %d /l APPLICATION /d \"\"\"\"%s\"\"\"\"",
                 c_LevelToString[(int)Level],
                 Id,
                 Message.c_str()
@@ -93,8 +95,73 @@ public:
         //
         ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
         fflush(stdout);
-        _setmode(_fileno(stdout), _O_U16TEXT);
+        m_previousStdoutMode = _setmode(_fileno(stdout), _O_U16TEXT);
+        Assert::AreNotEqual(-1, m_previousStdoutMode);
         setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
+    }
+
+    TEST_METHOD_CLEANUP(CleanupEventMonitorTests)
+    {
+        fflush(stdout);
+        setvbuf(stdout, nullptr, _IONBF, 0);
+        if (m_previousStdoutMode != -1)
+        {
+            _setmode(_fileno(stdout), m_previousStdoutMode);
+        }
+    }
+
+    TEST_METHOD(TestImmediateShutdown)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
+
+        for (int attempt = 0; attempt < 20; ++attempt)
+        {
+            ULONGLONG start = GetTickCount64();
+            {
+                EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
+            }
+            Assert::IsTrue(GetTickCount64() - start < 5000,
+                L"Stopping during startup must not exhaust the shutdown timeout.");
+        }
+    }
+
+    TEST_METHOD(TestShutdownDuringReplay)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
+        Assert::AreEqual(0, WriteEvent(EventChannelLogLevel::Error, 103, L"EventMonitor shutdown regression"));
+
+        for (int attempt = 0; attempt < 3; ++attempt)
+        {
+            auto eventMonitor = std::make_unique<EventMonitor>(eventChannels, true, true, L"json", L"");
+            Sleep(WAIT_TIME_EVENTMONITOR_START);
+
+            ULONGLONG start = GetTickCount64();
+            eventMonitor.reset();
+            Assert::IsTrue(GetTickCount64() - start < 5000,
+                L"Shutdown must cancel replay rather than exhaust the shutdown timeout.");
+        }
+    }
+
+    TEST_METHOD(TestShutdownDoesNotLeakHandles)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
+        {
+            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
+            Sleep(WAIT_TIME_EVENTMONITOR_START);
+        }
+
+        DWORD handlesBefore = 0;
+        Assert::IsTrue(GetProcessHandleCount(GetCurrentProcess(), &handlesBefore) != FALSE);
+        for (int attempt = 0; attempt < 20; ++attempt)
+        {
+            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
+        }
+
+        DWORD handlesAfter = 0;
+        Assert::IsTrue(GetProcessHandleCount(GetCurrentProcess(), &handlesAfter) != FALSE);
+        // Allow incidental test-host handles, but not two leaked handles per monitor.
+        Assert::IsTrue(handlesAfter <= handlesBefore + 4,
+            Utility::FormatString(L"Handle count grew from %lu to %lu.", handlesBefore, handlesAfter).c_str());
     }
 
     ///

@@ -26,6 +26,7 @@ class EventMonitor final
 
  private:
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
+    static constexpr DWORD EVENT_READ_TIMEOUT_MILLIS = 100;
     static constexpr int EVENT_ARRAY_SIZE = 10;
 
     const std::vector<EventLogChannel> m_eventChannels;
@@ -58,9 +59,11 @@ class EventMonitor final
 
     DWORD StartEventMonitor();
 
-    static DWORD StartEventMonitorStatic(
+    static DWORD WINAPI StartEventMonitorStatic(
         _In_ LPVOID Context
         );
+
+    DWORD CheckForStop() const;
 
     std::wstring ConstructWindowsEventQuery(
         _In_ const std::vector<EventLogChannel>& EventChannels
@@ -75,7 +78,7 @@ class EventMonitor final
         );
 
 
-    void EnableEventLogChannels();
+    DWORD EnableEventLogChannels();
 
     static DWORD EnableEventLogChannel(
         _In_ LPCWSTR ChannelPath);
