@@ -3,7 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include <cstdio>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -12,402 +14,401 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace LogMonitorTests
 {
+///
+/// Tests of Event Monitor. This class writes events and tests that the
+/// Monitor prints them to stdout.
+///
+TEST_CLASS(EventMonitorTests)
+{
     ///
-    /// Tests of Event Monitor. This class writes events and tests that the 
-    /// Monitor prints them to stdout.
+    /// The waiting time after event creation
     ///
-    TEST_CLASS(EventMonitorTests)
+    const DWORD WAIT_TIME_EVENTMONITOR_START = 100;
+    const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT = 50;
+    const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG = 150;
+
+    const int READ_OUTPUT_RETRIES = 8;
+
+    //
+    // Level
+    //
+    constexpr static LPWSTR c_LevelToString[] =
     {
-        ///
-        /// The waiting time after event creation
-        ///
-        const DWORD WAIT_TIME_EVENTMONITOR_START = 100;
-        const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT = 50;
-        const DWORD WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG = 150;
+        L"None",
+        L"Critical",
+        L"Error",
+        L"Warning",
+        L"Information",
+        L"Verbose",
+    };
 
-        const int READ_OUTPUT_RETRIES = 8;
+    WCHAR bigOutBuf[BUFFER_SIZE];
+
+    ///
+    /// Gets the content of the Stdout buffer and returns it in a wstring.
+    ///
+    /// \return A wstring with the stdout.
+    ///
+    std::wstring RecoverOuput()
+    {
+        return std::wstring(bigOutBuf);
+    }
+
+
+    ///
+    /// Writes an event
+    ///
+    /// \return Return true if the event was succesfully sent.
+    ///
+    int WriteEvent(EventChannelLogLevel Level,
+                    int Id,
+                    std::wstring Message)
+    {
+        if (Level <= EventChannelLogLevel::Critical || Level >= EventChannelLogLevel::Verbose)
+        {
+            return ERROR_INVALID_PARAMETER;
+        }
+
+        int status = _wsystem(
+            Utility::FormatString(
+                L"powershell eventcreate /t %s /id %d /l APPLICATION /d \"\"\"\"%s\"\"\"\"",
+                c_LevelToString[(int)Level],
+                Id,
+                Message.c_str()
+            ).c_str()
+        );
+
+        return status;
+    }
+
+
+public:
+    ///
+    /// "Redirects" the stdout to our buffer.
+    ///
+    TEST_METHOD_INITIALIZE(InitializeEventMonitorTests)
+    {
+        //
+        // Set our own buffer in stdout.
+        //
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        fflush(stdout);
+        _setmode(_fileno(stdout), _O_U16TEXT);
+        setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
+    }
+
+    ///
+    /// Check that EventMonitor prints the written errors when level <= Error.
+    ///
+    TEST_METHOD(TestErrorLevelMonitor)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
+
+        EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
+        Sleep(WAIT_TIME_EVENTMONITOR_START);
 
         //
-        // Level
+        // Write an Error level event.
         //
-        constexpr static LPWSTR c_LevelToString[] =
         {
-            L"None",
-            L"Critical",
-            L"Error",
-            L"Warning",
-            L"Information",
-            L"Verbose",
-        };
-
-        WCHAR bigOutBuf[BUFFER_SIZE];
-
-        ///
-        /// Gets the content of the Stdout buffer and returns it in a wstring. 
-        ///
-        /// \return A wstring with the stdout.
-        ///
-        std::wstring RecoverOuput()
-        {
-            return std::wstring(bigOutBuf);
-        }
-
-
-        ///
-        /// Writes an event 
-        ///
-        /// \return Return true if the event was succesfully sent.
-        ///
-        int WriteEvent(EventChannelLogLevel Level,
-                        int Id,
-                        std::wstring Message)
-        {
-            if (Level <= EventChannelLogLevel::Critical || Level >= EventChannelLogLevel::Verbose)
-            {
-                return ERROR_INVALID_PARAMETER;
-            }
-
-            int status = _wsystem(
-                Utility::FormatString(
-                    L"powershell eventcreate /t %s /id %d /l APPLICATION /d \"\"\"\"%s\"\"\"\"",
-                    c_LevelToString[(int)Level],
-                    Id,
-                    Message.c_str()
-                ).c_str()
-            );
-
-            return status;
-        }
-
-
-    public:
-
-        ///
-        /// "Redirects" the stdout to our buffer. 
-        ///
-        TEST_METHOD_INITIALIZE(InitializeEventMonitorTests)
-        {
-            //
-            // Set our own buffer in stdout.
-            //
-            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-            fflush(stdout);
-            _setmode(_fileno(stdout), _O_U16TEXT);
-            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
-        }
-
-        ///
-        /// Check that EventMonitor prints the written errors when level <= Error.
-        ///
-        TEST_METHOD(TestErrorLevelMonitor)
-        {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
-
-            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
-
-            //
-            // Write an Error level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Error!";
-                int eventId = 100;
-                EventChannelLogLevel level = EventChannelLogLevel::Error;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-                
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                               Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
-
-                Assert::IsTrue(std::regex_search(output, rgxId),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
-
-                Assert::IsTrue(std::regex_search(output, rgxLevel),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-
-            //
-            // Write an Warning level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Warning!";
-                int eventId = 101;
-                EventChannelLogLevel level = EventChannelLogLevel::Warning;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-
-                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
-                output = RecoverOuput();
-
-                //
-                // Monitor should have ignored this event.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                Assert::IsFalse(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-
-            //
-            // Write an Information level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Info!";
-                int eventId = 102;
-                EventChannelLogLevel level = EventChannelLogLevel::Information;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-
-                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
-                output = RecoverOuput();
-
-                //
-                // Monitor should have ignored this event.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                Assert::IsFalse(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-        }
-
-        ///
-        /// Check that EventMonitor prints the written errors when level <= Information.
-        ///
-        TEST_METHOD(TestInformationLevelMonitor)
-        {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
-
-            EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
-
-            //
-            // Write an Error level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Error!";
-                int eventId = 100;
-                EventChannelLogLevel level = EventChannelLogLevel::Error;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-                
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
-
-                Assert::IsTrue(std::regex_search(output, rgxId),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
-
-                Assert::IsTrue(std::regex_search(output, rgxLevel),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-
-            //
-            // Write a Warning level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Warning!";
-                int eventId = 101;
-                EventChannelLogLevel level = EventChannelLogLevel::Warning;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-                
-                //
-                // Test that the created event is printed. We could receive other events,
-                // so is better to loop until our message has arrived, using a regex.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
-
-                Assert::IsTrue(std::regex_search(output, rgxId),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
-
-                Assert::IsTrue(std::regex_search(output, rgxLevel),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-
-            //
-            // Write an Information level event.
-            //
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
-
-                std::wstring message = L"Hello world Info!";
-                int eventId = 102;
-                EventChannelLogLevel level = EventChannelLogLevel::Information;
-
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
-
-                std::wstring output;
-                int count = 0;
-
-                //
-                // Test that the created event is printed. We could receive other events,
-                // so is better to loop until our message has arrived, using a regex.
-                //
-                std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
-
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
-
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
-
-                Assert::IsTrue(std::regex_search(output, rgxId),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-
-                std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
-
-                Assert::IsTrue(std::regex_search(output, rgxLevel),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
-        }
-
-        //
-        // Check that setting true the StartAtOldestRecord property, monitor
-        // prints records that existed before the monitor started.
-        //
-        TEST_METHOD(TestStartAtOldestRecord)
-        {
-            std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
-
             ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
             fflush(stdout);
 
-            //
-            // Write one application event, to ensure that there is at least
-            // one event before starting the Event Monitor
-            //
-            std::wstring message = L"Hello world Info!";
-            int eventId = 102;
+            std::wstring message = L"Hello world Error!";
+            int eventId = 100;
             EventChannelLogLevel level = EventChannelLogLevel::Error;
 
             Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
-            EventMonitor eventMonitor(eventChannels, true, true, L"json", L"");
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
+            std::wstring output;
+            int count = 0;
 
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
+
+            do
             {
-                std::wstring output;
-                int count = 0;
-                do
-                {
-                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
-                    output = RecoverOuput();
-                } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
+                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
+                output = RecoverOuput();
+            } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
 
-                std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
 
-                Assert::IsTrue(std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                           Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
+
+            Assert::IsTrue(std::regex_search(output, rgxId),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
+
+            Assert::IsTrue(std::regex_search(output, rgxLevel),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
         }
 
         //
-        // Check that the events from non-listening channels are ignored.
+        // Write an Warning level event.
         //
-        TEST_METHOD(TestChannelsAreNotMixed)
         {
-            std::vector<EventLogChannel> eventChannels = { {L"System", EventChannelLogLevel::Information} };
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
 
-            EventMonitor eventMonitor(eventChannels, false, false, L"json", L"");
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
+            std::wstring message = L"Hello world Warning!";
+            int eventId = 101;
+            EventChannelLogLevel level = EventChannelLogLevel::Warning;
 
-            {
-                ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-                fflush(stdout);
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
 
-                std::wstring message = L"Hello world Error!";
-                int eventId = 100;
-                EventChannelLogLevel level = EventChannelLogLevel::Error;
+            std::wstring output;
 
-                Assert::AreEqual(0, WriteEvent(level, eventId, message));
+            Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
+            output = RecoverOuput();
 
-                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
-                std::wstring output = RecoverOuput();
+            //
+            // Monitor should have ignored this event.
+            //
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
 
-                std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
-
-                //
-                // We can not ensure that a System event isn't received right
-                // now, so it would be enough checking that this is not
-                // an appplication event.
-                //
-                Assert::IsTrue(!std::regex_search(output, rgxMessage),
-                    Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
-            }
+            Assert::IsFalse(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
         }
-    };
-}
+
+        //
+        // Write an Information level event.
+        //
+        {
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring message = L"Hello world Info!";
+            int eventId = 102;
+            EventChannelLogLevel level = EventChannelLogLevel::Information;
+
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+            std::wstring output;
+
+            Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
+            output = RecoverOuput();
+
+            //
+            // Monitor should have ignored this event.
+            //
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
+
+            Assert::IsFalse(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+    }
+
+    ///
+    /// Check that EventMonitor prints the written errors when level <= Information.
+    ///
+    TEST_METHOD(TestInformationLevelMonitor)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Information} };
+
+        EventMonitor eventMonitor(eventChannels, true, false, L"json", L"");
+        Sleep(WAIT_TIME_EVENTMONITOR_START);
+
+        //
+        // Write an Error level event.
+        //
+        {
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring message = L"Hello world Error!";
+            int eventId = 100;
+            EventChannelLogLevel level = EventChannelLogLevel::Error;
+
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+            std::wstring output;
+            int count = 0;
+
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
+
+            do
+            {
+                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
+                output = RecoverOuput();
+            } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
+
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
+
+            Assert::IsTrue(std::regex_search(output, rgxId),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
+
+            Assert::IsTrue(std::regex_search(output, rgxLevel),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+
+        //
+        // Write a Warning level event.
+        //
+        {
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring message = L"Hello world Warning!";
+            int eventId = 101;
+            EventChannelLogLevel level = EventChannelLogLevel::Warning;
+
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+            std::wstring output;
+            int count = 0;
+
+            //
+            // Test that the created event is printed. We could receive other events,
+            // so is better to loop until our message has arrived, using a regex.
+            //
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
+
+            do
+            {
+                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
+                output = RecoverOuput();
+            } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
+
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
+
+            Assert::IsTrue(std::regex_search(output, rgxId),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
+
+            Assert::IsTrue(std::regex_search(output, rgxLevel),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+
+        //
+        // Write an Information level event.
+        //
+        {
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring message = L"Hello world Info!";
+            int eventId = 102;
+            EventChannelLogLevel level = EventChannelLogLevel::Information;
+
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+            std::wstring output;
+            int count = 0;
+
+            //
+            // Test that the created event is printed. We could receive other events,
+            // so is better to loop until our message has arrived, using a regex.
+            //
+            std::wregex rgxMessage(Utility::FormatString(L"\"Message\": \"%s\"", message.c_str()));
+
+            do
+            {
+                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
+                output = RecoverOuput();
+            } while (!std::regex_search(output, rgxMessage) && READ_OUTPUT_RETRIES > ++count);
+
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxId(Utility::FormatString(L"\"EventId\": %d", eventId));
+
+            Assert::IsTrue(std::regex_search(output, rgxId),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+
+            std::wregex rgxLevel(Utility::FormatString(L"\"Level\": \"%s\"", c_LevelToString[(int)level]));
+
+            Assert::IsTrue(std::regex_search(output, rgxLevel),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+    }
+
+    //
+    // Check that setting true the StartAtOldestRecord property, monitor
+    // prints records that existed before the monitor started.
+    //
+    TEST_METHOD(TestStartAtOldestRecord)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
+
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        fflush(stdout);
+
+        //
+        // Write one application event, to ensure that there is at least
+        // one event before starting the Event Monitor
+        //
+        std::wstring message = L"Hello world Info!";
+        int eventId = 102;
+        EventChannelLogLevel level = EventChannelLogLevel::Error;
+
+        Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+        EventMonitor eventMonitor(eventChannels, true, true, L"json", L"");
+        Sleep(WAIT_TIME_EVENTMONITOR_START);
+
+        {
+            std::wstring output;
+            int count = 0;
+            do
+            {
+                Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_SHORT);
+                output = RecoverOuput();
+            } while (output.empty() && READ_OUTPUT_RETRIES > ++count);
+
+            std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
+
+            Assert::IsTrue(std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+    }
+
+    //
+    // Check that the events from non-listening channels are ignored.
+    //
+    TEST_METHOD(TestChannelsAreNotMixed)
+    {
+        std::vector<EventLogChannel> eventChannels = { {L"System", EventChannelLogLevel::Information} };
+
+        EventMonitor eventMonitor(eventChannels, false, false, L"json", L"");
+        Sleep(WAIT_TIME_EVENTMONITOR_START);
+
+        {
+            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+            fflush(stdout);
+
+            std::wstring message = L"Hello world Error!";
+            int eventId = 100;
+            EventChannelLogLevel level = EventChannelLogLevel::Error;
+
+            Assert::AreEqual(0, WriteEvent(level, eventId, message));
+
+            Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
+            std::wstring output = RecoverOuput();
+
+            std::wregex rgxMessage(Utility::FormatString(L"\"Channel\": \"Application\""));
+
+            //
+            // We can not ensure that a System event isn't received right
+            // now, so it would be enough checking that this is not
+            // an appplication event.
+            //
+            Assert::IsTrue(!std::regex_search(output, rgxMessage),
+                Utility::FormatString(L"Actual output: %s", output.c_str()).c_str());
+        }
+    }
+};
+}  // namespace LogMonitorTests

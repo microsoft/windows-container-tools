@@ -5,6 +5,9 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "EtwMonitor.h"  // NOLINT(build/include_subdir)
+#include <map>  // NOLINT(build/include_order)
+#include <utility>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 #define MAX_NAME 256
 

@@ -2,7 +2,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include "Utility.h"  // NOLINT(build/include_subdir)
 
 using namespace std;
 
@@ -13,7 +14,7 @@ using namespace std;
 ///
 
 ///
-/// Creates a new random-name directory inside the Temp directory. 
+/// Creates a new random-name directory inside the Temp directory.
 ///
 /// \return The new directory path. If an error occurs, it's empty.
 ///
@@ -28,7 +29,7 @@ wstring CreateTempDirectory()
         return L"";
     }
 
-    long status = CreateDirectoryW(tempDirectory, NULL);
+    BOOL status = CreateDirectoryW(tempDirectory, NULL);
     if (status == 0)
     {
         return L"";

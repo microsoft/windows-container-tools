@@ -45,10 +45,10 @@
 #include <system_error>
 #include <locale>
 #include <codecvt>
-#include "shlwapi.h"
+#include <shlwapi.h>
 #include <io.h>
 #include <fcntl.h>
-// NOLINTEND(build/include_order)
+// NOLINTEND
 #include <nlohmann/json.hpp>
 #include "Utility.h"  // NOLINT(build/include_subdir)
 #include "Parser/ConfigFileParser.h"  // NOLINT(build/include_subdir)

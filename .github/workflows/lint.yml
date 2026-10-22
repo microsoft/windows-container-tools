@@ -8,27 +8,41 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   lint-cpp:
     name: Lint C++
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: reviewdog/action-cpplint@master
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-pr-check
-          level: warning
-          flags: --linelength=120 --exclude=LogMonitor/LogMonitorTests/*
-          filter: +build/include_order
-            ,+build/include_subdir
-            ,+whitespace/comma
-            ,+whitespace/end_of_line
-            ,-build/namespaces
-            ,-readability/casting
-            ,-runtime/reference
-            ,-whitespace/braces
-            ,-whitespace/parens
-            ,-whitespace/newline
-            ,-whitespace/comments
-            ,-build/c++11
+          python-version: '3.12'
+      - name: Install cpplint
+        run: python -m pip install cpplint==2.0.2
+      - name: Set up reviewdog
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+        with:
+          reviewdog_version: v0.21.2
+      - name: Lint production and test sources
+        id: cpplint
+        working-directory: LogMonitor
+        shell: bash
+        run: |
+          git ls-files -z -- '*.cpp' '*.h' |
+            xargs -0 --no-run-if-empty python -m cpplint 2>&1 |
+            tee "$RUNNER_TEMP/cpplint.log"
+      - name: Report lint annotations
+        if: >-
+          ${{ !cancelled() && github.event_name == 'pull_request' &&
+              (steps.cpplint.outcome == 'success' || steps.cpplint.outcome == 'failure') }}
+        working-directory: LogMonitor
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog -efm="%f:%l: %m" -name=cpplint -reporter=github-pr-check -level=warning \
+            < "$RUNNER_TEMP/cpplint.log"

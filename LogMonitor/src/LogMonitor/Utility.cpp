@@ -7,6 +7,7 @@
 #include "Utility.h"  // NOLINT(build/include_subdir)
 #include <regex>  // NOLINT(build/include_order)
 #include <string>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 using json = nlohmann::json;

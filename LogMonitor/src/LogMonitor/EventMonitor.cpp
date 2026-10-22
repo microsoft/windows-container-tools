@@ -5,6 +5,7 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "EventMonitor.h"  // NOLINT(build/include_subdir)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 
