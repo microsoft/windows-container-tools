@@ -57,6 +57,11 @@ struct DirChangeNotificationEvent
     UINT64 Timestamp;
 };
 
+namespace LogMonitorTests
+{
+    class LogFileMonitorTests;
+}
+
 class LogFileMonitor final
 {
  public:
@@ -75,6 +80,8 @@ class LogFileMonitor final
     static std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
 
  private:
+    friend class LogMonitorTests::LogFileMonitorTests;
+
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int RECORDS_BUFFER_SIZE_BYTES = 8 * 1024;
 
