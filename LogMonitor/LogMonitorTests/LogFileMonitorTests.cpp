@@ -154,6 +154,120 @@ namespace LogMonitorTests
             }
         }
 
+        TEST_METHOD(TestRemovedDirectoryClearsTrackedFiles)
+        {
+            const std::wstring tempDirectory = CreateTempDirectory();
+            const std::wstring outsideDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+            Assert::IsFalse(outsideDirectory.empty());
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+            directoriesToDeleteAtCleanup.push_back(outsideDirectory);
+
+            const std::wstring removedDirectory = tempDirectory + L"\\RemovedDirectory";
+            const std::wstring nestedDirectory = removedDirectory + L"\\Nested";
+            const std::wstring retainedDirectory = tempDirectory + L"\\RemovedDirectoryOther";
+            Assert::IsTrue(CreateDirectoryW(removedDirectory.c_str(), nullptr) != FALSE);
+            Assert::IsTrue(CreateDirectoryW(nestedDirectory.c_str(), nullptr) != FALSE);
+            Assert::IsTrue(CreateDirectoryW(retainedDirectory.c_str(), nullptr) != FALSE);
+
+            const std::wstring removedFile = removedDirectory + L"\\removed.txt";
+            const std::wstring nestedFile = nestedDirectory + L"\\nested.txt";
+            const std::wstring retainedFile = retainedDirectory + L"\\retained.txt";
+            const std::string initialContent = "initial\n";
+            for (const auto& file : {removedFile, nestedFile, retainedFile})
+            {
+                Assert::AreEqual(DWORD(ERROR_SUCCESS), WriteToFile(file, initialContent.c_str(), initialContent.size()));
+            }
+
+            LogFileMonitor monitor(tempDirectory, L"*.txt", true, 0, L"json", L"");
+            Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+            const std::string beforeMove = "tracked-before-directory-removal\n";
+            Assert::AreEqual(DWORD(ERROR_SUCCESS), WriteToFile(removedFile, beforeMove.c_str(), beforeMove.size()));
+            int retries = 0;
+            while (RecoverOuput().find(L"tracked-before-directory-removal") == std::wstring::npos &&
+                   retries++ < READ_OUTPUT_RETRIES)
+            {
+                Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+            }
+            Assert::IsTrue(RecoverOuput().find(L"tracked-before-directory-removal") != std::wstring::npos);
+
+            Assert::IsTrue(MoveFileW(removedDirectory.c_str(), (outsideDirectory + L"\\MovedDirectory").c_str()) != FALSE);
+
+            const std::wstring markerFile = tempDirectory + L"\\marker.txt";
+            const std::string marker = "directory-removal-processed\n";
+            Assert::AreEqual(DWORD(ERROR_SUCCESS), WriteToFile(markerFile, marker.c_str(), marker.size()));
+            retries = 0;
+            while (RecoverOuput().find(L"directory-removal-processed") == std::wstring::npos &&
+                   retries++ < READ_OUTPUT_RETRIES)
+            {
+                Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+            }
+            Assert::IsTrue(RecoverOuput().find(L"directory-removal-processed") != std::wstring::npos);
+
+            Assert::IsTrue(SetEvent(monitor.m_stopEvent) != FALSE);
+            Assert::AreEqual(DWORD(WAIT_OBJECT_0), WaitForSingleObject(monitor.m_logDirMonitorThread, 5000));
+            Assert::AreEqual(DWORD(WAIT_OBJECT_0), WaitForSingleObject(monitor.m_logFilesChangeHandlerThread, 5000));
+
+            Assert::AreEqual(size_t(2), monitor.m_logFilesInformation.size());
+            Assert::AreEqual(size_t(2), monitor.m_longPaths.size());
+            Assert::AreEqual(size_t(2), monitor.m_fileIds.size());
+            Assert::IsTrue(monitor.m_logFilesInformation.find(L"RemovedDirectoryOther\\retained.txt") != monitor.m_logFilesInformation.end());
+            Assert::IsTrue(monitor.m_logFilesInformation.find(L"marker.txt") != monitor.m_logFilesInformation.end());
+            for (const auto& entry : monitor.m_longPaths)
+            {
+                Assert::IsTrue(monitor.m_logFilesInformation.find(entry.second) != monitor.m_logFilesInformation.end());
+            }
+            for (const auto& entry : monitor.m_fileIds)
+            {
+                Assert::IsTrue(monitor.m_logFilesInformation.find(entry.second) != monitor.m_logFilesInformation.end());
+            }
+        }
+
+        TEST_METHOD(TestRemoveDirectoryHandlesShortPaths)
+        {
+            const std::wstring tempDirectory = CreateTempDirectory();
+            Assert::IsFalse(tempDirectory.empty());
+            directoriesToDeleteAtCleanup.push_back(tempDirectory);
+
+            LogFileMonitor monitor(tempDirectory, L"*.txt", true, 0, L"json", L"");
+            Assert::IsTrue(SetEvent(monitor.m_stopEvent) != FALSE);
+            Assert::AreEqual(DWORD(WAIT_OBJECT_0), WaitForSingleObject(monitor.m_logDirMonitorThread, 5000));
+            Assert::AreEqual(DWORD(WAIT_OBJECT_0), WaitForSingleObject(monitor.m_logFilesChangeHandlerThread, 5000));
+
+            const std::wstring removedFile = L"LongDirectory\\Nested\\removed.txt";
+            const std::wstring retainedFile = L"LongDirectoryOther\\retained.txt";
+            auto removedInfo = std::make_shared<LogFileInformation>();
+            removedInfo->FileName = removedFile;
+            auto retainedInfo = std::make_shared<LogFileInformation>();
+            retainedInfo->FileName = retainedFile;
+            monitor.m_logFilesInformation[removedFile] = removedInfo;
+            monitor.m_logFilesInformation[retainedFile] = retainedInfo;
+            monitor.m_longPaths[L"LONGDI~1\\NESTED\\REMOVE~1.TXT"] = removedFile;
+            monitor.m_longPaths[L"LONGDI~2\\RETAIN~1.TXT"] = retainedFile;
+            FILE_ID_INFO removedId = {};
+            removedId.FileId.Identifier[0] = 1;
+            FILE_ID_INFO retainedId = {};
+            retainedId.FileId.Identifier[0] = 2;
+            monitor.m_fileIds[removedId] = removedFile;
+            monitor.m_fileIds[retainedId] = retainedFile;
+
+            DirChangeNotificationEvent event = {L"longdi~1", EventAction::Remove, GetTickCount64()};
+            Assert::AreEqual(DWORD(ERROR_SUCCESS), monitor.LogFileRemoveEventHandler(event));
+            Assert::AreEqual(size_t(1), monitor.m_logFilesInformation.size());
+            Assert::IsTrue(monitor.m_logFilesInformation.find(retainedFile) != monitor.m_logFilesInformation.end());
+            Assert::AreEqual(size_t(1), monitor.m_longPaths.size());
+            Assert::AreEqual(retainedFile, monitor.m_longPaths.begin()->second);
+            Assert::AreEqual(size_t(1), monitor.m_fileIds.size());
+            Assert::AreEqual(retainedFile, monitor.m_fileIds.begin()->second);
+
+            event.FileName = L"longdirectoryother";
+            Assert::AreEqual(DWORD(ERROR_SUCCESS), monitor.LogFileRemoveEventHandler(event));
+            Assert::IsTrue(monitor.m_logFilesInformation.empty());
+            Assert::IsTrue(monitor.m_longPaths.empty());
+            Assert::IsTrue(monitor.m_fileIds.empty());
+        }
+
         ///
         /// Check that LogFileMonitor prints the updates of the files
         /// inside a directory, that is its core functionality.

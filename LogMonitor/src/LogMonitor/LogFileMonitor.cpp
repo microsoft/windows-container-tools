@@ -254,7 +254,10 @@ LogFileMonitor::StartLogFileMonitorStatic(
 }
 
 DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, BOOLEAN lock = TRUE) {
-    if (event.Action != EventAction::ReInit && event.Action != EventAction::RenameNew)
+    // Removed directories need cleanup even when their names do not match the file filter.
+    if (event.Action != EventAction::ReInit &&
+        event.Action != EventAction::RenameNew &&
+        event.Action != EventAction::Remove)
     {
         if (!FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
         {
@@ -1124,43 +1127,55 @@ LogFileMonitor::LogFileRemoveEventHandler(
     )
 {
     DWORD status = ERROR_SUCCESS;
-    bool isShortPath = false;
+    auto element = GetLogFilesInformationIt(Event.FileName);
+    const std::wstring removedPath = element != m_logFilesInformation.end()
+        ? element->second->FileName : Event.FileName;
 
-    auto element = GetLogFilesInformationIt(Event.FileName, &isShortPath);
-
-    if (element != m_logFilesInformation.end())
+    const auto matchesRemovedPath = [&removedPath](const std::wstring& path)
     {
-        std::wstring longPath = element->second->FileName;
+        return _wcsicmp(path.c_str(), removedPath.c_str()) == 0 ||
+            (path.size() > removedPath.size() &&
+             path[removedPath.size()] == L'\\' &&
+             _wcsnicmp(path.c_str(), removedPath.c_str(), removedPath.size()) == 0);
+    };
 
-        m_logFilesInformation.erase(element);
-
-        auto longPathIterator = (!isShortPath) ? m_longPaths.find(Event.FileName) :
-            std::find_if(
-                m_longPaths.begin(),
-                m_longPaths.end(),
-                [&longPath](const auto& it) { return _wcsicmp(it.second.c_str(), longPath.c_str()) == 0; });
-
-        if (longPathIterator != m_longPaths.end())
+    for (auto it = m_logFilesInformation.begin(); it != m_logFilesInformation.end();)
+    {
+        if (matchesRemovedPath(it->first))
         {
-            m_longPaths.erase(longPathIterator);
+            it = m_logFilesInformation.erase(it);
         }
-
-        auto fileIdIterator =
-            std::find_if(
-                m_fileIds.begin(),
-                m_fileIds.end(),
-                [&longPath](const auto& it) { return _wcsicmp(it.second.c_str(), longPath.c_str()) == 0; });
-
-        if (fileIdIterator != m_fileIds.end())
+        else
         {
-            m_fileIds.erase(fileIdIterator);
+            ++it;
         }
     }
-    else
+
+    for (auto it = m_longPaths.begin(); it != m_longPaths.end();)
     {
-        //
-        // Log file not found.
-        //
+        if (matchesRemovedPath(it->first) ||
+            matchesRemovedPath(it->second) ||
+            m_logFilesInformation.find(it->second) == m_logFilesInformation.end())
+        {
+            m_logFilesInformation.erase(it->second);
+            it = m_longPaths.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    for (auto it = m_fileIds.begin(); it != m_fileIds.end();)
+    {
+        if (m_logFilesInformation.find(it->second) == m_logFilesInformation.end())
+        {
+            it = m_fileIds.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
     }
 
     return status;
