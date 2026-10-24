@@ -5,8 +5,15 @@
 
 #pragma once
 
+#include <Windows.h>
+#include <memory>
 #include <string>
 #include <vector>
+#include <nlohmann/json_fwd.hpp>
+#include "Utility.h"  // NOLINT(build/include_subdir)
+
+class LogSource;
+typedef struct _LoggerSettings LoggerSettings;
 
 bool handleEventLog(
     _In_ const nlohmann::json& source,
