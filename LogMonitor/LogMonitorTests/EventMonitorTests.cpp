@@ -79,6 +79,67 @@ namespace LogMonitorTests
             return status;
         }
 
+        void CheckCustomMessageFormatting(bool multiLine)
+        {
+            struct TestCase
+            {
+                LPCWSTR message;
+                LPCWSTR singleLineMessage;
+            };
+
+            const TestCase cases[] = {
+                {L"First\nSecond\nThird\n", L"First Second Third "},
+                {L"First\rSecond\rThird\r", L"First Second Third "},
+                {L"First\r\nSecond\r\nThird\r\n", L"First Second Third "},
+                {L"First\r\nSecond\nThird\rFourth", L"First Second Third Fourth"},
+                {L"\r\nFirst\r\n\r\nSecond\r\n", L" First  Second "},
+                {L"Already one line", L"Already one line"},
+                {L"Literal \\r\\n text", L"Literal \\r\\n text"},
+                {L"First\tpart\r\nSecond\tpart", L"First\tpart Second\tpart"},
+            };
+
+            std::vector<EventLogChannel> eventChannels = {
+                {L"Application", EventChannelLogLevel::Error}
+            };
+            EventMonitor eventMonitor(
+                eventChannels, multiLine, false, L"custom",
+                L"ISSUE200[%EventID%]:%Message%:END[%EventID%]");
+            Sleep(WAIT_TIME_EVENTMONITOR_START);
+
+            DWORD eventId = 400;
+            for (const auto& testCase : cases)
+            {
+                ++eventId;
+                HANDLE eventSource = RegisterEventSourceW(nullptr, L"EventCreate");
+                Assert::IsTrue(eventSource != nullptr, L"Failed to register event source");
+
+                LPCWSTR message = testCase.message;
+                BOOL written = ReportEventW(
+                    eventSource, EVENTLOG_ERROR_TYPE, 0, eventId, nullptr,
+                    1, 0, &message, nullptr);
+                DeregisterEventSource(eventSource);
+                Assert::IsTrue(written != FALSE, L"Failed to write multiline event");
+
+                std::wstring output;
+                std::wstring endMarker = Utility::FormatString(L":END[%lu]", eventId);
+                int count = 0;
+                do
+                {
+                    Sleep(WAIT_TIME_EVENTMONITOR_AFTER_WRITE_LONG);
+                    output = RecoverOuput();
+                } while (output.find(endMarker) == std::wstring::npos &&
+                         READ_OUTPUT_RETRIES > ++count);
+
+                std::wstring expected = Utility::FormatString(
+                    L"ISSUE200[%lu]:%s:END[%lu]", eventId,
+                    multiLine ? testCase.message : testCase.singleLineMessage, eventId);
+                Assert::IsTrue(
+                    output.find(expected) != std::wstring::npos,
+                    Utility::FormatString(
+                        L"Expected: %s; actual output: %s", expected.c_str(), output.c_str()).c_str());
+            }
+        }
+
 
     public:
 
@@ -94,6 +155,16 @@ namespace LogMonitorTests
             fflush(stdout);
             _setmode(_fileno(stdout), _O_U16TEXT);
             setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
+        }
+
+        TEST_METHOD(TestCustomFormatSingleLine)
+        {
+            CheckCustomMessageFormatting(false);
+        }
+
+        TEST_METHOD(TestCustomFormatMultiLine)
+        {
+            CheckCustomMessageFormatting(true);
         }
 
         ///
