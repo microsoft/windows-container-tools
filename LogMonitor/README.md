@@ -24,6 +24,10 @@ The log tool is supported for Windows, Server Core, and Nano images.
 
 ## Build
 
+`JsonProcessorTests.cpp` includes `JsonProcessor.h` before any other header and
+is compiled without a precompiled header. Building `LogMonitorTests` checks that
+`JsonProcessor.h` is self-contained in both the CMake and Visual Studio builds.
+
 ## Releases
 
 Release versions of the binaries can be found on the [Log Monitor Releases page](https://github.com/microsoft/windows-container-tools/releases/latest).
