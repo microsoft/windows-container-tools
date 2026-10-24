@@ -572,6 +572,11 @@ EventMonitor::PrintEvent(
 
                 std::wstring formattedEvent;
                 if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+                    if (!m_eventFormatMultiLine) {
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\r\n", L" ");
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\r", L" ");
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\n", L" ");
+                    }
                     formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
                 } else {
                     std::wstring logFmt;
