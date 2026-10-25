@@ -79,4 +79,93 @@ namespace LogMonitorTests
             Assert::AreEqual(expectedOutput, realOutput);
         }
     };
+
+    TEST_CLASS(ProcessMonitorTests)
+    {
+        std::wstring previousLogFormat;
+        std::wstring previousCustomFormat;
+
+        const std::string utf8Message =
+            "ASCII \xc2\xa1 \xe2\x82\xac \xe6\x97\xa5\xe6\x9c\xac \xf0\x9f\x98\x80 \xef\xbf\xbd";
+
+        void CheckStandardFormats(const std::string& input, const std::string& expected)
+        {
+            loggingformat = L"JSON";
+            std::string formatted = FormatProcessLog(input);
+            Assert::AreEqual(
+                std::string("{\"Source\":\"Process\",\"LogEntry\":{\"Logline\":\"") +
+                    expected + "\"},\"SchemaVersion\":\"1.0.0\"}\n",
+                formatted);
+            nlohmann::json parsed = nlohmann::json::parse(formatted);
+            Assert::AreEqual(expected, parsed.at("LogEntry").at("Logline").get<std::string>());
+
+            loggingformat = L"XML";
+            Assert::AreEqual(
+                std::string("<Log><Source>Process</Source><LogEntry><Logline>") +
+                    expected + "</Logline></LogEntry></Log>\n",
+                FormatProcessLog(input));
+        }
+
+    public:
+        TEST_METHOD_INITIALIZE(InitializeProcessMonitorTests)
+        {
+            previousLogFormat = loggingformat;
+            previousCustomFormat = processCustomLogFormat;
+        }
+
+        TEST_METHOD_CLEANUP(CleanupProcessMonitorTests)
+        {
+            loggingformat = previousLogFormat;
+            processCustomLogFormat = previousCustomFormat;
+        }
+
+        TEST_METHOD(TestStandardFormatsPreserveUtf8)
+        {
+            CheckStandardFormats(utf8Message, utf8Message);
+            std::string longMessage = std::string(4095, 'a') + utf8Message;
+            CheckStandardFormats(longMessage, longMessage);
+        }
+
+        TEST_METHOD(TestStandardFormatsPreserveAsciiAndNullReplacement)
+        {
+            CheckStandardFormats("", "");
+            CheckStandardFormats("plain ASCII 123", "plain ASCII 123");
+            std::string withNull = "before";
+            withNull.push_back('\0');
+            withNull += "after";
+            CheckStandardFormats(withNull, "before?after");
+        }
+
+        TEST_METHOD(TestStandardFormatsReplaceInvalidUtf8)
+        {
+            struct TestCase
+            {
+                const char* input;
+                const char* expected;
+            };
+            const TestCase cases[] = {
+                {"\x80", "?"},
+                {"\xff", "?"},
+                {"\xc0\xaf", "??"},
+                {"\xed\xa0\x80", "???"},
+                {"\xf4\x90\x80\x80", "????"},
+                {"\xe2\x28\xa1", "?(?"},
+                {"\xf0\x9f\x98", "???"},
+            };
+            for (const auto& testCase : cases)
+            {
+                CheckStandardFormats(testCase.input, testCase.expected);
+            }
+            CheckStandardFormats(utf8Message + "\xff" + utf8Message,
+                utf8Message + "?" + utf8Message);
+        }
+
+        TEST_METHOD(TestCustomFormatPreservesUtf8)
+        {
+            loggingformat = L"Custom";
+            processCustomLogFormat = L"%Source%: %Message%";
+            Assert::AreEqual(std::string("Process: ") + utf8Message + "\n",
+                FormatProcessLog(utf8Message));
+        }
+    };
 }
