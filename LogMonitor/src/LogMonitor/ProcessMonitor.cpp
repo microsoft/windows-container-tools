@@ -222,11 +222,34 @@ std::string FormatStandardLog(const std::string& inputLine) {
         suffix = "\"},\"SchemaVersion\":\"1.0.0\"}\n";
     }
 
-    // Sanitize the log line
+    // Preserve complete UTF-8 sequences; retain '?' for NUL and invalid bytes.
     std::string sanitized;
     sanitized.reserve(inputLine.size());
-    for (char c : inputLine) {
-        sanitized += (c > 0) ? c : '?';
+    for (size_t i = 0; i < inputLine.size();) {
+        unsigned char c = static_cast<unsigned char>(inputLine[i]);
+        if (c > 0 && c < 0x80) {
+            sanitized += inputLine[i++];
+            continue;
+        }
+
+        int sequenceLength = 0;
+        if (c >= 0xc2 && c <= 0xdf) {
+            sequenceLength = 2;
+        } else if (c >= 0xe0 && c <= 0xef) {
+            sequenceLength = 3;
+        } else if (c >= 0xf0 && c <= 0xf4) {
+            sequenceLength = 4;
+        }
+
+        if (sequenceLength > 0 &&
+            inputLine.size() - i >= static_cast<size_t>(sequenceLength) &&
+            Utility::IsTextUTF8(inputLine.data() + i, sequenceLength)) {
+            sanitized.append(inputLine, i, sequenceLength);
+            i += sequenceLength;
+        } else {
+            sanitized += '?';
+            ++i;
+        }
     }
 
     std::string logLine = prefix + sanitized + suffix;

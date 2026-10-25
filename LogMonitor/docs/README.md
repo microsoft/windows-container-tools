@@ -365,6 +365,12 @@ WARNING: Failed to parse configuration file. Error retrieving source attributes.
 
 Currently, this one does not need any configuration, it basically streams the output of tthe process/command that is provided as the argument to `LogMonitor.exe`. For the given _entryproint_ command, a child process is created and links its STDIN and STDOUT to the `LogMonitor` process (through a _pipe_).
 
+Child processes should write UTF-8 output. JSON and XML process logs preserve valid
+UTF-8 characters, including characters split across pipe reads. Invalid UTF-8
+bytes are replaced with `?`; valid characters elsewhere in the line are
+preserved. Process monitoring does not automatically detect or convert legacy
+Windows code pages.
+
 ### Examples
 
 ```dockerfile
