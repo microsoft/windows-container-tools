@@ -6,6 +6,7 @@
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "Parser/JsonFileParser.h"  // NOLINT(build/include_subdir)
 #include <regex>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 /// JsonFileParser.cpp
 ///
@@ -682,7 +683,8 @@ JsonFileParser::AdvanceBufferPointer(
     size_t Offset
     )
 {
-    m_currentPos = min(m_currentPos + Offset, m_bufferLength);
+    // min is the Windows SDK macro, not std::min.
+    m_currentPos = min(m_currentPos + Offset, m_bufferLength);  // NOLINT(build/include_what_you_use)
 
     for (; m_currentPos < m_bufferLength && IsWhiteSpace(m_buffer[m_currentPos]); m_currentPos++)
     {

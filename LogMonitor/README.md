@@ -24,6 +24,27 @@ The log tool is supported for Windows, Server Core, and Nano images.
 
 ## Build
 
+## Lint
+
+CI runs cpplint 2.0.2 on all tracked C++ source and header files, including tests,
+and fails on lint diagnostics. Generated files and dependencies are not scanned.
+The shared rules are in `CPPLINT.cfg`, with a 120-character line limit.
+Reviewdog publishes pull-request check annotations; lint failures fail the job
+independently of annotation filtering.
+
+To run the same checks from the repository root in PowerShell:
+
+```powershell
+python -m pip install cpplint==2.0.2
+Set-Location .\LogMonitor
+$sources = git ls-files -- '*.cpp' '*.h'
+python -m cpplint @sources
+```
+
+Keep `pch.h` first in translation units. Follow the existing category-specific
+`NOLINT` exceptions for PCH and Windows header ordering rather than disabling
+rules globally. Block suppressions end with `NOLINTEND` without categories.
+
 ## Releases
 
 Release versions of the binaries can be found on the [Log Monitor Releases page](https://github.com/microsoft/windows-container-tools/releases/latest).

@@ -7,6 +7,19 @@
 
 #include <vector>
 
+#ifdef LOGMONITOR_TESTS
+struct EventMonitorReplayTestHooks
+{
+    HANDLE batchReady;
+    HANDLE releaseBatch;
+    HANDLE shutdownRequested;
+    LONG batchSize;
+    LONG processedEvents;
+    LONG closedEvents;
+    DWORD releaseBatchWaitResult;
+};
+#endif
+
 class EventMonitor final
 {
  public:
@@ -18,6 +31,9 @@ class EventMonitor final
         _In_ bool StartAtOldestRecord,
         _In_ std::wstring LogFormat,
         _In_ std::wstring CustomLogFormat
+#ifdef LOGMONITOR_TESTS
+        , _In_opt_ EventMonitorReplayTestHooks* ReplayTestHooks = nullptr
+#endif
         );
 
     ~EventMonitor();
@@ -26,6 +42,7 @@ class EventMonitor final
 
  private:
     static constexpr int EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
+    static constexpr DWORD EVENT_READ_TIMEOUT_MILLIS = 100;
     static constexpr int EVENT_ARRAY_SIZE = 10;
 
     const std::vector<EventLogChannel> m_eventChannels;
@@ -56,11 +73,17 @@ class EventMonitor final
 
     std::vector<wchar_t> m_eventMessageBuffer;
 
+#ifdef LOGMONITOR_TESTS
+    EventMonitorReplayTestHooks* m_replayTestHooks;
+#endif
+
     DWORD StartEventMonitor();
 
-    static DWORD StartEventMonitorStatic(
+    static DWORD WINAPI StartEventMonitorStatic(
         _In_ LPVOID Context
         );
+
+    DWORD CheckForStop() const;
 
     std::wstring ConstructWindowsEventQuery(
         _In_ const std::vector<EventLogChannel>& EventChannels
@@ -75,7 +98,7 @@ class EventMonitor final
         );
 
 
-    void EnableEventLogChannels();
+    DWORD EnableEventLogChannels();
 
     static DWORD EnableEventLogChannel(
         _In_ LPCWSTR ChannelPath);
