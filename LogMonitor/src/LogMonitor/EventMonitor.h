@@ -16,6 +16,7 @@ struct EventMonitorReplayTestHooks
     LONG batchSize;
     LONG processedEvents;
     LONG closedEvents;
+    DWORD releaseBatchWaitResult;
 };
 #endif
 

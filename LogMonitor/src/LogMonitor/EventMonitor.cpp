@@ -426,8 +426,10 @@ EventMonitor::EnumerateResults(
         {
             m_replayTestHooks->batchSize = static_cast<LONG>(dwReturned);
             SetEvent(m_replayTestHooks->batchReady);
-            if (WaitForSingleObject(m_replayTestHooks->releaseBatch,
-                                    EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS) != WAIT_OBJECT_0)
+            m_replayTestHooks->releaseBatchWaitResult = WaitForSingleObject(
+                m_replayTestHooks->releaseBatch,
+                EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS);
+            if (m_replayTestHooks->releaseBatchWaitResult != WAIT_OBJECT_0)
             {
                 status = ERROR_TIMEOUT;
                 goto cleanup;

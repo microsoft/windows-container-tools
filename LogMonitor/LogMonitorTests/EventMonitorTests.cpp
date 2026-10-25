@@ -144,6 +144,7 @@ public:
             0,
             0,
             0,
+            WAIT_FAILED,
         };
         auto eventMonitor = std::make_unique<EventMonitor>(
             eventChannels, true, true, L"json", L"", &hooks);
@@ -164,6 +165,8 @@ public:
         SetEvent(releaseBatch);
         shutdownThread.join();
 
+        Assert::AreEqual(static_cast<DWORD>(WAIT_OBJECT_0), hooks.releaseBatchWaitResult,
+            L"Replay worker did not observe the batch release before exiting.");
         Assert::AreEqual(static_cast<DWORD>(WAIT_OBJECT_0), shutdownWait,
             L"Destructor did not request shutdown before the test timeout.");
         Assert::IsTrue(GetTickCount64() - start < 5000,
