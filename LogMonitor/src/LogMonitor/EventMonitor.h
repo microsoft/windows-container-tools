@@ -7,6 +7,18 @@
 
 #include <vector>
 
+#ifdef LOGMONITOR_TESTS
+struct EventMonitorReplayTestHooks
+{
+    HANDLE batchReady;
+    HANDLE releaseBatch;
+    HANDLE shutdownRequested;
+    LONG batchSize;
+    LONG processedEvents;
+    LONG closedEvents;
+};
+#endif
+
 class EventMonitor final
 {
  public:
@@ -18,6 +30,9 @@ class EventMonitor final
         _In_ bool StartAtOldestRecord,
         _In_ std::wstring LogFormat,
         _In_ std::wstring CustomLogFormat
+#ifdef LOGMONITOR_TESTS
+        , _In_opt_ EventMonitorReplayTestHooks* ReplayTestHooks = nullptr
+#endif
         );
 
     ~EventMonitor();
@@ -56,6 +71,10 @@ class EventMonitor final
     HANDLE m_eventMonitorThread;
 
     std::vector<wchar_t> m_eventMessageBuffer;
+
+#ifdef LOGMONITOR_TESTS
+    EventMonitorReplayTestHooks* m_replayTestHooks;
+#endif
 
     DWORD StartEventMonitor();
 

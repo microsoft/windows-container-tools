@@ -12,6 +12,8 @@
 #ifndef LOGMONITOR_LOGMONITORTESTS_PCH_H_
 #define LOGMONITOR_LOGMONITORTESTS_PCH_H_
 
+#define LOGMONITOR_TESTS
+
 // add headers that you want to pre-compile here
 
 // Preserve the Windows header dependencies and PCH order used by the test project.
@@ -22,6 +24,7 @@
 #include <stdio.h>
 #include <array>
 #include <memory>
+#include <thread>
 #include <variant>
 #include <cstdint>
 #include <string>

@@ -130,16 +130,52 @@ public:
         std::vector<EventLogChannel> eventChannels = { {L"Application", EventChannelLogLevel::Error} };
         Assert::AreEqual(0, WriteEvent(EventChannelLogLevel::Error, 103, L"EventMonitor shutdown regression"));
 
-        for (int attempt = 0; attempt < 3; ++attempt)
-        {
-            auto eventMonitor = std::make_unique<EventMonitor>(eventChannels, true, true, L"json", L"");
-            Sleep(WAIT_TIME_EVENTMONITOR_START);
+        HANDLE batchReady = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+        HANDLE releaseBatch = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+        HANDLE shutdownRequested = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+        Assert::IsNotNull(batchReady);
+        Assert::IsNotNull(releaseBatch);
+        Assert::IsNotNull(shutdownRequested);
 
-            ULONGLONG start = GetTickCount64();
+        EventMonitorReplayTestHooks hooks{
+            batchReady,
+            releaseBatch,
+            shutdownRequested,
+            0,
+            0,
+            0,
+        };
+        auto eventMonitor = std::make_unique<EventMonitor>(
+            eventChannels, true, true, L"json", L"", &hooks);
+
+        DWORD batchWait = WaitForSingleObject(batchReady, 5000);
+        if (batchWait != WAIT_OBJECT_0)
+        {
+            SetEvent(releaseBatch);
             eventMonitor.reset();
-            Assert::IsTrue(GetTickCount64() - start < 5000,
-                L"Shutdown must cancel replay rather than exhaust the shutdown timeout.");
         }
+        Assert::AreEqual(static_cast<DWORD>(WAIT_OBJECT_0), batchWait,
+            L"Replay did not provide a batch before the test timeout.");
+        Assert::IsTrue(hooks.batchSize > 0, L"Replay batch must contain an unprocessed event.");
+
+        ULONGLONG start = GetTickCount64();
+        std::thread shutdownThread([&eventMonitor]() { eventMonitor.reset(); });
+        DWORD shutdownWait = WaitForSingleObject(shutdownRequested, 5000);
+        SetEvent(releaseBatch);
+        shutdownThread.join();
+
+        Assert::AreEqual(static_cast<DWORD>(WAIT_OBJECT_0), shutdownWait,
+            L"Destructor did not request shutdown before the test timeout.");
+        Assert::IsTrue(GetTickCount64() - start < 5000,
+            L"Shutdown must cancel replay rather than exhaust the shutdown timeout.");
+        Assert::AreEqual(0L, hooks.processedEvents,
+            L"Replay processed an event after shutdown was requested.");
+        Assert::AreEqual(hooks.batchSize, hooks.closedEvents,
+            L"Shutdown must close every unprocessed event handle in the replay batch.");
+
+        CloseHandle(shutdownRequested);
+        CloseHandle(releaseBatch);
+        CloseHandle(batchReady);
     }
 
     TEST_METHOD(TestShutdownDoesNotLeakHandles)

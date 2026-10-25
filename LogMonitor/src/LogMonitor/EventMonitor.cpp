@@ -31,12 +31,18 @@ EventMonitor::EventMonitor(
     _In_ bool StartAtOldestRecord,
     _In_ std::wstring LogFormat,
     _In_ std::wstring CustomLogFormat = L""
+#ifdef LOGMONITOR_TESTS
+    , _In_opt_ EventMonitorReplayTestHooks* ReplayTestHooks
+#endif
     ) :
     m_eventChannels(EventChannels),
     m_eventFormatMultiLine(EventFormatMultiLine),
     m_startAtOldestRecord(StartAtOldestRecord),
     m_logFormat(LogFormat),
     m_customLogFormat(CustomLogFormat)
+#ifdef LOGMONITOR_TESTS
+    , m_replayTestHooks(ReplayTestHooks)
+#endif
 {
     m_stopEvent = NULL;
     m_eventMonitorThread = NULL;
@@ -74,6 +80,12 @@ EventMonitor::~EventMonitor()
     }
     else
     {
+#ifdef LOGMONITOR_TESTS
+        if (m_replayTestHooks != nullptr)
+        {
+            SetEvent(m_replayTestHooks->shutdownRequested);
+        }
+#endif
         //
         // Wait for watch thread to exit.
         //
@@ -409,6 +421,20 @@ EventMonitor::EnumerateResults(
             goto cleanup;
         }
 
+#ifdef LOGMONITOR_TESTS
+        if (m_replayTestHooks != nullptr)
+        {
+            m_replayTestHooks->batchSize = static_cast<LONG>(dwReturned);
+            SetEvent(m_replayTestHooks->batchReady);
+            if (WaitForSingleObject(m_replayTestHooks->releaseBatch,
+                                    EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS) != WAIT_OBJECT_0)
+            {
+                status = ERROR_TIMEOUT;
+                goto cleanup;
+            }
+        }
+#endif
+
         //
         // For each event, call the PrintEvent function which renders the
         // event for display.
@@ -420,6 +446,13 @@ EventMonitor::EnumerateResults(
             {
                 goto cleanup;
             }
+
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->processedEvents);
+            }
+#endif
 
             status = PrintEvent(hEvents[i]);
 
@@ -436,6 +469,12 @@ EventMonitor::EnumerateResults(
 
             EvtClose(hEvents[i]);
             hEvents[i] = NULL;
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->closedEvents);
+            }
+#endif
         }
     }
 
@@ -449,6 +488,12 @@ cleanup:
         if (NULL != hEvents[i])
         {
             EvtClose(hEvents[i]);
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->closedEvents);
+            }
+#endif
         }
     }
 
