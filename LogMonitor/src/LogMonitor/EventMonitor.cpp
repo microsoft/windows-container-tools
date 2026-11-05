@@ -8,6 +8,69 @@
 
 using namespace std;
 
+namespace
+{
+DWORD FormatEventMessage(
+    EVT_HANDLE publisher,
+    EVT_HANDLE event,
+    std::vector<wchar_t>& message,
+    DWORD& formattingError,
+    decltype(&EvtFormatMessage) formatter = EvtFormatMessage)
+{
+    message.clear();
+    DWORD bufferSize = 0;
+    formatter(publisher, event, 0, 0, nullptr, EvtFormatMessageEvent, 0, nullptr, &bufferSize);
+
+    // A provider resource error can leave the initial size unset. Try formatting
+    // with a nonempty buffer so a subsequent size request can still be honored.
+    bufferSize = (std::max)(bufferSize, 1UL);
+
+    for (;;)
+    {
+        message.assign(bufferSize, L'\0');
+        DWORD used = 0;
+        BOOL formatted = formatter(
+            publisher, event, 0, 0, nullptr, EvtFormatMessageEvent, bufferSize, message.data(), &used);
+        formattingError = formatted ? ERROR_SUCCESS : GetLastError();
+
+        if (formattingError == ERROR_INSUFFICIENT_BUFFER && used > bufferSize)
+        {
+            bufferSize = used;
+            continue;
+        }
+
+        const bool partialMessage =
+            formattingError == ERROR_EVT_UNRESOLVED_VALUE_INSERT ||
+            formattingError == ERROR_EVT_UNRESOLVED_PARAMETER_INSERT ||
+            formattingError == ERROR_EVT_MAX_INSERTS_REACHED ||
+            formattingError == ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND;
+
+        if (formattingError != ERROR_SUCCESS && !partialMessage)
+        {
+            message.clear();
+            return formattingError;
+        }
+
+        if (used == 0 || used > message.size())
+        {
+            message.clear();
+            return formatted ? ERROR_INVALID_DATA : formattingError;
+        }
+
+        const auto end = message.begin() + used;
+        const auto terminator = std::find(message.begin(), end, L'\0');
+        if (terminator == end)
+        {
+            message.clear();
+            return ERROR_INVALID_DATA;
+        }
+
+        message.resize(static_cast<size_t>(terminator - message.begin()));
+        return partialMessage && message.empty() ? formattingError : ERROR_SUCCESS;
+    }
+}
+}  // namespace
+
 ///
 /// EventMonitor.cpp
 ///
@@ -522,53 +585,46 @@ EventMonitor::PrintEvent(
             //
             // Collect user message
             //
+            m_eventMessageBuffer.clear();
+            DWORD formattingError = ERROR_SUCCESS;
             publisher = EvtOpenPublisherMetadata(nullptr, providerName.c_str(), nullptr, 0, 0);
 
             if (publisher)
             {
-                EvtFormatMessage(publisher, EventHandle, 0, 0, nullptr, EvtFormatMessageEvent, 0, nullptr, &bufferSize);
-                status = GetLastError();
+                status = FormatEventMessage(publisher, EventHandle, m_eventMessageBuffer, formattingError);
 
-                if (status != ERROR_EVT_MESSAGE_NOT_FOUND)
-                {
-                    if (ERROR_INSUFFICIENT_BUFFER == status || ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
-                    {
-                        status = ERROR_SUCCESS;
-                    }
-
-                    if (m_eventMessageBuffer.capacity() < bufferSize)
-                    {
-                        m_eventMessageBuffer.resize(bufferSize);
-                    }
-
-                    if (!EvtFormatMessage(
-                        publisher,
-                        EventHandle,
-                        0,
-                        0,
-                        nullptr,
-                        EvtFormatMessageEvent,
-                        bufferSize,
-                        &m_eventMessageBuffer[0],
-                        &bufferSize))
-                    {
-                        status = GetLastError();
-                    }
-                }
-                else
+                if (status == ERROR_EVT_MESSAGE_NOT_FOUND)
                 {
                     status = ERROR_SUCCESS;
                 }
             }
+            else
+            {
+                formattingError = GetLastError();
+            }
 
             if (status == ERROR_SUCCESS)
             {
+                if (formattingError != ERROR_SUCCESS)
+                {
+                    logWriter.TraceWarning(
+                        Utility::FormatString(
+                            L"Failed to fully format event log message for provider '%s', event %u. "
+                            L"Using %s. Error: %lu.",
+                            providerName.c_str(),
+                            pLogEntry->eventId,
+                            m_eventMessageBuffer.empty() ? L"an empty message" : L"the available message text",
+                            formattingError
+                        ).c_str()
+                    );
+                }
+
                 pLogEntry->source = L"EventLog";
                 pLogEntry->eventSource = providerName;
                 pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
                 pLogEntry->eventChannel = channelName;
                 pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
-                pLogEntry->eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
+                pLogEntry->eventMessage.assign(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
 
                 std::wstring formattedEvent;
                 if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
@@ -592,9 +648,7 @@ EventMonitor::PrintEvent(
                                  L"}}";
 
                         // sanitize message
-                        std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-                        Utility::SanitizeJson(msg);
-                        pLogEntry->eventMessage = msg;
+                        Utility::SanitizeJson(pLogEntry->eventMessage);
                     }
 
                     formattedEvent = Utility::FormatString(
