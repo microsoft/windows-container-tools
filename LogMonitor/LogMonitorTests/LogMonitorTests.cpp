@@ -39,8 +39,8 @@ namespace LogMonitorTests
             bool terminated = true;
         };
 
-        inline static thread_local std::vector<FormatReply> replies;
-        inline static thread_local size_t nextReply = 0;
+        static thread_local std::vector<FormatReply> replies;
+        static thread_local size_t nextReply;
 
         static BOOL WINAPI FormatMessage(
             EVT_HANDLE, EVT_HANDLE, DWORD messageId, DWORD valueCount,
@@ -183,6 +183,9 @@ namespace LogMonitorTests
             }, ERROR_INVALID_DATA, ERROR_SUCCESS, L"");
         }
     };
+
+    thread_local std::vector<EventMessageFormattingTests::FormatReply> EventMessageFormattingTests::replies;
+    thread_local size_t EventMessageFormattingTests::nextReply = 0;
 
     ///
     /// Tests the tools that other tests could use. i.e. redirecting stdout.
