@@ -150,6 +150,8 @@ Using both the provider's name and provider GUID:
 
 Event log is a record of events related to the system, security, and application stored on a Windows operating system. The event log provides a standard, centralized way for apps and the operating system to record important software and hardware events, helping in tracking of potential threats and problems that could be potentially degrading performance.
 
+If Windows returns message text but cannot resolve an insertion or a localized message resource, Log Monitor outputs the available text and a warning instead of dropping the event. Unresolved placeholders can remain in the message. Errors that leave no usable text are still reported.
+
 ### Configuration
 
 - `startAtOldestRecord` (Required): This Boolean field indicates whether the Log Monitor tool should output event logs from the start of the container boot or from the start of the Log Monitor tool itself. If set `true`, the tool should output the event logs from the start of container boot, and if set false, the tool only outputs event logs from the start of log monitor.
