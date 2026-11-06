@@ -2,6 +2,7 @@
 
 **Contents:**
 
+- [Configuration File Path](#configuration-file-path)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
@@ -10,6 +11,14 @@
 - [IIS Monitoring](#iis-monitoring-with-log-monitor)
 - [Log Format Customization](#log-format-customization)
 - [Security Advisory for Config File](#security-advisory-for-config-file)
+
+## Configuration File Path
+
+Use `/Config <PATH>` to select a JSON configuration file. The path must be fully qualified, such as `C:\config\LogMonitorConfig.json` or `\\server\share\LogMonitorConfig.json`, or a plain file name such as `LogMonitorConfig.json`. Plain file names are resolved relative to the directory containing `LogMonitor.exe`, not the process's working directory.
+
+UNC paths also accept forward slashes (`//server/share/LogMonitorConfig.json`) or mixed separators. Fully qualified paths are passed through unchanged.
+
+Root-relative paths (`\config.json` or `/config.json`), drive-relative paths (`C:config.json`), and relative directory paths (`subdir\config.json` or `..\config.json`) are rejected.
 
 ## Sample Config File
 
