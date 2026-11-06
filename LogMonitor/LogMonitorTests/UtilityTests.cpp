@@ -18,6 +18,73 @@ namespace UtilityTests
     TEST_CLASS(UtilityTests)
     {
     public:
+        TEST_METHOD(TestConfigPathRejectsRootRelativePaths)
+        {
+            for (const auto* path : {L"\\config.json", L"\\dir\\config.json", L"\\", L"/config.json"})
+            {
+                std::wstring resolved;
+                Assert::IsFalse(Utility::ResolveConfigPath(path, resolved), path);
+            }
+        }
+
+        TEST_METHOD(TestConfigPathRejectsDriveRelativePaths)
+        {
+            for (const auto* path : {L"C:config.json", L"C:", L"z:dir\\config.json"})
+            {
+                std::wstring resolved;
+                Assert::IsFalse(Utility::ResolveConfigPath(path, resolved), path);
+            }
+        }
+
+        TEST_METHOD(TestConfigPathPreservesFullyQualifiedPaths)
+        {
+            for (const auto* path : {
+                L"C:\\config.json",
+                L"z:\\dir with spaces\\config.json",
+                L"C:/config.json",
+                L"C:\\dir\\..\\config.json",
+                L"\\\\server\\share\\config.json",
+                L"\\\\?\\C:\\dir\\config.json",
+                L"\\\\?\\UNC\\server\\share\\config.json",
+                L"\\\\.\\C:\\dir\\config.json"})
+            {
+                std::wstring resolved;
+                Assert::IsTrue(Utility::ResolveConfigPath(path, resolved), path);
+                Assert::AreEqual(std::wstring(path), resolved);
+            }
+        }
+
+        TEST_METHOD(TestConfigPathAnchorsPlainNamesToExecutableDirectory)
+        {
+            WCHAR modulePath[MAX_PATH] = {};
+            DWORD length = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+            Assert::IsTrue(length > 0 && length < _countof(modulePath));
+            Assert::IsTrue(PathRemoveFileSpecW(modulePath) != FALSE);
+            std::wstring directory(modulePath);
+            if (directory.back() != L'\\')
+            {
+                directory += L'\\';
+            }
+
+            for (const auto* name : {L"config.json", L"my..config.json", L"config name.json"})
+            {
+                std::wstring resolved;
+                Assert::IsTrue(Utility::ResolveConfigPath(name, resolved), name);
+                Assert::AreEqual(directory + name, resolved);
+            }
+        }
+
+        TEST_METHOD(TestConfigPathRejectsInvalidRelativeNames)
+        {
+            for (const auto* path : {
+                L"", L".", L"..", L"..\\config.json", L".\\config.json",
+                L"dir\\config.json", L"dir/config.json", L"config.json:stream"})
+            {
+                std::wstring resolved;
+                Assert::IsFalse(Utility::ResolveConfigPath(path, resolved), path);
+            }
+        }
+
         TEST_METHOD(TestisJsonNumberTrue)
         {
             std::wstring str = L"-0.12";
