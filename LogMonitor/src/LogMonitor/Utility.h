@@ -57,6 +57,11 @@ class Utility final
         _In_ const std::wstring& Path
     );
 
+    static bool ResolveConfigPath(
+        _In_ const std::wstring& userConfigName,
+        _Out_ std::wstring& resolvedConfigPath
+    );
+
     static std::wstring ReplaceAll(
         _In_ std::wstring Str,
         _In_ const std::wstring& From,
