@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <Windows.h>
+#include <cmath>
+#include <cwchar>
 #include <map>
 #include <string>
 

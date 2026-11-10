@@ -3,8 +3,9 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"  // NOLINT(build/include_subdir)
+// Keep this header first and PCH disabled to verify that it is self-contained.
 #include "../src/LogMonitor/JsonProcessor.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
 #include <cstdio>  // NOLINT(build/include_order)
 #include <string>  // NOLINT(build/include_order)
 

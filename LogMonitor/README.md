@@ -24,6 +24,10 @@ The log tool is supported for Windows, Server Core, and Nano images.
 
 ## Build
 
+`JsonProcessorTests.cpp` includes `JsonProcessor.h` before any other header and
+is compiled without a precompiled header. Building `LogMonitorTests` checks that
+`JsonProcessor.h` is self-contained in both the CMake and Visual Studio builds.
+
 ## Lint
 
 CI runs cpplint 2.0.2 on all tracked C++ source and header files, including tests,
@@ -41,9 +45,11 @@ $sources = git ls-files -- '*.cpp' '*.h'
 python -m cpplint @sources
 ```
 
-Keep `pch.h` first in translation units. Follow the existing category-specific
-`NOLINT` exceptions for PCH and Windows header ordering rather than disabling
-rules globally. Block suppressions end with `NOLINTEND` without categories.
+Keep `pch.h` first in translation units that use precompiled headers. The
+header self-containment test described above intentionally compiles without PCH.
+Follow the existing category-specific `NOLINT` exceptions for PCH and Windows
+header ordering rather than disabling rules globally. Block suppressions end
+with `NOLINTEND` without categories.
 
 ## Releases
 
