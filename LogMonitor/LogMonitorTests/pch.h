@@ -9,17 +9,22 @@
 // However, files listed here are ALL re-compiled if any one of them is updated between builds.
 // Do not add files here that you will be updating frequently as this negates the performance advantage.
 
-#ifndef PCH_H
-#define PCH_H
+#ifndef LOGMONITOR_LOGMONITORTESTS_PCH_H_
+#define LOGMONITOR_LOGMONITORTESTS_PCH_H_
+
+#define LOGMONITOR_TESTS
 
 // add headers that you want to pre-compile here
 
+// Preserve the Windows header dependencies and PCH order used by the test project.
+// NOLINTBEGIN(build/include_order)
 #include "CppUnitTest.h"
 #include <functional>
 #include <conio.h>
 #include <stdio.h>
 #include <array>
 #include <memory>
+#include <thread>
 #include <variant>
 #include <cstdint>
 #include <string>
@@ -48,10 +53,11 @@
 #include <streambuf>
 #include <system_error>
 #include <codecvt>
-#include "shlwapi.h"
-#include <direct.h >
-#include <io.h> 
-#include <fcntl.h> 
+#include <shlwapi.h>
+#include <direct.h>
+#include <io.h>
+#include <fcntl.h>
+// NOLINTEND
 #include <nlohmann/json.hpp>
 #include "../src/LogMonitor/Utility.h"
 #include "../src/LogMonitor/Parser/ConfigFileParser.h"
@@ -64,4 +70,4 @@
 #include "../src/LogMonitor/LogFileMonitor.h"
 #include "../src/LogMonitor/ProcessMonitor.h"
 #include "Utility.h"
-#endif //PCH_H
+#endif  // LOGMONITOR_LOGMONITORTESTS_PCH_H_

@@ -5,6 +5,9 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "Version.h"  // NOLINT(build/include_subdir)
+#include <memory>  // NOLINT(build/include_order)
+#include <utility>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 

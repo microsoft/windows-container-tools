@@ -3,8 +3,11 @@
 // Licensed under the MIT license.
 //
 
-#include "pch.h"
+#include "pch.h"  // NOLINT(build/include_subdir)
+#include <cstdio>  // NOLINT(build/include_order)
 
+// The VS test project compiles these implementations into this test translation unit.
+// NOLINTBEGIN(build/include)
 #include "../src/LogMonitor/EtwMonitor.cpp"
 #include "../src/LogMonitor/EventMonitor.cpp"
 #include "../src/LogMonitor/JsonFileParser.cpp"
@@ -13,11 +16,12 @@
 #include "../src/LogMonitor/LogFileMonitor.cpp"
 #include "../src/LogMonitor/ProcessMonitor.cpp"
 #include "../src/LogMonitor/Utility.cpp"
+// NOLINTEND
 
 #pragma comment(lib, "wevtapi.lib")
 #pragma comment(lib, "tdh.lib")
 #pragma comment(lib, "ws2_32.lib")  // For ntohs function
-#pragma comment(lib, "shlwapi.lib") 
+#pragma comment(lib, "shlwapi.lib")
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -27,56 +31,55 @@ LogWriter logWriter;
 
 namespace LogMonitorTests
 {
+///
+/// Tests the tools that other tests could use. i.e. redirecting stdout.
+///
+TEST_CLASS(LogMonitorTests)
+{
+    WCHAR bigOutBuf[BUFFER_SIZE];
+
     ///
-    /// Tests the tools that other tests could use. i.e. redirecting stdout.
+    /// Gets the content of the Stdout buffer and returns it in a wstring.
     ///
-    TEST_CLASS(LogMonitorTests)
+    /// \return A wstring with the stdout.
+    ///
+    std::wstring RecoverOuput()
     {
-        WCHAR bigOutBuf[BUFFER_SIZE];
+        return std::wstring(bigOutBuf);
+    }
 
-        ///
-        /// Gets the content of the Stdout buffer and returns it in a wstring. 
-        ///
-        /// \return A wstring with the stdout.
-        ///
-        std::wstring RecoverOuput()
-        {
-            return std::wstring(bigOutBuf);
-        }
+public:
+    ///
+    /// "Redirects" the stdout to our buffer.
+    ///
+    TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
+    {
+        //
+        // Set our own buffer in stdout.
+        //
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        fflush(stdout);
+        _setmode(_fileno(stdout), _O_U16TEXT);
+        setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
+    }
 
-    public:
+    ///
+    /// Test that things being printed with logWriter are sent to
+    /// bigOutBuf buffer.
+    ///
+    TEST_METHOD(TestRedirectedOutputForTests)
+    {
+        std::wstring expectedOutput(BUFFER_SIZE - 4, L'#');
 
-        ///
-        /// "Redirects" the stdout to our buffer. 
-        ///
-        TEST_METHOD_INITIALIZE(InitializeLogFileMonitorTests)
-        {
-            //
-            // Set our own buffer in stdout.
-            //
-            ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
-            fflush(stdout);
-            _setmode(_fileno(stdout), _O_U16TEXT);
-            setvbuf(stdout, (char*)bigOutBuf, _IOFBF, sizeof(bigOutBuf) - sizeof(WCHAR));
-        }
-        
-        ///
-        /// Test that things being printed with logWriter are sent to
-        /// bigOutBuf buffer. 
-        ///
-        TEST_METHOD(TestRedirectedOutputForTests)
-        {
-            std::wstring expectedOutput(BUFFER_SIZE - 4, L'#');
+        logWriter.WriteConsoleLog(expectedOutput);
+        expectedOutput += L"\n";
 
-            logWriter.WriteConsoleLog(expectedOutput);
-            expectedOutput += L"\n";
+        //
+        // Recover the stdout
+        //
+        std::wstring realOutput = RecoverOuput();
 
-            //
-            // Recover the stdout
-            //
-            std::wstring realOutput = RecoverOuput();
-
-            Assert::AreEqual(expectedOutput, realOutput);
-        }
-    };
-}
+        Assert::AreEqual(expectedOutput, realOutput);
+    }
+};
+}  // namespace LogMonitorTests
