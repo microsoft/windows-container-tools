@@ -2,6 +2,7 @@
 
 **Contents:**
 
+- [Configuration File Path](#configuration-file-path)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
@@ -10,6 +11,14 @@
 - [IIS Monitoring](#iis-monitoring-with-log-monitor)
 - [Log Format Customization](#log-format-customization)
 - [Security Advisory for Config File](#security-advisory-for-config-file)
+
+## Configuration File Path
+
+Use `/Config <PATH>` to select a JSON configuration file. The path must be fully qualified, such as `C:\config\LogMonitorConfig.json` or `\\server\share\LogMonitorConfig.json`, or a plain file name such as `LogMonitorConfig.json`. Plain file names are resolved relative to the directory containing `LogMonitor.exe`, not the process's working directory.
+
+UNC paths also accept forward slashes (`//server/share/LogMonitorConfig.json`) or mixed separators. Fully qualified paths are passed through unchanged.
+
+Root-relative paths (`\config.json` or `/config.json`), drive-relative paths (`C:config.json`), and relative directory paths (`subdir\config.json` or `..\config.json`) are rejected.
 
 ## Sample Config File
 
@@ -150,6 +159,8 @@ Using both the provider's name and provider GUID:
 
 Event log is a record of events related to the system, security, and application stored on a Windows operating system. The event log provides a standard, centralized way for apps and the operating system to record important software and hardware events, helping in tracking of potential threats and problems that could be potentially degrading performance.
 
+During shutdown, Event Log monitoring cancels pending replay instead of draining the remaining records. It waits up to five seconds for its worker to exit before releasing resources. If signaling or waiting for the worker fails, or the wait times out, Log Monitor terminates the process with a Windows fail-fast exception rather than allowing the worker to access freed memory.
+
 ### Configuration
 
 - `startAtOldestRecord` (Required): This Boolean field indicates whether the Log Monitor tool should output event logs from the start of the container boot or from the start of the Log Monitor tool itself. If set `true`, the tool should output the event logs from the start of container boot, and if set false, the tool only outputs event logs from the start of log monitor.
@@ -216,6 +227,8 @@ Example 1 (Application channel, verboseness: Error):
 This will monitor any changes in log files matching a specified filter, given the log directory location in the configuration. For instance, given a directory like `C:\temp\logs` and `*.log` filter, this will monitor any changes in `.log` files within the `C:\temp\logs` directory.
 
 When a monitored subdirectory is deleted or moved outside the watched directory, LogMonitor stops monitoring its tracked files, including files in nested subdirectories.
+
+When `includeSubdirectories` is enabled, adding or moving a populated directory back into the watched tree discovers its files that match the configured filter. Newly discovered files are read from the beginning, as with individually added files. Removal also handles mixed long and short directory names without affecting similarly named sibling directories.
 
 ### Configuration
 

@@ -5,6 +5,7 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "ProcessMonitor.h"  // NOLINT(build/include_subdir)
+#include <string>  // NOLINT(build/include_order)
 
 using namespace std;
 

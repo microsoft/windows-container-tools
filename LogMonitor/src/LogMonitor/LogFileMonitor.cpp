@@ -5,7 +5,11 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "LogFileMonitor.h"  // NOLINT(build/include_subdir)
+#include <memory>  // NOLINT(build/include_order)
 #include <regex>  // NOLINT(build/include_order)
+#include <string>  // NOLINT(build/include_order)
+#include <utility>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 
@@ -254,7 +258,7 @@ LogFileMonitor::StartLogFileMonitorStatic(
 }
 
 DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, BOOLEAN lock = TRUE) {
-    // Removed directories need cleanup even when their names do not match the file filter.
+    // Directory notifications can affect matching descendants even when the directory name does not match.
     if (event.Action != EventAction::ReInit &&
         event.Action != EventAction::RenameNew &&
         event.Action != EventAction::Remove)
@@ -269,7 +273,13 @@ DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, B
 
             if (!FileMatchesFilter((LPCWSTR)(event.FileName.c_str()), m_filter.c_str()))
             {
-                return ERROR_NO_MATCH;
+                const DWORD attributes = event.Action == EventAction::Add && m_includeSubfolders
+                    ? GetFileAttributesW((m_logDirectory + L'\\' + event.FileName).c_str())
+                    : INVALID_FILE_ATTRIBUTES;
+                if (attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY))
+                {
+                    return ERROR_NO_MATCH;
+                }
             }
         }
     }
@@ -632,7 +642,6 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
             dwNextEntryOffset = fileNotificationInfo->NextEntryOffset;
             fileNotificationInfo =
                 (FILE_NOTIFY_INFORMATION*)((LPBYTE)fileNotificationInfo + fileNotificationInfo->NextEntryOffset);
-
         } while (dwNextEntryOffset);
     }
     else
@@ -690,6 +699,8 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
                 const std::wstring shortPath = Utility::GetShortPath(fileName).substr(m_shortLogDirectory.size() + 1);
 
                 logFileInfo->FileName = longPath;
+                logFileInfo->ShortName = shortPath;
+                logFileInfo->FileId = fileId;
                 logFileInfo->NextReadOffset = 0;
                 logFileInfo->LastReadTimestamp = 0;
 
@@ -1072,7 +1083,34 @@ LogFileMonitor::LogFileAddEventHandler(
             return status;
         }
 
-        if (!(ftyp & FILE_ATTRIBUTE_DIRECTORY))
+        if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            if (m_includeSubfolders)
+            {
+                std::vector<std::pair<std::wstring, FILE_ID_INFO>> logFiles;
+                status = GetFilesInDirectory(fullLongPath, m_filter, logFiles, true);
+                if (status != ERROR_SUCCESS)
+                {
+                    logWriter.TraceError(
+                        Utility::FormatString(
+                            L"Failed to enumerate added log directory %ws. Error: %lu",
+                            fullLongPath.c_str(), status).c_str());
+                    return status;
+                }
+
+                for (const auto& file : logFiles)
+                {
+                    DirChangeNotificationEvent added = {
+                        file.first.substr(m_logDirectory.size() + 1), EventAction::Add, Event.Timestamp};
+                    const DWORD fileStatus = LogFileAddEventHandler(added);
+                    if (status == ERROR_SUCCESS)
+                    {
+                        status = fileStatus;
+                    }
+                }
+            }
+        }
+        else if (FileMatchesFilter(PathFindFileNameW(fullLongPath.c_str()), m_filter.c_str()))
         {
             auto logFileInfo = std::make_shared<LogFileInformation>();
 
@@ -1084,6 +1122,7 @@ LogFileMonitor::LogFileAddEventHandler(
             const std::wstring shortPath = Utility::GetShortPath(fullLongPath).substr(m_shortLogDirectory.size() + 1);
 
             logFileInfo->FileName = longPath;
+            logFileInfo->ShortName = shortPath;
             logFileInfo->NextReadOffset = 0;
             logFileInfo->LastReadTimestamp = 0;
             logFileInfo->EncodingType = LM_FILETYPE::FileTypeUnknown;
@@ -1109,6 +1148,7 @@ LogFileMonitor::LogFileAddEventHandler(
                 }
             }
 
+            logFileInfo->FileId = fileId;
             status = ReadLogFile(logFileInfo);
 
             m_fileIds[fileId] = longPath;
@@ -1121,64 +1161,112 @@ LogFileMonitor::LogFileAddEventHandler(
 }
 
 
+std::wstring
+LogFileMonitor::ResolveTrackedPath(const std::wstring& Path) const
+{
+    std::wstring longPrefix;
+    std::wstring shortPrefix;
+    size_t start = 0;
+    while (start < Path.size())
+    {
+        const size_t end = Path.find(L'\\', start);
+        const std::wstring component = Path.substr(start, end - start);
+        const auto findEntry = [&component](const auto& paths, const std::wstring& prefix)
+        {
+            auto exact = paths.find(prefix + component);
+            if (exact != paths.end())
+            {
+                return exact;
+            }
+
+            const std::wstring directory = prefix + component + L'\\';
+            auto child = paths.lower_bound(directory);
+            return child != paths.end() &&
+                _wcsnicmp(child->first.c_str(), directory.c_str(), directory.size()) == 0
+                ? child : paths.end();
+        };
+
+        // Descendant records retain both spellings even after a directory disappears.
+        std::wstring longName;
+        std::wstring shortName;
+        auto file = findEntry(m_logFilesInformation, longPrefix);
+        if (file != m_logFilesInformation.end())
+        {
+            longName = file->first;
+            shortName = file->second->ShortName;
+        }
+        else
+        {
+            auto alias = findEntry(m_longPaths, shortPrefix);
+            if (alias == m_longPaths.end())
+            {
+                return L"";
+            }
+            longName = alias->second;
+            shortName = alias->first;
+        }
+
+        const size_t longEnd = longName.find(L'\\', longPrefix.size());
+        const size_t shortEnd = shortName.find(L'\\', shortPrefix.size());
+        longPrefix = longName.substr(0, longEnd);
+        shortPrefix = shortName.substr(0, shortEnd);
+        if (end == std::wstring::npos)
+        {
+            return longPrefix;
+        }
+        if (longEnd == std::wstring::npos || shortEnd == std::wstring::npos)
+        {
+            return L"";
+        }
+        longPrefix += L'\\';
+        shortPrefix += L'\\';
+        start = end + 1;
+    }
+    return L"";
+}
+
+
 DWORD
 LogFileMonitor::LogFileRemoveEventHandler(
     _In_ DirChangeNotificationEvent& Event
     )
 {
-    DWORD status = ERROR_SUCCESS;
-    auto element = GetLogFilesInformationIt(Event.FileName);
-    const std::wstring removedPath = element != m_logFilesInformation.end()
-        ? element->second->FileName : Event.FileName;
-
-    const auto matchesRemovedPath = [&removedPath](const std::wstring& path)
+    const std::wstring removedPath = ResolveTrackedPath(Event.FileName);
+    if (removedPath.empty())
     {
-        return _wcsicmp(path.c_str(), removedPath.c_str()) == 0 ||
-            (path.size() > removedPath.size() &&
-             path[removedPath.size()] == L'\\' &&
-             _wcsnicmp(path.c_str(), removedPath.c_str(), removedPath.size()) == 0);
+        return ERROR_SUCCESS;
+    }
+
+    const auto eraseFile = [this](LogFileInfoMap::iterator file)
+    {
+        auto alias = m_longPaths.find(file->second->ShortName);
+        if (alias != m_longPaths.end() && _wcsicmp(alias->second.c_str(), file->first.c_str()) == 0)
+        {
+            m_longPaths.erase(alias);
+        }
+        auto id = m_fileIds.find(file->second->FileId);
+        if (id != m_fileIds.end() && _wcsicmp(id->second.c_str(), file->first.c_str()) == 0)
+        {
+            m_fileIds.erase(id);
+        }
+        return m_logFilesInformation.erase(file);
     };
 
-    for (auto it = m_logFilesInformation.begin(); it != m_logFilesInformation.end();)
+    auto exact = m_logFilesInformation.find(removedPath);
+    if (exact != m_logFilesInformation.end())
     {
-        if (matchesRemovedPath(it->first))
-        {
-            it = m_logFilesInformation.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
+        eraseFile(exact);
+        return ERROR_SUCCESS;
     }
 
-    for (auto it = m_longPaths.begin(); it != m_longPaths.end();)
+    const std::wstring prefix = removedPath + L'\\';
+    for (auto file = m_logFilesInformation.lower_bound(prefix);
+         file != m_logFilesInformation.end() &&
+             _wcsnicmp(file->first.c_str(), prefix.c_str(), prefix.size()) == 0;)
     {
-        if (matchesRemovedPath(it->first) ||
-            matchesRemovedPath(it->second) ||
-            m_logFilesInformation.find(it->second) == m_logFilesInformation.end())
-        {
-            m_logFilesInformation.erase(it->second);
-            it = m_longPaths.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
+        file = eraseFile(file);
     }
-
-    for (auto it = m_fileIds.begin(); it != m_fileIds.end();)
-    {
-        if (m_logFilesInformation.find(it->second) == m_logFilesInformation.end())
-        {
-            it = m_fileIds.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-
-    return status;
+    return ERROR_SUCCESS;
 }
 
 
@@ -1237,7 +1325,15 @@ LogFileMonitor::LogFileRenameNewEventHandler(
         {
             std::vector<std::pair<std::wstring, FILE_ID_INFO>> logFiles;
 
-            GetFilesInDirectory(fullLongPath, m_filter, logFiles, m_includeSubfolders);
+            status = GetFilesInDirectory(fullLongPath, m_filter, logFiles, m_includeSubfolders);
+            if (status != ERROR_SUCCESS)
+            {
+                logWriter.TraceError(
+                    Utility::FormatString(
+                        L"Failed to enumerate renamed log directory %ws. Error: %lu",
+                        fullLongPath.c_str(), status).c_str());
+                return status;
+            }
 
             for (auto file : logFiles)
             {
@@ -1249,6 +1345,16 @@ LogFileMonitor::LogFileRenameNewEventHandler(
                 if (itFileId != m_fileIds.end())
                 {
                     RenameFileInMaps(fileName, itFileId->second, fileId);
+                }
+                else
+                {
+                    DirChangeNotificationEvent added = {
+                        fileName.substr(m_logDirectory.size() + 1), EventAction::Add, Event.Timestamp};
+                    const DWORD fileStatus = LogFileAddEventHandler(added);
+                    if (status == ERROR_SUCCESS)
+                    {
+                        status = fileStatus;
+                    }
                 }
             }
         }
@@ -1351,6 +1457,8 @@ LogFileMonitor::RenameFileInMaps(
         m_longPaths.erase(longPathIterator);
     }
 
+    fileInfo->ShortName = shortPath;
+    fileInfo->FileId = FileId;
     m_logFilesInformation[longPath] = fileInfo;
     m_longPaths[shortPath] = longPath;
     m_fileIds[FileId] = longPath;
@@ -1391,6 +1499,8 @@ LogFileMonitor::LogFileReInitEventHandler(
                 const std::wstring shortPath = Utility::GetShortPath(fileName).substr(m_shortLogDirectory.size() + 1);
 
                 logFileInfo->FileName = longPath;
+                logFileInfo->ShortName = shortPath;
+                logFileInfo->FileId = fileId;
                 logFileInfo->NextReadOffset = 0;
                 logFileInfo->LastReadTimestamp = 0;
 
