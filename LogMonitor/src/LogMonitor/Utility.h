@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <Windows.h>
+#include <cmath>
+#include <cwchar>
 #include <map>
 #include <string>
 
@@ -55,6 +58,11 @@ class Utility final
 
     static std::wstring GetLongPath(
         _In_ const std::wstring& Path
+    );
+
+    static bool ResolveConfigPath(
+        _In_ const std::wstring& userConfigName,
+        _Out_ std::wstring& resolvedConfigPath
     );
 
     static std::wstring ReplaceAll(
