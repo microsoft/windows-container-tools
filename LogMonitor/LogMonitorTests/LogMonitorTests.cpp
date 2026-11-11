@@ -6,8 +6,10 @@
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include <wrl/client.h>  // NOLINT(build/include_order)
 #include <xmllite.h>  // NOLINT(build/include_order)
+#include <algorithm>  // NOLINT(build/include_order)
 #include <cstdio>  // NOLINT(build/include_order)
 #include <string>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 // The VS test project compiles these implementations into this test translation unit.
 // NOLINTBEGIN(build/include)
@@ -35,6 +37,166 @@ LogWriter logWriter;
 
 namespace LogMonitorTests
 {
+TEST_CLASS(EventMessageFormattingTests)
+{
+    struct FormatReply
+    {
+        DWORD capacity;
+        BOOL success;
+        DWORD error;
+        DWORD used;
+        std::wstring text;
+        bool terminated = true;
+    };
+
+    static thread_local std::vector<FormatReply> replies;
+    static thread_local size_t nextReply;
+
+    static BOOL WINAPI FormatMessage(
+        EVT_HANDLE, EVT_HANDLE, DWORD messageId, DWORD valueCount,
+        PEVT_VARIANT values, DWORD flags, DWORD bufferSize,
+        LPWSTR buffer, PDWORD used)
+    {
+        Assert::IsTrue(nextReply < replies.size(), L"Unexpected formatting call.");
+        const auto& reply = replies[nextReply++];
+        Assert::AreEqual(0UL, messageId);
+        Assert::AreEqual(0UL, valueCount);
+        Assert::IsTrue(values == nullptr);
+        Assert::AreEqual(static_cast<DWORD>(EvtFormatMessageEvent), flags);
+        Assert::AreEqual(reply.capacity, bufferSize);
+        if (bufferSize == 0)
+        {
+            Assert::IsTrue(buffer == nullptr);
+        }
+        else
+        {
+            Assert::IsTrue(buffer != nullptr);
+            Assert::IsTrue(reply.text.size() + (reply.terminated ? 1 : 0) <= bufferSize);
+            std::fill(buffer, buffer + bufferSize, L'!');
+            std::copy(reply.text.begin(), reply.text.end(), buffer);
+            if (reply.terminated)
+            {
+                buffer[reply.text.size()] = L'\0';
+            }
+        }
+        *used = reply.used;
+        SetLastError(reply.error);
+        return reply.success;
+    }
+
+    static void CheckFormatting(
+        const std::vector<FormatReply>& sequence,
+        DWORD expectedStatus,
+        DWORD expectedError,
+        const std::wstring& expectedText)
+    {
+        replies = sequence;
+        nextReply = 0;
+        std::vector<wchar_t> message(256, L'z');
+        DWORD formattingError = ERROR_SUCCESS;
+        DWORD status = FormatEventMessage(nullptr, nullptr, message, formattingError, FormatMessage);
+        Assert::AreEqual(expectedStatus, status);
+        Assert::AreEqual(expectedError, formattingError);
+        Assert::AreEqual(expectedText, std::wstring(message.begin(), message.end()));
+        Assert::IsTrue(nextReply == replies.size(), L"Expected another formatting call.");
+    }
+
+public:
+    TEST_METHOD(TestSuccessfulMessageIgnoresLastErrorAndOldBufferContents)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 16, L""},
+            {16, TRUE, ERROR_ACCESS_DENIED, 3, L"ok"},
+        }, ERROR_SUCCESS, ERROR_SUCCESS, L"ok");
+    }
+
+    TEST_METHOD(TestPreservesPartialMessages)
+    {
+        for (DWORD error : {
+            ERROR_EVT_UNRESOLVED_VALUE_INSERT,
+            ERROR_EVT_UNRESOLVED_PARAMETER_INSERT,
+            ERROR_EVT_MAX_INSERTS_REACHED,
+            ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND})
+        {
+            CheckFormatting({
+                {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 5, L""},
+                {5, FALSE, error, 5, L"%2f!"},
+            }, ERROR_SUCCESS, error, L"%2f!");
+        }
+    }
+
+    TEST_METHOD(TestRetriesLargerBuffer)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 1, L""},
+            {1, FALSE, ERROR_INSUFFICIENT_BUFFER, 3, L""},
+            {3, TRUE, ERROR_SUCCESS, 3, L"ok"},
+        }, ERROR_SUCCESS, ERROR_SUCCESS, L"ok");
+    }
+
+    TEST_METHOD(TestRetriesAfterSizingResourceError)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_MUI_FILE_NOT_FOUND, 0, L""},
+            {1, FALSE, ERROR_INSUFFICIENT_BUFFER, 5, L""},
+            {5, FALSE, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, 5, L"%2f!"},
+        }, ERROR_SUCCESS, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, L"%2f!");
+    }
+
+    TEST_METHOD(TestInsufficientBufferWithoutGrowthFails)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 3, L""},
+            {3, FALSE, ERROR_INSUFFICIENT_BUFFER, 3, L""},
+        }, ERROR_INSUFFICIENT_BUFFER, ERROR_INSUFFICIENT_BUFFER, L"");
+    }
+
+    TEST_METHOD(TestFailedFormattingDiscardsPreviousMessage)
+    {
+        for (DWORD error : {ERROR_ACCESS_DENIED, ERROR_EVT_MESSAGE_NOT_FOUND})
+        {
+            CheckFormatting({
+                {0, FALSE, error, 0, L""},
+                {1, FALSE, error, 0, L""},
+            }, error, error, L"");
+        }
+
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 5, L""},
+            {5, FALSE, ERROR_ACCESS_DENIED, 5, L"text"},
+        }, ERROR_ACCESS_DENIED, ERROR_ACCESS_DENIED, L"");
+    }
+
+    TEST_METHOD(TestPartialErrorWithoutTextIsNotSuccess)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, 0, L""},
+            {1, FALSE, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, 0, L""},
+        }, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND, L"");
+
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 1, L""},
+            {1, FALSE, ERROR_EVT_UNRESOLVED_VALUE_INSERT, 1, L""},
+        }, ERROR_EVT_UNRESOLVED_VALUE_INSERT, ERROR_EVT_UNRESOLVED_VALUE_INSERT, L"");
+    }
+
+    TEST_METHOD(TestRejectsInvalidMessageSizeOrTermination)
+    {
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 3, L""},
+            {3, TRUE, ERROR_SUCCESS, 4, L"ok"},
+        }, ERROR_INVALID_DATA, ERROR_SUCCESS, L"");
+
+        CheckFormatting({
+            {0, FALSE, ERROR_INSUFFICIENT_BUFFER, 3, L""},
+            {3, TRUE, ERROR_SUCCESS, 3, L"bad", false},
+        }, ERROR_INVALID_DATA, ERROR_SUCCESS, L"");
+    }
+};
+
+thread_local std::vector<EventMessageFormattingTests::FormatReply> EventMessageFormattingTests::replies;
+thread_local size_t EventMessageFormattingTests::nextReply = 0;
+
 ///
 /// Tests the tools that other tests could use. i.e. redirecting stdout.
 ///

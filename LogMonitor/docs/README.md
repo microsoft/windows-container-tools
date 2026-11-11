@@ -159,6 +159,8 @@ Using both the provider's name and provider GUID:
 
 Event log is a record of events related to the system, security, and application stored on a Windows operating system. The event log provides a standard, centralized way for apps and the operating system to record important software and hardware events, helping in tracking of potential threats and problems that could be potentially degrading performance.
 
+If Windows returns message text but cannot resolve an insertion or a localized message resource, Log Monitor outputs the available text and a warning instead of dropping the event. Unresolved placeholders can remain in the message. Errors that leave no usable text are still reported.
+
 During shutdown, Event Log monitoring cancels pending replay instead of draining the remaining records. It waits up to five seconds for its worker to exit before releasing resources. If signaling or waiting for the worker fails, or the wait times out, Log Monitor terminates the process with a Windows fail-fast exception rather than allowing the worker to access freed memory.
 
 ### Configuration
