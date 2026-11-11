@@ -5,6 +5,7 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "ProcessMonitor.h"  // NOLINT(build/include_subdir)
+#include <string>  // NOLINT(build/include_order)
 
 using namespace std;
 
@@ -213,8 +214,9 @@ std::string FormatCustomLog(const std::string& inputLine) {
 ///
 std::string FormatStandardLog(const std::string& inputLine) {
     std::string prefix, suffix;
+    const bool isXml = Utility::CompareWStrings(loggingformat, L"XML");
 
-    if (Utility::CompareWStrings(loggingformat, L"XML")) {
+    if (isXml) {
         prefix = "<Log><Source>Process</Source><LogEntry><Logline>";
         suffix = "</Logline></LogEntry></Log>\n";
     } else {
@@ -244,7 +246,14 @@ std::string FormatStandardLog(const std::string& inputLine) {
         if (sequenceLength > 0 &&
             inputLine.size() - i >= static_cast<size_t>(sequenceLength) &&
             Utility::IsTextUTF8(inputLine.data() + i, sequenceLength)) {
-            sanitized.append(inputLine, i, sequenceLength);
+            // XML 1.0 forbids U+FFFE and U+FFFF, although both are valid UTF-8.
+            if (isXml &&
+                (inputLine.compare(i, sequenceLength, "\xef\xbf\xbe") == 0 ||
+                 inputLine.compare(i, sequenceLength, "\xef\xbf\xbf") == 0)) {
+                sanitized.append(sequenceLength, '?');
+            } else {
+                sanitized.append(inputLine, i, sequenceLength);
+            }
             i += sequenceLength;
         } else {
             sanitized += '?';
