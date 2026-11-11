@@ -2,6 +2,7 @@
 
 **Contents:**
 
+- [Configuration File Path](#configuration-file-path)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
@@ -10,6 +11,14 @@
 - [IIS Monitoring](#iis-monitoring-with-log-monitor)
 - [Log Format Customization](#log-format-customization)
 - [Security Advisory for Config File](#security-advisory-for-config-file)
+
+## Configuration File Path
+
+Use `/Config <PATH>` to select a JSON configuration file. The path must be fully qualified, such as `C:\config\LogMonitorConfig.json` or `\\server\share\LogMonitorConfig.json`, or a plain file name such as `LogMonitorConfig.json`. Plain file names are resolved relative to the directory containing `LogMonitor.exe`, not the process's working directory.
+
+UNC paths also accept forward slashes (`//server/share/LogMonitorConfig.json`) or mixed separators. Fully qualified paths are passed through unchanged.
+
+Root-relative paths (`\config.json` or `/config.json`), drive-relative paths (`C:config.json`), and relative directory paths (`subdir\config.json` or `..\config.json`) are rejected.
 
 ## Sample Config File
 
@@ -149,6 +158,8 @@ Using both the provider's name and provider GUID:
 ### Description
 
 Event log is a record of events related to the system, security, and application stored on a Windows operating system. The event log provides a standard, centralized way for apps and the operating system to record important software and hardware events, helping in tracking of potential threats and problems that could be potentially degrading performance.
+
+During shutdown, Event Log monitoring cancels pending replay instead of draining the remaining records. It waits up to five seconds for its worker to exit before releasing resources. If signaling or waiting for the worker fails, or the wait times out, Log Monitor terminates the process with a Windows fail-fast exception rather than allowing the worker to access freed memory.
 
 ### Configuration
 
@@ -364,6 +375,14 @@ WARNING: Failed to parse configuration file. Error retrieving source attributes.
 ### Description
 
 Currently, this one does not need any configuration, it basically streams the output of tthe process/command that is provided as the argument to `LogMonitor.exe`. For the given _entryproint_ command, a child process is created and links its STDIN and STDOUT to the `LogMonitor` process (through a _pipe_).
+
+Child processes should write UTF-8 output. JSON and XML process logs preserve valid
+UTF-8 characters, including characters split across pipe reads. In JSON and XML
+output, invalid UTF-8 bytes are replaced with `?`; valid characters elsewhere in the line are
+preserved. XML output also replaces each UTF-8 byte of U+FFFE and U+FFFF with
+`?` because these code points are forbidden in XML; JSON preserves them.
+Process monitoring does not automatically detect or convert legacy Windows code
+pages.
 
 ### Examples
 
