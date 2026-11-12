@@ -5,8 +5,73 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "EventMonitor.h"  // NOLINT(build/include_subdir)
+#include <algorithm>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
+
+namespace
+{
+DWORD FormatEventMessage(
+    EVT_HANDLE publisher,
+    EVT_HANDLE event,
+    std::vector<wchar_t>& message,
+    DWORD& formattingError,
+    decltype(&EvtFormatMessage) formatter = EvtFormatMessage)
+{
+    message.clear();
+    DWORD bufferSize = 0;
+    formatter(publisher, event, 0, 0, nullptr, EvtFormatMessageEvent, 0, nullptr, &bufferSize);
+
+    // A provider resource error can leave the initial size unset. Try formatting
+    // with a nonempty buffer so a subsequent size request can still be honored.
+    bufferSize = (std::max)(bufferSize, 1UL);
+
+    for (;;)
+    {
+        message.assign(bufferSize, L'\0');
+        DWORD used = 0;
+        BOOL formatted = formatter(
+            publisher, event, 0, 0, nullptr, EvtFormatMessageEvent, bufferSize, message.data(), &used);
+        formattingError = formatted ? ERROR_SUCCESS : GetLastError();
+
+        if (formattingError == ERROR_INSUFFICIENT_BUFFER && used > bufferSize)
+        {
+            bufferSize = used;
+            continue;
+        }
+
+        const bool partialMessage =
+            formattingError == ERROR_EVT_UNRESOLVED_VALUE_INSERT ||
+            formattingError == ERROR_EVT_UNRESOLVED_PARAMETER_INSERT ||
+            formattingError == ERROR_EVT_MAX_INSERTS_REACHED ||
+            formattingError == ERROR_EVT_MESSAGE_LOCALE_NOT_FOUND;
+
+        if (formattingError != ERROR_SUCCESS && !partialMessage)
+        {
+            message.clear();
+            return formattingError;
+        }
+
+        if (used == 0 || used > message.size())
+        {
+            message.clear();
+            return formatted ? ERROR_INVALID_DATA : formattingError;
+        }
+
+        const auto end = message.begin() + used;
+        const auto terminator = std::find(message.begin(), end, L'\0');
+        if (terminator == end)
+        {
+            message.clear();
+            return ERROR_INVALID_DATA;
+        }
+
+        message.resize(static_cast<size_t>(terminator - message.begin()));
+        return partialMessage && message.empty() ? formattingError : ERROR_SUCCESS;
+    }
+}
+}  // namespace
 
 ///
 /// EventMonitor.cpp
@@ -15,9 +80,9 @@ using namespace std;
 ///
 /// EventMonitor starts a monitor thread that waits for events from EvtSubscribe
 /// or for a stop event to be set. The same thread processes the changes and invokes the callback.
-/// Note: The constructor blocks until the spawned thread starts listening for changes or dies.
+/// The constructor starts the monitoring thread asynchronously.
 ///
-/// The destructor signals the stop event and waits up to MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring
+/// The destructor signals the stop event and waits up to EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS for the monitoring
 /// thread to exit. To prevent the thread from out-living EventMonitor, the destructor fails fast
 /// if the wait fails or times out. This also ensures the callback is not being called and will not be
 /// called once EventMonitor is destroyed.
@@ -30,12 +95,18 @@ EventMonitor::EventMonitor(
     _In_ bool StartAtOldestRecord,
     _In_ std::wstring LogFormat,
     _In_ std::wstring CustomLogFormat = L""
+#ifdef LOGMONITOR_TESTS
+    , _In_opt_ EventMonitorReplayTestHooks* ReplayTestHooks
+#endif
     ) :
     m_eventChannels(EventChannels),
     m_eventFormatMultiLine(EventFormatMultiLine),
     m_startAtOldestRecord(StartAtOldestRecord),
     m_logFormat(LogFormat),
     m_customLogFormat(CustomLogFormat)
+#ifdef LOGMONITOR_TESTS
+    , m_replayTestHooks(ReplayTestHooks)
+#endif
 {
     m_stopEvent = NULL;
     m_eventMonitorThread = NULL;
@@ -50,7 +121,7 @@ EventMonitor::EventMonitor(
     m_eventMonitorThread = CreateThread(
         nullptr,
         0,
-        (LPTHREAD_START_ROUTINE)&EventMonitor::StartEventMonitorStatic,
+        &EventMonitor::StartEventMonitorStatic,
         this,
         0,
         nullptr
@@ -58,20 +129,27 @@ EventMonitor::EventMonitor(
 
     if (!m_eventMonitorThread)
     {
-        throw std::system_error(std::error_code(GetLastError(), std::system_category()), "CreateThread");
+        DWORD status = GetLastError();
+        CloseHandle(m_stopEvent);
+        throw std::system_error(std::error_code(status, std::system_category()), "CreateThread");
     }
 }
 
 EventMonitor::~EventMonitor()
 {
+    DWORD status = ERROR_SUCCESS;
     if (!SetEvent(m_stopEvent))
     {
-        logWriter.TraceError(
-            Utility::FormatString(L"Failed to gracefully stop event log monitor %lu", GetLastError()).c_str()
-        );
+        status = GetLastError();
     }
     else
     {
+#ifdef LOGMONITOR_TESTS
+        if (m_replayTestHooks != nullptr)
+        {
+            SetEvent(m_replayTestHooks->shutdownRequested);
+        }
+#endif
         //
         // Wait for watch thread to exit.
         //
@@ -79,16 +157,27 @@ EventMonitor::~EventMonitor()
 
         if (waitResult != WAIT_OBJECT_0)
         {
-            // Wait failed or timed out
+            status = waitResult == WAIT_FAILED ? GetLastError() : ERROR_TIMEOUT;
         }
     }
 
-    if (!m_eventMonitorThread)
+    if (status != ERROR_SUCCESS)
+    {
+        // The worker may hold the log writer lock. Report the failure through WER without taking that lock.
+        EXCEPTION_RECORD exceptionRecord{};
+        exceptionRecord.ExceptionCode = HRESULT_FROM_WIN32(status);
+        exceptionRecord.ExceptionFlags = EXCEPTION_NONCONTINUABLE;
+        exceptionRecord.NumberParameters = 1;
+        exceptionRecord.ExceptionInformation[0] = status;
+        RaiseFailFastException(&exceptionRecord, nullptr, FAIL_FAST_GENERATE_EXCEPTION_ADDRESS);
+    }
+
+    if (m_eventMonitorThread)
     {
         CloseHandle(m_eventMonitorThread);
     }
 
-    if (!m_stopEvent)
+    if (m_stopEvent)
     {
         CloseHandle(m_stopEvent);
     }
@@ -102,7 +191,7 @@ EventMonitor::~EventMonitor()
 ///
 /// \return Status of event monitoring operation.
 ///
-DWORD
+DWORD WINAPI
 EventMonitor::StartEventMonitorStatic(
     _In_ LPVOID Context
     )
@@ -111,7 +200,7 @@ EventMonitor::StartEventMonitorStatic(
     try
     {
         DWORD status = pThis->StartEventMonitor();
-        if (status != ERROR_SUCCESS)
+        if (status != ERROR_SUCCESS && status != ERROR_CANCELLED)
         {
             logWriter.TraceError(
                 Utility::FormatString(L"Failed to start event log monitor. Error: %lu", status).c_str()
@@ -135,6 +224,21 @@ EventMonitor::StartEventMonitorStatic(
     }
 }
 
+DWORD
+EventMonitor::CheckForStop() const
+{
+    DWORD waitResult = WaitForSingleObject(m_stopEvent, 0);
+    if (waitResult == WAIT_OBJECT_0)
+    {
+        return ERROR_CANCELLED;
+    }
+    if (waitResult == WAIT_TIMEOUT)
+    {
+        return ERROR_SUCCESS;
+    }
+    return waitResult == WAIT_FAILED ? GetLastError() : ERROR_INVALID_DATA;
+}
+
 
 ///
 /// Entry for the spawned event monitor thread. Loops to wait for either the stop event in which case it exits
@@ -151,7 +255,16 @@ EventMonitor::StartEventMonitor()
     const LPWSTR pwsQuery = (LPWSTR)(L"*");
     const DWORD eventsCount = 2;
 
-    EnableEventLogChannels();
+    status = EnableEventLogChannels();
+    if (status != ERROR_SUCCESS)
+    {
+        return status;
+    }
+    status = CheckForStop();
+    if (status != ERROR_SUCCESS)
+    {
+        return status;
+    }
 
     //
     // Order stop event first so that stop is prioritized if both events are already signalled (changes
@@ -233,11 +346,12 @@ EventMonitor::StartEventMonitor()
             {
                 if (WAIT_FAILED == wait)
                 {
+                    status = GetLastError();
                     logWriter.TraceError(
                         Utility::FormatString(
                             L"Failed to subscribe to event log channel."
                             L" Wait operation on event handle failed. Error: %lu.",
-                            GetLastError()).c_str()
+                            status).c_str()
                     );
                 }
                 break;
@@ -339,17 +453,29 @@ EventMonitor::EnumerateResults(
     )
 {
     DWORD status = ERROR_SUCCESS;
-    EVT_HANDLE hEvents[EVENT_ARRAY_SIZE];
+    EVT_HANDLE hEvents[EVENT_ARRAY_SIZE]{};
     DWORD dwReturned = 0;
 
     while (true)
     {
+        status = CheckForStop();
+        if (status != ERROR_SUCCESS)
+        {
+            goto cleanup;
+        }
+
         //
         // Get a block of events from the result set.
         //
-        if (!EvtNext(hResults, EVENT_ARRAY_SIZE, hEvents, INFINITE, 0, &dwReturned))
+        dwReturned = 0;
+        if (!EvtNext(hResults, EVENT_ARRAY_SIZE, hEvents, EVENT_READ_TIMEOUT_MILLIS, 0, &dwReturned))
         {
-            if (ERROR_NO_MORE_ITEMS != (status = GetLastError()))
+            status = GetLastError();
+            if (status == ERROR_TIMEOUT)
+            {
+                continue;
+            }
+            if (status != ERROR_NO_MORE_ITEMS)
             {
                 logWriter.TraceError(
                     Utility::FormatString(L"Failed to query next event. Error: %lu.", status).c_str()
@@ -359,12 +485,41 @@ EventMonitor::EnumerateResults(
             goto cleanup;
         }
 
+#ifdef LOGMONITOR_TESTS
+        if (m_replayTestHooks != nullptr)
+        {
+            m_replayTestHooks->batchSize = static_cast<LONG>(dwReturned);
+            SetEvent(m_replayTestHooks->batchReady);
+            m_replayTestHooks->releaseBatchWaitResult = WaitForSingleObject(
+                m_replayTestHooks->releaseBatch,
+                EVENT_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS);
+            if (m_replayTestHooks->releaseBatchWaitResult != WAIT_OBJECT_0)
+            {
+                status = ERROR_TIMEOUT;
+                goto cleanup;
+            }
+        }
+#endif
+
         //
         // For each event, call the PrintEvent function which renders the
         // event for display.
         //
         for (DWORD i = 0; i < dwReturned; i++)
         {
+            status = CheckForStop();
+            if (status != ERROR_SUCCESS)
+            {
+                goto cleanup;
+            }
+
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->processedEvents);
+            }
+#endif
+
             status = PrintEvent(hEvents[i]);
 
             if (ERROR_SUCCESS != status)
@@ -380,6 +535,12 @@ EventMonitor::EnumerateResults(
 
             EvtClose(hEvents[i]);
             hEvents[i] = NULL;
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->closedEvents);
+            }
+#endif
         }
     }
 
@@ -393,6 +554,12 @@ cleanup:
         if (NULL != hEvents[i])
         {
             EvtClose(hEvents[i]);
+#ifdef LOGMONITOR_TESTS
+            if (m_replayTestHooks != nullptr)
+            {
+                InterlockedIncrement(&m_replayTestHooks->closedEvents);
+            }
+#endif
         }
     }
 
@@ -522,56 +689,54 @@ EventMonitor::PrintEvent(
             //
             // Collect user message
             //
+            m_eventMessageBuffer.clear();
+            DWORD formattingError = ERROR_SUCCESS;
             publisher = EvtOpenPublisherMetadata(nullptr, providerName.c_str(), nullptr, 0, 0);
 
             if (publisher)
             {
-                EvtFormatMessage(publisher, EventHandle, 0, 0, nullptr, EvtFormatMessageEvent, 0, nullptr, &bufferSize);
-                status = GetLastError();
+                status = FormatEventMessage(publisher, EventHandle, m_eventMessageBuffer, formattingError);
 
-                if (status != ERROR_EVT_MESSAGE_NOT_FOUND)
-                {
-                    if (ERROR_INSUFFICIENT_BUFFER == status || ERROR_EVT_UNRESOLVED_VALUE_INSERT == status)
-                    {
-                        status = ERROR_SUCCESS;
-                    }
-
-                    if (m_eventMessageBuffer.capacity() < bufferSize)
-                    {
-                        m_eventMessageBuffer.resize(bufferSize);
-                    }
-
-                    if (!EvtFormatMessage(
-                        publisher,
-                        EventHandle,
-                        0,
-                        0,
-                        nullptr,
-                        EvtFormatMessageEvent,
-                        bufferSize,
-                        &m_eventMessageBuffer[0],
-                        &bufferSize))
-                    {
-                        status = GetLastError();
-                    }
-                }
-                else
+                if (status == ERROR_EVT_MESSAGE_NOT_FOUND)
                 {
                     status = ERROR_SUCCESS;
                 }
             }
+            else
+            {
+                formattingError = GetLastError();
+            }
 
             if (status == ERROR_SUCCESS)
             {
+                if (formattingError != ERROR_SUCCESS)
+                {
+                    logWriter.TraceWarning(
+                        Utility::FormatString(
+                            L"Failed to fully format event log message for provider '%s', event %u. "
+                            L"Using %s. Error: %lu.",
+                            providerName.c_str(),
+                            pLogEntry->eventId,
+                            m_eventMessageBuffer.empty() ? L"an empty message" : L"the available message text",
+                            formattingError
+                        ).c_str()
+                    );
+                }
+
                 pLogEntry->source = L"EventLog";
                 pLogEntry->eventSource = providerName;
                 pLogEntry->eventTime = Utility::FileTimeToString(fileTimeCreated);
                 pLogEntry->eventChannel = channelName;
                 pLogEntry->eventLevel = c_LevelToString[static_cast<UINT8>(level)];
-                pLogEntry->eventMessage = (LPWSTR)(&m_eventMessageBuffer[0]);
+                pLogEntry->eventMessage.assign(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
 
                 std::wstring formattedEvent;
                 if (Utility::CompareWStrings(m_logFormat, L"Custom")) {
+                    if (!m_eventFormatMultiLine) {
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\r\n", L" ");
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\r", L" ");
+                        pLogEntry->eventMessage = Utility::ReplaceAll(pLogEntry->eventMessage, L"\n", L" ");
+                    }
                     formattedEvent = Utility::FormatEventLineLog(m_customLogFormat, pLogEntry, pLogEntry->source);
                 } else {
                     std::wstring logFmt;
@@ -592,9 +757,7 @@ EventMonitor::PrintEvent(
                                  L"}}";
 
                         // sanitize message
-                        std::wstring msg(m_eventMessageBuffer.begin(), m_eventMessageBuffer.end());
-                        Utility::SanitizeJson(msg);
-                        pLogEntry->eventMessage = msg;
+                        Utility::SanitizeJson(pLogEntry->eventMessage);
                     }
 
                     formattedEvent = Utility::FormatString(
@@ -634,23 +797,27 @@ EventMonitor::PrintEvent(
 
 /// Enables all monitored event log channels.
 ///
-/// \return None
+/// \return ERROR_CANCELLED on shutdown, an error on a failed wait, or ERROR_SUCCESS.
 ///
-void
+DWORD
 EventMonitor::EnableEventLogChannels()
 {
     for (const auto& eventChannel : m_eventChannels) {
-        DWORD status = EnableEventLogChannel(eventChannel.Name.c_str());
+        DWORD status = CheckForStop();
+        if (status != ERROR_SUCCESS) {
+            return status;
+        }
+        status = EnableEventLogChannel(eventChannel.Name.c_str());
 
         if (status == RPC_S_SERVER_UNAVAILABLE) {
             HANDLE timerEvent = CreateWaitableTimer(NULL, FALSE, NULL);
 
             if (!timerEvent) {
-            status = GetLastError();
-            logWriter.TraceError(
-                Utility::FormatString(
-                    L"Failed to create timer object.", status).c_str());
-            break;
+                status = GetLastError();
+                logWriter.TraceError(
+                    Utility::FormatString(
+                        L"Failed to create timer object. Error: %lu", status).c_str());
+                return status;
             }
 
             std::double_t waitInSeconds = 300;
@@ -671,7 +838,9 @@ EventMonitor::EnableEventLogChannels()
                             L"Failed to set timer object to enable %s event channel. Error: %lu",
                             eventChannel.Name.c_str(),
                             status).c_str());
-                    break;
+                    CancelWaitableTimer(timerEvent);
+                    CloseHandle(timerEvent);
+                    return status;
                 }
 
                 DWORD wait = WaitForMultipleObjects(eventsCount, channelEnableEvents, FALSE, INFINITE);
@@ -683,6 +852,7 @@ EventMonitor::EnableEventLogChannels()
                         //
                         CancelWaitableTimer(timerEvent);
                         CloseHandle(timerEvent);
+                        return ERROR_CANCELLED;
                     }
 
                     case WAIT_OBJECT_0 + 1:
@@ -707,6 +877,7 @@ EventMonitor::EnableEventLogChannels()
 
                         CancelWaitableTimer(timerEvent);
                         CloseHandle(timerEvent);
+                        return status;
                     }
                 }
 
@@ -715,12 +886,13 @@ EventMonitor::EnableEventLogChannels()
                 if (retryStatus == RPC_S_SERVER_UNAVAILABLE) {
                     elapsedTime += Utility::WAIT_INTERVAL;
                 } else {
-                    logWriter.TraceInfo(
-                        Utility::FormatString(
-                            L"Enabled %s event channel after %d seconds.",
-                            eventChannel.Name.c_str(),
-                            elapsedTime).c_str() );
-                    status = ERROR_SUCCESS;
+                    if (retryStatus == ERROR_SUCCESS) {
+                        logWriter.TraceInfo(
+                            Utility::FormatString(
+                                L"Enabled %s event channel after %d seconds.",
+                                eventChannel.Name.c_str(),
+                                elapsedTime).c_str() );
+                    }
                     break;
                 }
             }
@@ -729,6 +901,7 @@ EventMonitor::EnableEventLogChannels()
             CloseHandle(timerEvent);
         }
     }
+    return ERROR_SUCCESS;
 }
 
 

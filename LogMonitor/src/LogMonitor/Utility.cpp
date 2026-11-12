@@ -7,6 +7,7 @@
 #include "Utility.h"  // NOLINT(build/include_subdir)
 #include <regex>  // NOLINT(build/include_order)
 #include <string>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 using json = nlohmann::json;
@@ -228,6 +229,69 @@ Utility::GetLongPath(
     }
 
     return Path;
+}
+
+bool Utility::ResolveConfigPath(
+    _In_ const std::wstring& userConfigName,
+    _Out_ std::wstring& resolvedConfigPath)
+{
+    const bool hasDriveRoot =
+        userConfigName.size() >= 3 &&
+        PathGetDriveNumberW(userConfigName.c_str()) >= 0 &&
+        (userConfigName[2] == L'\\' || userConfigName[2] == L'/');
+    const bool hasUncOrDeviceRoot =
+        userConfigName.size() >= 2 &&
+        (userConfigName[0] == L'\\' || userConfigName[0] == L'/') &&
+        (userConfigName[1] == L'\\' || userConfigName[1] == L'/');
+
+    if (hasDriveRoot || hasUncOrDeviceRoot)
+    {
+        resolvedConfigPath = userConfigName;
+        return true;
+    }
+
+    // Relative paths must be plain file names rooted under the executable directory.
+    if (userConfigName.empty() ||
+        userConfigName == L"." ||
+        userConfigName == L".." ||
+        userConfigName.find(L'/') != std::wstring::npos ||
+        userConfigName.find(L'\\') != std::wstring::npos ||
+        userConfigName.find(L':') != std::wstring::npos)
+    {
+        return false;
+    }
+
+    WCHAR modulePath[MAX_PATH] = {};
+    DWORD modulePathLength = GetModuleFileNameW(nullptr, modulePath, _countof(modulePath));
+    if (modulePathLength == 0)
+    {
+        logWriter.TraceError(
+            Utility::FormatString(L"Failed to get module path. Error: %d", GetLastError()).c_str()
+        );
+        return false;
+    }
+
+    if (modulePathLength >= _countof(modulePath))
+    {
+        logWriter.TraceError(L"Module path exceeds the maximum supported length.");
+        return false;
+    }
+
+    if (!PathRemoveFileSpecW(modulePath))
+    {
+        logWriter.TraceError(L"Failed to resolve executable directory.");
+        return false;
+    }
+
+    WCHAR combinedPath[MAX_PATH] = {};
+    if (PathCombineW(combinedPath, modulePath, userConfigName.c_str()) == nullptr)
+    {
+        logWriter.TraceError(L"Failed to resolve configuration file path.");
+        return false;
+    }
+
+    resolvedConfigPath = combinedPath;
+    return true;
 }
 
 ///
