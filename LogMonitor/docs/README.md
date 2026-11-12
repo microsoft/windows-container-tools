@@ -2,6 +2,7 @@
 
 **Contents:**
 
+- [Configuration File Path](#configuration-file-path)
 - [Sample Config File](#sample-config-file)
 - [ETW Monitoring](#etw-monitoring)
 - [Event Log Monitoring](#event-log-monitoring)
@@ -10,6 +11,14 @@
 - [IIS Monitoring](#iis-monitoring-with-log-monitor)
 - [Log Format Customization](#log-format-customization)
 - [Security Advisory for Config File](#security-advisory-for-config-file)
+
+## Configuration File Path
+
+Use `/Config <PATH>` to select a JSON configuration file. The path must be fully qualified, such as `C:\config\LogMonitorConfig.json` or `\\server\share\LogMonitorConfig.json`, or a plain file name such as `LogMonitorConfig.json`. Plain file names are resolved relative to the directory containing `LogMonitor.exe`, not the process's working directory.
+
+UNC paths also accept forward slashes (`//server/share/LogMonitorConfig.json`) or mixed separators. Fully qualified paths are passed through unchanged.
+
+Root-relative paths (`\config.json` or `/config.json`), drive-relative paths (`C:config.json`), and relative directory paths (`subdir\config.json` or `..\config.json`) are rejected.
 
 ## Sample Config File
 
@@ -150,10 +159,14 @@ Using both the provider's name and provider GUID:
 
 Event log is a record of events related to the system, security, and application stored on a Windows operating system. The event log provides a standard, centralized way for apps and the operating system to record important software and hardware events, helping in tracking of potential threats and problems that could be potentially degrading performance.
 
+If Windows returns message text but cannot resolve an insertion or a localized message resource, Log Monitor outputs the available text and a warning instead of dropping the event. Unresolved placeholders can remain in the message. Errors that leave no usable text are still reported.
+
+During shutdown, Event Log monitoring cancels pending replay instead of draining the remaining records. It waits up to five seconds for its worker to exit before releasing resources. If signaling or waiting for the worker fails, or the wait times out, Log Monitor terminates the process with a Windows fail-fast exception rather than allowing the worker to access freed memory.
+
 ### Configuration
 
 - `startAtOldestRecord` (Required): This Boolean field indicates whether the Log Monitor tool should output event logs from the start of the container boot or from the start of the Log Monitor tool itself. If set `true`, the tool should output the event logs from the start of container boot, and if set false, the tool only outputs event logs from the start of log monitor.
-- `eventFormatMultiLine` (Optional): This is a Boolean field that is used to indicate whether the Log Monitor should format the logs to `STDOUT` as multi-line or single line. If the field is not set in the config file, by default the value is `true`. If the field is set `true`, the tool does not format the event messages to a single line (and thus event messages can span multiple lines). If set to false, the tool formats the event log messages to a single line and removes new line characters.
+- `eventFormatMultiLine` (Optional): This is a Boolean field that is used to indicate whether the Log Monitor should format the logs to `STDOUT` as multi-line or single line. If the field is not set in the config file, by default the value is `true`. If the field is set `true`, the tool does not format the event messages to a single line (and thus event messages can span multiple lines). If set to false, the tool formats the event log messages to a single line and removes new line characters. For custom output, each CRLF, CR, or LF line break in the message is replaced with one space; other message content is preserved.
 - `channels` (Required): A channel is a named stream of events. It serves as a logical pathway for transporting events from the event publisher to a log file and possibly a subscriber. It is a sink that collects events. Each defined channel has the following properties:
   - `name` (Required): The name of the event channel
   - `level` (optional): This string field specifies the verboseness of the events collected. These include `Critical`, `Error`, `Warning`, `Information` and `Verbose`. If the level is not specified, level will be set to `Error`.
@@ -249,7 +262,7 @@ This will monitor any changes in log files matching a specified filter, given th
 - `filter` (optional): uses [MS-DOS wildcard match type](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/indexsrv/ms-dos-and-windows-wildcard-characters) i.e.. `*, ?`. Can be set to empty, which will be default to `"*"`.
 - `includeSubdirectories` (optional) : `"true|false"`, specify if sub-directories also need to be monitored. Defaults to `false`.
 - `includeFileNames` (optional): `"true|false"`, specifies whether to include file names in the logline, eg. `sample.log: xxxxx`. Defaults to `false`.
-- `enableTruncationRecovery` (optional): `"true|false"`, when `true` the monitor detects if a log file has been truncated in-place (its current size is smaller than the last read position) and resets the read offset to the beginning of the file so new content is not missed. This is useful when a log rotation strategy rewrites the same file rather than renaming it. Defaults to `false`.
+- `enableTruncationRecovery` (optional): `"true|false"`, when `true` the monitor detects if a log file has been truncated in-place (its current size is smaller than the last read position) and resets the read offset and encoding detection so the new content is read from the beginning with its new encoding, skipping any byte-order mark (BOM). This is useful when a log rotation strategy rewrites the same file rather than renaming it. Truncation cannot be detected if the file grows back to or beyond the previous read position before the monitor observes its smaller size. Defaults to `false`.
 - `waitInSeconds` (optional): specifies the duration to wait for a file or folder to be created if it does not exist. It takes integer values between 0-INFINITY. Defaults to `300` seconds, i.e, 5 minutes. It can be passed as a value or a string.
 
   - `waitInSeconds = 0`
@@ -365,6 +378,14 @@ WARNING: Failed to parse configuration file. Error retrieving source attributes.
 ### Description
 
 Currently, this one does not need any configuration, it basically streams the output of tthe process/command that is provided as the argument to `LogMonitor.exe`. For the given _entryproint_ command, a child process is created and links its STDIN and STDOUT to the `LogMonitor` process (through a _pipe_).
+
+Child processes should write UTF-8 output. JSON and XML process logs preserve valid
+UTF-8 characters, including characters split across pipe reads. In JSON and XML
+output, invalid UTF-8 bytes are replaced with `?`; valid characters elsewhere in the line are
+preserved. XML output also replaces each UTF-8 byte of U+FFFE and U+FFFF with
+`?` because these code points are forbidden in XML; JSON preserves them.
+Process monitoring does not automatically detect or convert legacy Windows code
+pages.
 
 ### Examples
 

@@ -166,7 +166,9 @@
   <ItemGroup>
     <ClCompile Include="EtwMonitorTests.cpp" />
     <ClCompile Include="EventMonitorTests.cpp" />
-	<ClCompile Include="JsonProcessorTests.cpp" />
+    <ClCompile Include="JsonProcessorTests.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="LogFileMonitorTests.cpp" />
     <ClCompile Include="LogMonitorTests.cpp" />
     <ClCompile Include="pch.cpp">

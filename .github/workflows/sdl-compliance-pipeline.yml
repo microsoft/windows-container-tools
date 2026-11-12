@@ -1,5 +1,8 @@
 name: CodeQL Analysis
 
+# This advanced setup covers C++ and GitHub Actions. Repository CodeQL default
+# setup must be disabled so GitHub accepts these analysis results.
+
 on:
   push:
     branches: ["main", "releases/**"]
@@ -11,6 +14,9 @@ on:
     paths-ignore:
       - "*.md"
       - "**/docs"
+  schedule:
+    # Weekly on Thursdays at 22:25 UTC.
+    - cron: "25 22 * * 4"
 
 jobs:
   sdl_compliance:
@@ -64,7 +70,7 @@ jobs:
       # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
       # https://github.com/github/codeql-action/blob/main/init/action.yml
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality # Default is "security-extended"
@@ -85,10 +91,33 @@ jobs:
 
       # https://github.com/github/codeql-action/blob/main/analyze/action.yml
       # Performs code analysis and uploads results to provided output path.
-      # We therefore do not need to use github/codeql-action/upload-sarif@v3
+      # We therefore do not need to use github/codeql-action/upload-sarif@v4
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           # The path of the directory in which to save the SARIF results (../results/cpp.sarif)
           output: ${{ env.CodeQLResultsDir }}
           upload: "always" # Options: 'always', 'failure-only', 'never'
+
+  actions_analysis:
+    name: Analyze (actions)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: actions
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:actions"

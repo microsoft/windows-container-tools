@@ -37,6 +37,11 @@ target_include_directories(LogMonitor PRIVATE
 target_link_libraries(LogMonitorLib PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(LogMonitor PRIVATE LogMonitorLib nlohmann_json::nlohmann_json)
 
+if(MSVC)
+    target_compile_options(LogMonitor PRIVATE /guard:cf)
+    target_link_options(LogMonitor PRIVATE /guard:cf)
+endif()
+
 # Set output path — use $<CONFIG> so Release/Debug binaries go into separate subdirectories,
 # matching the pipeline's $(buildConfiguration) layout.
 set_target_properties(LogMonitor PROPERTIES

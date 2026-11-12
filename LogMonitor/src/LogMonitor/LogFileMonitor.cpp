@@ -5,7 +5,11 @@
 
 #include "pch.h"  // NOLINT(build/include_subdir)
 #include "LogFileMonitor.h"  // NOLINT(build/include_subdir)
+#include <memory>  // NOLINT(build/include_order)
 #include <regex>  // NOLINT(build/include_order)
+#include <string>  // NOLINT(build/include_order)
+#include <utility>  // NOLINT(build/include_order)
+#include <vector>  // NOLINT(build/include_order)
 
 using namespace std;
 
@@ -47,7 +51,7 @@ LogFileMonitor::LogFileMonitor(_In_ const std::wstring& LogDirectory,
                                _In_ const std::double_t& WaitInSeconds,
                                _In_ std::wstring LogFormat,
                                _In_ std::wstring CustomLogFormat = L"",
-                               _In_ bool EnableTruncationRecovery = false
+                               _In_ bool EnableTruncationRecovery
                                ) :
                                m_logDirectory(LogDirectory),
                                m_filter(Filter),
@@ -632,7 +636,6 @@ LogFileMonitor::LogDirectoryChangeNotificationHandler()
             dwNextEntryOffset = fileNotificationInfo->NextEntryOffset;
             fileNotificationInfo =
                 (FILE_NOTIFY_INFORMATION*)((LPBYTE)fileNotificationInfo + fileNotificationInfo->NextEntryOffset);
-
         } while (dwNextEntryOffset);
     }
     else
@@ -1457,14 +1460,25 @@ LogFileMonitor::ReadLogFile(
     if (m_enableTruncationRecovery)
     {
         LARGE_INTEGER fileSize = {};
-        if (GetFileSizeEx(logFile, &fileSize))
+        if (!GetFileSizeEx(logFile, &fileSize))
         {
-            if (fileSize.QuadPart < LogFileInfo->NextReadOffset)
-            {
-                // File was truncated and rewritten in-place; read from beginning.
-                LogFileInfo->NextReadOffset = 0;
-                LogFileInfo->LastReadTimestamp = 0;
-            }
+            status = GetLastError();
+            logWriter.TraceError(
+                Utility::FormatString(
+                    L"Error in log file monitor. Failed to get file size. File: %ws. Error: %d",
+                    fullLongPath.c_str(),
+                    status
+                ).c_str()
+            );
+            CloseHandle(logFile);
+            return status;
+        }
+
+        if (static_cast<UINT64>(fileSize.QuadPart) < LogFileInfo->NextReadOffset)
+        {
+            LogFileInfo->NextReadOffset = 0;
+            LogFileInfo->LastReadTimestamp = 0;
+            LogFileInfo->EncodingType = LM_FILETYPE::FileTypeUnknown;
         }
     }
 

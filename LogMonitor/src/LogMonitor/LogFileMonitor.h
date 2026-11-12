@@ -69,7 +69,7 @@ class LogFileMonitor final
         _In_ const std::double_t &WaitInSeconds,
         _In_ std::wstring LogFormat,
         _In_ std::wstring CustomLogFormat,
-        _In_ bool EnableTruncationRecovery);
+        _In_ bool EnableTruncationRecovery = false);
 
     ~LogFileMonitor();
 
