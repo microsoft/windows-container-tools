@@ -281,7 +281,6 @@ DWORD LogFileMonitor::EnqueueDirChangeEvents(DirChangeNotificationEvent event, B
 
     if (m_directoryChangeEvents.size() == 1)
     {
-        //wprintf(L"Signalling worker thread to start processing the event queue\n");
         if(!SetEvent(m_workerThreadEvent))
         {
             logWriter.TraceError(
@@ -650,8 +649,6 @@ LogFileMonitor::InitializeDirectoryChangeEventsQueue()
     DWORD status = ERROR_SUCCESS;
     std::vector<std::pair<std::wstring, FILE_ID_INFO> > logFiles;
 
-    //wprintf(L"InitializeDirectoryChangeEventsQueue\n");
-
     status = GetFilesInDirectory(m_logDirectory, m_filter, logFiles, m_includeSubfolders);
 
     if (status == ERROR_SUCCESS)
@@ -910,49 +907,7 @@ LogFileMonitor::LogFilesChangeHandler()
 
                     ReleaseSRWLockExclusive(&m_eventQueueLock);
 
-                    switch (event.Action)
-                    {
-                        case EventAction::Add:
-                        {
-                            status = LogFileAddEventHandler(event);
-                            break;
-                        }
-
-                        case EventAction::Modify:
-                        {
-                            status = LogFileModifyEventHandler(event);
-                            break;
-                        }
-
-                        case EventAction::Remove:
-                        {
-                            status = LogFileRemoveEventHandler(event);
-                            break;
-                        }
-
-                        case EventAction::RenameOld:
-                        {
-                            //
-                            // Nothing to do
-                            //
-                            break;
-                        }
-
-                        case EventAction::RenameNew:
-                        {
-                            status = LogFileRenameNewEventHandler(event);
-                            break;
-                        }
-
-                        case EventAction::ReInit:
-                        {
-                            status = LogFileReInitEventHandler(event);
-                            break;
-                        }
-
-                        default:
-                            break;
-                    }
+                    status = GetLogFileEventStatus(event);
 
                     AcquireSRWLockExclusive(&m_eventQueueLock);
                 }
@@ -991,8 +946,6 @@ LogFileMonitor::LogFilesChangeHandler()
             case WAIT_OBJECT_0 + 2:
             {
                 map<std::wstring, std::shared_ptr<LogFileInformation>>::iterator it;
-
-                //wprintf(L"LogFilesChangeHandler: Timer event\n");
 
                 for ( it = m_logFilesInformation.begin(); it != m_logFilesInformation.end(); it++ )
                 {
@@ -1033,6 +986,50 @@ LogFileMonitor::LogFilesChangeHandler()
     }
 
     CloseHandle(timerEvent);
+
+    return status;
+}
+
+
+DWORD LogFileMonitor::GetLogFileEventStatus(DirChangeNotificationEvent& event)
+{
+    DWORD status = ERROR_SUCCESS;
+    switch (event.Action)
+    {
+        case EventAction::Add:
+        {
+            status = LogFileAddEventHandler(event);
+            break;
+        }
+
+        case EventAction::Modify:
+        {
+            status = LogFileModifyEventHandler(event);
+            break;
+        }
+
+        case EventAction::Remove:
+        {
+            status = LogFileRemoveEventHandler(event);
+            break;
+        }
+        
+        case EventAction::RenameNew:
+        {
+            status = LogFileRenameNewEventHandler(event);
+            break;
+        }
+
+        case EventAction::ReInit:
+        {
+            status = LogFileReInitEventHandler(event);
+            break;
+        }
+
+        case EventAction::RenameOld:
+        default:
+            break;
+    }
 
     return status;
 }
@@ -1400,9 +1397,6 @@ LogFileMonitor::LogFileReInitEventHandler(
     }
 
     map<std::wstring, std::shared_ptr<LogFileInformation>>::iterator it;
-
-    //wprintf(L"LogFilesChangeHandler: Timer event\n");
-
     for ( it = m_logFilesInformation.begin(); it != m_logFilesInformation.end(); it++ )
     {
         ReadLogFile(it->second);
@@ -1609,7 +1603,7 @@ LogFileMonitor::ReadLogFile(
                 {
                     remainingStringIndex = found + 1;
 
-                    if ((found - 1) >= 0
+                    if (found >= 1 // Ensures non-negative after subtraction
                         && (decodedString[(found - 1)] == L'\n' || decodedString[(found - 1)] == L'\r')
                         && decodedString[(found - 1)] != decodedString[found])
                     {
@@ -1836,8 +1830,6 @@ LogFileMonitor::GetFilesInDirectory(
 
                     FILE_ID_INFO fileId{ 0 };
                     GetFileId(fileName, fileId);
-
-                    //wprintf(L"Started monitoring file: %s\n",fileName.c_str());
 
                     Files.push_back({ fileName, fileId });
                 }
