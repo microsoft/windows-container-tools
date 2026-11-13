@@ -106,6 +106,108 @@ TEST_CLASS(LogFileMonitorTests)
         return (success)? 0 : GetLastError();
     }
 
+    DWORD TruncateAndWriteFile(
+        const std::wstring& FileName,
+        _In_reads_bytes_opt_(BufferSize) LPCVOID Buffer,
+        _In_ size_t BufferSize)
+    {
+        HANDLE file = CreateFileW(
+            FileName.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr,
+            CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH, nullptr);
+        if (file == INVALID_HANDLE_VALUE)
+        {
+            return GetLastError();
+        }
+
+        DWORD bytesWritten = 0;
+        DWORD status = ERROR_SUCCESS;
+        if (!WriteFile(file, Buffer, static_cast<DWORD>(BufferSize), &bytesWritten, nullptr))
+        {
+            status = GetLastError();
+        }
+        else if (bytesWritten != BufferSize)
+        {
+            status = ERROR_WRITE_FAULT;
+        }
+        CloseHandle(file);
+        return status;
+    }
+
+    std::wstring WaitForOutput()
+    {
+        std::wstring output;
+        for (int retry = 0; retry < READ_OUTPUT_RETRIES; ++retry)
+        {
+            Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_SHORT);
+            output = RecoverOuput();
+            if (!output.empty())
+            {
+                break;
+            }
+        }
+        return output;
+    }
+
+    std::string EncodeWithBom(const std::wstring& Content, LM_FILETYPE Encoding)
+    {
+        if (Encoding == LM_FILETYPE::UTF8)
+        {
+            return "\xEF\xBB\xBF" + Utility::WStringToString(Content);
+        }
+
+        Assert::IsTrue(Encoding == LM_FILETYPE::UTF16LE || Encoding == LM_FILETYPE::UTF16BE);
+        std::string encoded;
+        for (wchar_t character : std::wstring(1, BYTE_ORDER_MARK) + Content)
+        {
+            const char low = static_cast<char>(character & 0xFF);
+            const char high = static_cast<char>((character >> 8) & 0xFF);
+            encoded.push_back(Encoding == LM_FILETYPE::UTF16LE ? low : high);
+            encoded.push_back(Encoding == LM_FILETYPE::UTF16LE ? high : low);
+        }
+        return encoded;
+    }
+
+    void CheckEncodingAfterTruncation(
+        LM_FILETYPE InitialEncoding, LM_FILETYPE ReplacementEncoding, bool TruncateToEmptyFirst = false)
+    {
+        const std::wstring directory = CreateTempDirectory();
+        Assert::IsFalse(directory.empty());
+        directoriesToDeleteAtCleanup.push_back(directory);
+
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        LogFileMonitor monitor(directory, L"*.log", false, 300, L"custom", L"%Message%", true);
+        Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+        const std::wstring filename = directory + L"\\encoding.log";
+        const std::wstring initialText = std::wstring(200, L'A') + L" \u00E9 \u03A9";
+        const std::string initial = EncodeWithBom(initialText, InitialEncoding);
+        Assert::AreEqual(DWORD{ERROR_SUCCESS}, WriteToFile(filename, initial.data(), initial.size()));
+        Assert::AreEqual((initialText + L"\n").c_str(), WaitForOutput().c_str());
+
+        const std::wstring replacementText = L"Recovered \u00E9 \u03A9";
+        const std::string replacement = EncodeWithBom(replacementText, ReplacementEncoding);
+        Assert::IsTrue(replacement.size() < initial.size());
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+        if (TruncateToEmptyFirst)
+        {
+            Assert::AreEqual(DWORD{ERROR_SUCCESS}, TruncateAndWriteFile(filename, initial.data(), 0));
+            Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_LONG);
+            Assert::AreEqual(L"", RecoverOuput().c_str());
+            Assert::AreEqual(DWORD{ERROR_SUCCESS}, WriteToFile(filename, replacement.data(), replacement.size()));
+        }
+        else
+        {
+            Assert::AreEqual(DWORD{ERROR_SUCCESS},
+                TruncateAndWriteFile(filename, replacement.data(), replacement.size()));
+        }
+
+        Assert::AreEqual((replacementText + L"\n").c_str(), WaitForOutput().c_str(),
+            L"Recovered text must use the new encoding and must not include a BOM.");
+    }
+
 public:
     ///
     /// "Redirects" the stdout to our buffer.
@@ -1083,6 +1185,101 @@ public:
 
             Assert::IsTrue(output.find(TO_WSTR(content)) != std::wstring::npos);
         }
+    }
+    TEST_METHOD(TestTruncationRecovery_Enabled)
+    {
+        const std::wstring directory = CreateTempDirectory();
+        Assert::IsFalse(directory.empty());
+        directoriesToDeleteAtCleanup.push_back(directory);
+
+        SourceFile sourceFile;
+        sourceFile.Directory = directory;
+        sourceFile.EnableTruncationRecovery = true;
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        LogFileMonitor monitor(
+            sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories,
+            sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
+        Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+        const std::wstring filename = directory + L"\\rotate.log";
+        const std::string initial(200, 'A');
+        Assert::AreEqual(DWORD{ERROR_SUCCESS}, WriteToFile(filename, initial.data(), initial.size()));
+        Assert::IsTrue(WaitForOutput().find(TO_WSTR(initial)) != std::wstring::npos);
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+        const std::string replacement = "AFTER_ROTATION";
+        Assert::IsTrue(replacement.size() < initial.size());
+        Assert::AreEqual(DWORD{ERROR_SUCCESS},
+            TruncateAndWriteFile(filename, replacement.data(), replacement.size()));
+        Assert::IsTrue(WaitForOutput().find(TO_WSTR(replacement)) != std::wstring::npos);
+    }
+
+    TEST_METHOD(TestTruncationRecovery_Disabled)
+    {
+        const std::wstring directory = CreateTempDirectory();
+        Assert::IsFalse(directory.empty());
+        directoriesToDeleteAtCleanup.push_back(directory);
+
+        SourceFile sourceFile;
+        sourceFile.Directory = directory;
+        Assert::IsFalse(sourceFile.EnableTruncationRecovery);
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+        LogFileMonitor monitor(
+            sourceFile.Directory, sourceFile.Filter, sourceFile.IncludeSubdirectories,
+            sourceFile.WaitInSeconds, L"json", L"", sourceFile.EnableTruncationRecovery);
+        Sleep(WAIT_TIME_LOGFILEMONITOR_START);
+
+        const std::wstring filename = directory + L"\\rotate.log";
+        const std::string initial(200, 'B');
+        Assert::AreEqual(DWORD{ERROR_SUCCESS}, WriteToFile(filename, initial.data(), initial.size()));
+        Assert::IsTrue(WaitForOutput().find(TO_WSTR(initial)) != std::wstring::npos);
+        fflush(stdout);
+        ZeroMemory(bigOutBuf, sizeof(bigOutBuf));
+
+        const std::string replacement = "SKIPPED_ROTATION";
+        Assert::IsTrue(replacement.size() < initial.size());
+        Assert::AreEqual(DWORD{ERROR_SUCCESS},
+            TruncateAndWriteFile(filename, replacement.data(), replacement.size()));
+        Sleep(WAIT_TIME_LOGFILEMONITOR_AFTER_WRITE_LONG);
+        Assert::AreEqual(L"", RecoverOuput().c_str());
+    }
+
+    TEST_METHOD(TestTruncationRecovery_SkipsUtf8Bom)
+    {
+        CheckEncodingAfterTruncation(LM_FILETYPE::UTF8, LM_FILETYPE::UTF8);
+    }
+
+    TEST_METHOD(TestTruncationRecovery_SkipsUtf16LEBom)
+    {
+        CheckEncodingAfterTruncation(LM_FILETYPE::UTF16LE, LM_FILETYPE::UTF16LE);
+    }
+
+    TEST_METHOD(TestTruncationRecovery_SkipsUtf16BEBom)
+    {
+        CheckEncodingAfterTruncation(LM_FILETYPE::UTF16BE, LM_FILETYPE::UTF16BE);
+    }
+
+    TEST_METHOD(TestTruncationRecovery_RedetectsEncoding)
+    {
+        const LM_FILETYPE encodings[] = {LM_FILETYPE::UTF8, LM_FILETYPE::UTF16LE, LM_FILETYPE::UTF16BE};
+        for (LM_FILETYPE initial : encodings)
+        {
+            for (LM_FILETYPE replacement : encodings)
+            {
+                if (initial != replacement)
+                {
+                    CheckEncodingAfterTruncation(initial, replacement);
+                }
+            }
+        }
+    }
+
+    TEST_METHOD(TestTruncationRecovery_AfterEmptyTruncation)
+    {
+        CheckEncodingAfterTruncation(LM_FILETYPE::UTF16LE, LM_FILETYPE::UTF8, true);
     }
 };
 }  // namespace LogMonitorTests
