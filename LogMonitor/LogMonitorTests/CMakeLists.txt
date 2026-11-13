@@ -14,6 +14,7 @@ endif()
 
 # Define test shared library (DLL)
 add_library(LogMonitorTests SHARED ${TEST_SOURCES})
+add_dependencies(LogMonitorTests LogMonitor)
 
 # Add a definition for symbol exporting
 target_compile_definitions(LogMonitorTests PRIVATE LOGMONITORTESTS_EXPORTS)
