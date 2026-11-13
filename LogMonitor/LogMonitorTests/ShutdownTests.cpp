@@ -128,6 +128,7 @@ TEST_CLASS(ShutdownTests)
         startup.hStdInput = m_input;
         startup.hStdOutput = m_output;
         startup.hStdError = m_output;
+        // Assign the suspended monitor to the job before it can create an otherwise unowned child.
         Assert::IsTrue(CreateProcessW(executable.c_str(), &command[0], nullptr, nullptr, TRUE,
                                      CREATE_SUSPENDED | CREATE_NO_WINDOW, nullptr, nullptr,
                                      &startup, &m_process) != FALSE);
@@ -165,8 +166,13 @@ TEST_CLASS(ShutdownTests)
         Assert::IsTrue(GetExitCodeProcess(m_process.hProcess, &exitCode) != FALSE);
         Assert::AreEqual(expectedExitCode, exitCode, L"LogMonitor must preserve the child's exit code.");
         std::string output = ReadOutput();
-        Assert::IsTrue(output.find("\"Phase\":\"queued-shutdown\"") != std::string::npos);
-        Assert::IsTrue(output.find("[LOGMONITOR] ERROR:") == std::string::npos);
+        const std::wstring actualOutput = Utility::StringToWString(output);
+        Assert::IsTrue(output.find("\"Phase\":\"queued-shutdown\"") != std::string::npos,
+                       Utility::FormatString(L"Missing queued shutdown event. Actual output: %s",
+                                             actualOutput.c_str()).c_str());
+        Assert::IsTrue(output.find("[LOGMONITOR] ERROR:") == std::string::npos,
+                       Utility::FormatString(L"LogMonitor reported an error. Actual output: %s",
+                                             actualOutput.c_str()).c_str());
         Assert::AreEqual(static_cast<ULONG>(ERROR_WMI_INSTANCE_NOT_FOUND),
                          ControlSession(EVENT_TRACE_CONTROL_QUERY), L"LogMonitor left its ETW session running.");
         m_ownsTrace = false;
