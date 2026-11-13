@@ -456,5 +456,10 @@ int __cdecl wmain(int argc, WCHAR *argv[])
         g_hStopEvent = INVALID_HANDLE_VALUE;
     }
 
+    // Stop workers before CRT teardown destroys the function-local statics used by their formatters.
+    g_etwMon.reset();
+    g_logfileMonitors.clear();
+    g_eventMon.reset();
+
     return exitcode;
 }
