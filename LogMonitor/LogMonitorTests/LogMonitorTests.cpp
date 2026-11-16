@@ -253,6 +253,12 @@ TEST_CLASS(ProcessMonitorTests)
 {
     std::wstring previousLogFormat;
     std::wstring previousCustomFormat;
+    HANDLE previousPipeRead = nullptr;
+    HANDLE previousStdOut = nullptr;
+    HANDLE inputRead = nullptr;
+    HANDLE inputWrite = nullptr;
+    HANDLE outputRead = nullptr;
+    HANDLE outputWrite = nullptr;
 
     const std::string utf8Message =
         "ASCII \xc2\xa1 \xe2\x82\xac \xe6\x97\xa5\xe6\x9c\xac \xf0\x9f\x98\x80 \xef\xbf\xbd";
@@ -295,17 +301,92 @@ TEST_CLASS(ProcessMonitorTests)
         CheckStandardFormats(input, expected, expected);
     }
 
+    void CheckPipeBuffering(const std::wstring& format)
+    {
+        loggingformat = format;
+        std::string input = std::string("before") + '\0' + "after\nnext\n";
+        std::vector<std::string> expectedLines = {"before?after", "next"};
+
+        // Put a NUL at the end of one read and another at the start of a later read.
+        std::string padding(BUFSIZE - 1 - input.size(), 'a');
+        input += padding + '\0' + utf8Message + "\r\n";
+        expectedLines.push_back(padding + '?' + utf8Message);
+        padding.assign(BUFSIZE - input.size() % BUFSIZE, 'b');
+        input += padding + '\0' + "after-boundary\n";
+        expectedLines.push_back(padding + "?after-boundary");
+
+        // Closing the input writer exercises the final partial-line flush, including its last NUL.
+        input += std::string(1, '\0') + "tail" + '\0';
+        expectedLines.push_back("?tail?");
+        std::string expected;
+        for (const auto& line : expectedLines)
+        {
+            expected += FormatProcessLog(line);
+        }
+
+        // Both pipes are prefilled/read synchronously, so neither write may fill its buffer.
+        Assert::IsTrue(input.size() < BUFFER_SIZE && expected.size() < BUFFER_SIZE);
+        Assert::IsTrue(CreatePipe(&inputRead, &inputWrite, nullptr, BUFFER_SIZE) != FALSE);
+        Assert::IsTrue(CreatePipe(&outputRead, &outputWrite, nullptr, BUFFER_SIZE) != FALSE);
+        DWORD written = 0;
+        Assert::IsTrue(WriteFile(
+            inputWrite, input.data(), static_cast<DWORD>(input.size()), &written, nullptr) != FALSE);
+        Assert::AreEqual(static_cast<DWORD>(input.size()), written);
+        Assert::IsTrue(CloseHandle(inputWrite) != FALSE);
+        inputWrite = nullptr;
+
+        g_hChildStd_OUT_Rd = inputRead;
+        Assert::IsTrue(SetStdHandle(STD_OUTPUT_HANDLE, outputWrite) != FALSE);
+        Assert::AreEqual(static_cast<DWORD>(ERROR_SUCCESS), ReadFromPipe(nullptr));
+        Assert::IsTrue(SetStdHandle(STD_OUTPUT_HANDLE, previousStdOut) != FALSE);
+        Assert::IsTrue(CloseHandle(outputWrite) != FALSE);
+        outputWrite = nullptr;
+
+        std::string output;
+        char buffer[BUFSIZE];
+        DWORD read = 0;
+        while (ReadFile(outputRead, buffer, sizeof(buffer), &read, nullptr))
+        {
+            output.append(buffer, read);
+        }
+        Assert::AreEqual(static_cast<DWORD>(ERROR_BROKEN_PIPE), GetLastError());
+        Assert::AreEqual(expected, output);
+    }
+
 public:
     TEST_METHOD_INITIALIZE(InitializeProcessMonitorTests)
     {
         previousLogFormat = loggingformat;
         previousCustomFormat = processCustomLogFormat;
+        previousPipeRead = g_hChildStd_OUT_Rd;
+        previousStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
     }
 
     TEST_METHOD_CLEANUP(CleanupProcessMonitorTests)
     {
+        bool cleaned = SetStdHandle(STD_OUTPUT_HANDLE, previousStdOut) != FALSE;
+        g_hChildStd_OUT_Rd = previousPipeRead;
+        for (HANDLE* handle : {&inputRead, &inputWrite, &outputRead, &outputWrite})
+        {
+            if (*handle != nullptr)
+            {
+                cleaned = CloseHandle(*handle) != FALSE && cleaned;
+                *handle = nullptr;
+            }
+        }
         loggingformat = previousLogFormat;
         processCustomLogFormat = previousCustomFormat;
+        Assert::IsTrue(cleaned, L"Failed to restore process pipe test resources.");
+    }
+
+    TEST_METHOD(TestJsonPipePreservesNullBytesAndReadBoundaries)
+    {
+        CheckPipeBuffering(L"JSON");
+    }
+
+    TEST_METHOD(TestXmlPipePreservesNullBytesAndReadBoundaries)
+    {
+        CheckPipeBuffering(L"XML");
     }
 
     TEST_METHOD(TestStandardFormatsPreserveUtf8)

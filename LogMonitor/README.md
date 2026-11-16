@@ -28,6 +28,11 @@ The log tool is supported for Windows, Server Core, and Nano images.
 is compiled without a precompiled header. Building `LogMonitorTests` checks that
 `JsonProcessor.h` is self-contained in both the CMake and Visual Studio builds.
 
+`ShutdownTests` launches the production `LogMonitor.exe` beside the test DLL,
+queues ETW events, and checks safe shutdown and child exit-code propagation.
+Run these tests elevated, with Windows PowerShell available, and without another
+LogMonitor ETW session running. Do not run ETW tests concurrently.
+
 ## Lint
 
 CI runs cpplint 2.0.2 on all tracked C++ source and header files, including tests,
@@ -86,6 +91,7 @@ ENTRYPOINT      Start-Service WMSVC; `
 
 
 Log Monitor starts the wrapped application as a child process and monitors the STDOUT output of the application.
+When the child exits, Log Monitor stops its monitors before returning the child's exit code.
 
 Note that in the `SHELL` usage pattern the `CMD`/`ENTRYPOINT` instruction should be specified in the `SHELL` form and not exec form. When exec form of the `CMD`/`ENTRYPOINT` instruction is used, SHELL is not launched, and the Log Monitor tool will not be launched inside the container.
 
