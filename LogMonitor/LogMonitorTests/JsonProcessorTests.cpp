@@ -165,6 +165,42 @@ public:
         Assert::AreEqual(300.0, src2->WaitInSeconds);
     }
 
+    TEST_METHOD(JsonProcessor_ParsesEnableTruncationRecovery)
+    {
+        auto path = WriteTempConfig(R"({
+            "LogConfig": {
+                "sources": [
+                    {
+                        "type": "File",
+                        "directory": "C:\\logs",
+                        "enableTruncationRecovery": true
+                    },
+                    {
+                        "type": "File",
+                        "directory": "C:\\logs",
+                        "enableTruncationRecovery": false
+                    },
+                    {
+                        "type": "File",
+                        "directory": "C:\\logs"
+                    }
+                ]
+            }
+        })");
+
+        LoggerSettings settings;
+        Assert::IsTrue(ReadConfigFile((PWCHAR)path.c_str(), settings));
+        Assert::AreEqual(size_t{3}, settings.Sources.size());
+        for (const auto& source : settings.Sources)
+        {
+            Assert::AreEqual((int)LogSourceType::File, (int)source->Type);
+        }
+
+        Assert::IsTrue(std::reinterpret_pointer_cast<SourceFile>(settings.Sources[0])->EnableTruncationRecovery);
+        Assert::IsFalse(std::reinterpret_pointer_cast<SourceFile>(settings.Sources[1])->EnableTruncationRecovery);
+        Assert::IsFalse(std::reinterpret_pointer_cast<SourceFile>(settings.Sources[2])->EnableTruncationRecovery);
+    }
+
     ///
     /// A source with an unknown type must be skipped with an error logged,
     /// but valid sources in the same config must still be processed.

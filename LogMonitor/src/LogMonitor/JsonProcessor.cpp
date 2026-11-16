@@ -253,6 +253,14 @@ bool handleFileLog(
         );
     }
 
+    if (source.contains("enableTruncationRecovery") &&
+        source["enableTruncationRecovery"].is_boolean()) {
+        Attributes[JSON_TAG_ENABLE_TRUNCATION_RECOVERY] = reinterpret_cast<void*>(
+            std::make_unique<bool>(
+                source["enableTruncationRecovery"].get<bool>()).release()
+        );
+    }
+
     auto sourceFile = std::make_shared<SourceFile>();
     if (!SourceFile::Unwrap(Attributes, *sourceFile)) {
         logWriter.TraceError(L"Error parsing configuration file. Invalid File source");
@@ -527,7 +535,8 @@ void cleanupAttributes(_In_ AttributesMap& Attributes) {
 
         if (key == JSON_TAG_START_AT_OLDEST_RECORD ||
             key == JSON_TAG_FORMAT_MULTILINE ||
-            key == JSON_TAG_INCLUDE_SUBDIRECTORIES) {
+            key == JSON_TAG_INCLUDE_SUBDIRECTORIES ||
+            key == JSON_TAG_ENABLE_TRUNCATION_RECOVERY) {
             delete static_cast<bool*>(attributePair.second);
         } else if (key == JSON_TAG_CUSTOM_LOG_FORMAT ||
                    key == JSON_TAG_DIRECTORY ||
