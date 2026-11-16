@@ -34,6 +34,8 @@ enum LM_FILETYPE
 struct LogFileInformation
 {
     std::wstring FileName;
+    std::wstring ShortName;
+    FILE_ID_INFO FileId = {};
     UINT64 NextReadOffset;
     UINT64 LastReadTimestamp;
     LM_FILETYPE EncodingType;
@@ -57,6 +59,11 @@ struct DirChangeNotificationEvent
     UINT64 Timestamp;
 };
 
+namespace LogMonitorTests
+{
+class LogFileMonitorTests;
+}
+
 class LogFileMonitor final
 {
  public:
@@ -75,6 +82,8 @@ class LogFileMonitor final
     static std::wstring FileFieldsMapping(_In_ std::wstring eventFields, _In_ void* pLogEntryData);
 
  private:
+    friend class LogMonitorTests::LogFileMonitorTests;
+
     static constexpr int LOG_MONITOR_THREAD_EXIT_MAX_WAIT_MILLIS = 5 * 1000;
     static constexpr int RECORDS_BUFFER_SIZE_BYTES = 8 * 1024;
 
@@ -191,6 +200,8 @@ class LogFileMonitor final
     DWORD LogFileAddEventHandler(DirChangeNotificationEvent &Event);
 
     DWORD LogFileRemoveEventHandler(DirChangeNotificationEvent &Event);
+
+    std::wstring ResolveTrackedPath(const std::wstring &Path) const;
 
     DWORD LogFileModifyEventHandler(DirChangeNotificationEvent &Event);
 

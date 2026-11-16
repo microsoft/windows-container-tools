@@ -228,6 +228,10 @@ Example 1 (Application channel, verboseness: Error):
 
 This will monitor any changes in log files matching a specified filter, given the log directory location in the configuration. For instance, given a directory like `C:\temp\logs` and `*.log` filter, this will monitor any changes in `.log` files within the `C:\temp\logs` directory.
 
+When a monitored subdirectory is deleted or moved outside the watched directory, LogMonitor stops monitoring its tracked files, including files in nested subdirectories.
+
+When `includeSubdirectories` is enabled, adding or moving a populated directory back into the watched tree discovers its files that match the configured filter. Newly discovered files are read from the beginning, as with individually added files. Removal also handles mixed long and short directory names without affecting similarly named sibling directories.
+
 ### Configuration
 
 - `type` (required): `"File"`
