@@ -11,7 +11,6 @@
 #include <vector>
 #include <array>
 #include <memory>
-#include <variant>
 
 bool OpenConfigFile(
     _In_ const PWCHAR ConfigFileName,
