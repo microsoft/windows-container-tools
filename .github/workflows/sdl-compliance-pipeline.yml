@@ -45,7 +45,7 @@ jobs:
 
     steps: 
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # We must fetch at least the immediate parents so that if this is
           # a pull request then we can checkout the head.
@@ -53,7 +53,7 @@ jobs:
 
       # https://github.com/marketplace/actions/setup-msbuild#specifying-msbuild-architecture-optional
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3.0.0
         with:
           msbuild-architecture: ${{ matrix.build-platform }} # Default is x86. Options are x86, x64, and arm64
       
@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
