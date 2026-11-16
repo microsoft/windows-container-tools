@@ -277,7 +277,7 @@ std::string FormatStandardLog(const std::string& inputLine) {
 DWORD ReadFromPipe(LPVOID Param)
 {
     DWORD dwWritten;
-    char chBuf[BUFSIZE + 1] = { 0 };
+    char chBuf[BUFSIZE];
     std::string partialLine;
     HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
     UNREFERENCED_PARAMETER(Param);
@@ -290,8 +290,7 @@ DWORD ReadFromPipe(LPVOID Param)
         if (!bSuccess || bytesRead == 0)
             break;
 
-        chBuf[bytesRead] = '\0'; // Null-terminate buffer
-        partialLine.append(chBuf);
+        partialLine.append(chBuf, bytesRead);
 
         size_t start = 0;
         size_t newlinePos;
